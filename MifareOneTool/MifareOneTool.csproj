@@ -107,6 +107,9 @@
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Form1.en.resx">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form1.ru.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
@@ -114,6 +117,9 @@
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormDiff.resx">
+      <DependentUpon>FormDiff.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormDiff.en.resx">
       <DependentUpon>FormDiff.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormDiff.ru.resx">
@@ -125,6 +131,9 @@
     <EmbeddedResource Include="FormHardNes.resx">
       <DependentUpon>FormHardNes.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="FormHardNes.en.resx">
+      <DependentUpon>FormHardNes.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FormHardNes.ru.resx">
       <DependentUpon>FormHardNes.cs</DependentUpon>
     </EmbeddedResource>
@@ -134,6 +143,9 @@
     <EmbeddedResource Include="FormHTool.resx">
       <DependentUpon>FormHTool.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="FormHTool.en.resx">
+      <DependentUpon>FormHTool.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FormHTool.ru.resx">
       <DependentUpon>FormHTool.cs</DependentUpon>
     </EmbeddedResource>
@@ -141,6 +153,9 @@
       <DependentUpon>FormHTool.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormMFF08.resx">
+      <DependentUpon>FormMFF08.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormMFF08.en.resx">
       <DependentUpon>FormMFF08.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormMFF08.ru.resx">
@@ -159,6 +174,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="Properties\Resources.en.resx">
+      <DependentUpon>Resources.resx</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.ru.resx">
       <DependentUpon>Resources.resx</DependentUpon>
     </EmbeddedResource>

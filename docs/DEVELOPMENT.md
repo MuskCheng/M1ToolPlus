@@ -65,9 +65,13 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
 ### 本地化
 
 - 中性资源 = 简体中文（`Form1.resx` 界面文本即中文）
-- 卫星：`Form1.zh.resx`（中文覆盖）、`Form1.ru.resx`（俄语）
+- 卫星：`Form1.zh.resx`（中文覆盖）、`Form1.ru.resx`（俄语）、`*.en.resx`（英语，
+  2026 新增，文案移植自 xavave/MifareOneTool-English fork，生成脚本 `scripts/gen-en-resx.ps1`）
 - 运行时在 `Form1()` 构造里按 `Settings.Language` 设置 `CurrentUICulture`
 - 文案全部经 `Properties\Resources` 强类型访问（`Resources.xxx`）
+- 语言切换（`ComboBox1_SelectedIndexChanged`）按**下拉索引**映射文化
+  （0=zh-cn 1=ru-RU 2=en-US），不比对各语言文案，新增语言只需：
+  ① 生成对应 `.xx.resx` 并注册进 csproj ② combo 加一项 ③ switch 加一个分支
 
 ### 设置项（Properties.Settings）
 

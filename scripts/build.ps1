@@ -106,7 +106,7 @@ if (-not $fullBuildOk) {
     $asmInfo = Get-Content (Join-Path $projDir "Properties\AssemblyInfo.cs") -Raw
     $ver = if ($asmInfo -match 'AssemblyFileVersion\("([\d\.]+)"\)') { $Matches[1] } else { "1.7.0.0" }
 
-    foreach ($cult in @("ru", "zh")) {
+    foreach ($cult in @("en", "ru", "zh")) {
         $resFiles = Get-ChildItem $objDir -Filter "*.$cult.resources" -File -ErrorAction SilentlyContinue
         if (-not $resFiles) { Write-Warning "[$cult] 无卫星资源，跳过"; continue }
 

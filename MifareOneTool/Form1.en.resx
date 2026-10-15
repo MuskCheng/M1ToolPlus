@@ -1,0 +1,2042 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="buttonScanCard.Text" xml:space="preserve">
+    <value>Manual scanning</value>
+  </data>
+  <metadata name="toolTipHelp.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
+  <data name="buttonScanCard.ToolTip" xml:space="preserve">
+    <value>Scan for a valid card.</value>
+  </data>
+  <data name="&gt;&gt;buttonScanCard.Name" xml:space="preserve">
+    <value>buttonScanCard</value>
+  </data>
+  <data name="&gt;&gt;buttonScanCard.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonScanCard.Parent" xml:space="preserve">
+    <value>flowLayoutPanel12</value>
+  </data>
+  <data name="&gt;&gt;buttonScanCard.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel12.Name" xml:space="preserve">
+    <value>flowLayoutPanel12</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel12.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel12.Parent" xml:space="preserve">
+    <value>tableLayoutPanel5</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel12.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonListDev.Text" xml:space="preserve">
+    <value>Testing Equipment</value>
+  </data>
+  <data name="buttonListDev.ToolTip" xml:space="preserve">
+    <value>Scan a connected NFC device
+(currently supports PN532, ACR122U)</value>
+  </data>
+  <data name="&gt;&gt;buttonListDev.Name" xml:space="preserve">
+    <value>buttonListDev</value>
+  </data>
+  <data name="&gt;&gt;buttonListDev.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonListDev.Parent" xml:space="preserve">
+    <value>flowLayoutPanel11</value>
+  </data>
+  <data name="&gt;&gt;buttonListDev.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonCLI.Text" xml:space="preserve">
+    <value>Manual CLI</value>
+  </data>
+  <data name="buttonCLI.ToolTip" xml:space="preserve">
+    <value>Open the NFC command line for advanced operations.</value>
+  </data>
+  <data name="&gt;&gt;buttonCLI.Name" xml:space="preserve">
+    <value>buttonCLI</value>
+  </data>
+  <data name="&gt;&gt;buttonCLI.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonCLI.Parent" xml:space="preserve">
+    <value>flowLayoutPanel11</value>
+  </data>
+  <data name="&gt;&gt;buttonCLI.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel11.Name" xml:space="preserve">
+    <value>flowLayoutPanel11</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel11.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel11.Parent" xml:space="preserve">
+    <value>tableLayoutPanel5</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel11.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel5.Name" xml:space="preserve">
+    <value>tableLayoutPanel5</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel5.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel5.Parent" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel5.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox1.Text" xml:space="preserve">
+    <value>device control</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Name" xml:space="preserve">
+    <value>groupBox1</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.Parent" xml:space="preserve">
+    <value>flowLayoutPanel7</value>
+  </data>
+  <data name="&gt;&gt;groupBox1.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="richTextBox1.Text" xml:space="preserve">
+    <value>Hello,cardman!</value>
+  </data>
+  <data name="&gt;&gt;richTextBox1.Name" xml:space="preserve">
+    <value>richTextBox1</value>
+  </data>
+  <data name="&gt;&gt;richTextBox1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RichTextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;richTextBox1.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;richTextBox1.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonMfRead.Text" xml:space="preserve">
+    <value>Read M1</value>
+  </data>
+  <data name="buttonMfRead.ToolTip" xml:space="preserve">
+    <value>Read normal M1 cards (may need to load the key file)</value>
+  </data>
+  <data name="&gt;&gt;buttonMfRead.Name" xml:space="preserve">
+    <value>buttonMfRead</value>
+  </data>
+  <data name="&gt;&gt;buttonMfRead.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonMfRead.Parent" xml:space="preserve">
+    <value>flowLayoutPanel13</value>
+  </data>
+  <data name="&gt;&gt;buttonMfRead.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonSelectKey.Text" xml:space="preserve">
+    <value>Select key.mfd</value>
+  </data>
+  <data name="buttonSelectKey.ToolTip" xml:space="preserve">
+    <value>Load the MFD file with the correct read and write card key and the correct control bits.</value>
+  </data>
+  <data name="&gt;&gt;buttonSelectKey.Name" xml:space="preserve">
+    <value>buttonSelectKey</value>
+  </data>
+  <data name="&gt;&gt;buttonSelectKey.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonSelectKey.Parent" xml:space="preserve">
+    <value>flowLayoutPanel14</value>
+  </data>
+  <data name="&gt;&gt;buttonSelectKey.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel14.Name" xml:space="preserve">
+    <value>flowLayoutPanel14</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel14.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel14.Parent" xml:space="preserve">
+    <value>tableLayoutPanel7</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel14.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonMfWrite.Text" xml:space="preserve">
+    <value>Write M1</value>
+  </data>
+  <data name="buttonMfWrite.ToolTip" xml:space="preserve">
+    <value>Write a normal M1 card (may need to load the key file)</value>
+  </data>
+  <data name="&gt;&gt;buttonMfWrite.Name" xml:space="preserve">
+    <value>buttonMfWrite</value>
+  </data>
+  <data name="&gt;&gt;buttonMfWrite.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonMfWrite.Parent" xml:space="preserve">
+    <value>flowLayoutPanel13</value>
+  </data>
+  <data name="&gt;&gt;buttonMfWrite.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="buttonMfFormat.Text" xml:space="preserve">
+    <value>Clear M1</value>
+  </data>
+  <data name="buttonMfFormat.ToolTip" xml:space="preserve">
+    <value>Format normal M1 card (must load key file)</value>
+  </data>
+  <data name="&gt;&gt;buttonMfFormat.Name" xml:space="preserve">
+    <value>buttonMfFormat</value>
+  </data>
+  <data name="&gt;&gt;buttonMfFormat.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonMfFormat.Parent" xml:space="preserve">
+    <value>flowLayoutPanel13</value>
+  </data>
+  <data name="&gt;&gt;buttonMfFormat.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel13.Name" xml:space="preserve">
+    <value>flowLayoutPanel13</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel13.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel13.Parent" xml:space="preserve">
+    <value>tableLayoutPanel7</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel13.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel7.Name" xml:space="preserve">
+    <value>tableLayoutPanel7</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel7.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel7.Parent" xml:space="preserve">
+    <value>groupBox2</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel7.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox2.Text" xml:space="preserve">
+    <value>Ordinary card operation</value>
+  </data>
+  <data name="&gt;&gt;groupBox2.Name" xml:space="preserve">
+    <value>groupBox2</value>
+  </data>
+  <data name="&gt;&gt;groupBox2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox2.Parent" xml:space="preserve">
+    <value>flowLayoutPanel7</value>
+  </data>
+  <data name="&gt;&gt;groupBox2.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="buttonBmfWrite.Text" xml:space="preserve">
+    <value>Write UID</value>
+  </data>
+  <data name="buttonBmfWrite.ToolTip" xml:space="preserve">
+    <value>Write a UID card.</value>
+  </data>
+  <data name="&gt;&gt;buttonBmfWrite.Name" xml:space="preserve">
+    <value>buttonBmfWrite</value>
+  </data>
+  <data name="&gt;&gt;buttonBmfWrite.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonBmfWrite.Parent" xml:space="preserve">
+    <value>flowLayoutPanel16</value>
+  </data>
+  <data name="&gt;&gt;buttonBmfWrite.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonBmfRead.Text" xml:space="preserve">
+    <value>Read UID</value>
+  </data>
+  <data name="buttonBmfRead.ToolTip" xml:space="preserve">
+    <value>Read the UID card.</value>
+  </data>
+  <data name="&gt;&gt;buttonBmfRead.Name" xml:space="preserve">
+    <value>buttonBmfRead</value>
+  </data>
+  <data name="&gt;&gt;buttonBmfRead.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonBmfRead.Parent" xml:space="preserve">
+    <value>flowLayoutPanel15</value>
+  </data>
+  <data name="&gt;&gt;buttonBmfRead.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonMfoc.Text" xml:space="preserve">
+    <value>MFOC reading</value>
+  </data>
+  <data name="buttonMfoc.ToolTip" xml:space="preserve">
+    <value>Nested cracking on semi-encrypted cards.
+Press Ctrl and click this button to add a known key.</value>
+  </data>
+  <data name="&gt;&gt;buttonMfoc.Name" xml:space="preserve">
+    <value>buttonMfoc</value>
+  </data>
+  <data name="&gt;&gt;buttonMfoc.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonMfoc.Parent" xml:space="preserve">
+    <value>flowLayoutPanel17</value>
+  </data>
+  <data name="&gt;&gt;buttonMfoc.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonUidWrite.Text" xml:space="preserve">
+    <value>UID write number</value>
+  </data>
+  <data name="buttonUidWrite.ToolTip" xml:space="preserve">
+    <value>Write the top card number to the UID card, and the manufacturer sets it to Fudan.</value>
+  </data>
+  <data name="&gt;&gt;buttonUidWrite.Name" xml:space="preserve">
+    <value>buttonUidWrite</value>
+  </data>
+  <data name="&gt;&gt;buttonUidWrite.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonUidWrite.Parent" xml:space="preserve">
+    <value>flowLayoutPanel16</value>
+  </data>
+  <data name="&gt;&gt;buttonUidWrite.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="buttonUidFormat.Text" xml:space="preserve">
+    <value>UID full grid</value>
+  </data>
+  <data name="buttonUidFormat.ToolTip" xml:space="preserve">
+    <value>Empty the card and reinitialize it.
+It can be used for first aid in situations where ACbit damage/KEY is completely changed.</value>
+  </data>
+  <data name="&gt;&gt;buttonUidFormat.Name" xml:space="preserve">
+    <value>buttonUidFormat</value>
+  </data>
+  <data name="&gt;&gt;buttonUidFormat.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonUidFormat.Parent" xml:space="preserve">
+    <value>flowLayoutPanel15</value>
+  </data>
+  <data name="&gt;&gt;buttonUidFormat.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="buttonUidReset.Text" xml:space="preserve">
+    <value>Reset UID</value>
+  </data>
+  <data name="buttonUidReset.ToolTip" xml:space="preserve">
+    <value>Reset the UID card 0 block, the UID is random, and the manufacturer number is Fudan.</value>
+  </data>
+  <data name="&gt;&gt;buttonUidReset.Name" xml:space="preserve">
+    <value>buttonUidReset</value>
+  </data>
+  <data name="&gt;&gt;buttonUidReset.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonUidReset.Parent" xml:space="preserve">
+    <value>flowLayoutPanel15</value>
+  </data>
+  <data name="&gt;&gt;buttonUidReset.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="buttonKill.Text" xml:space="preserve">
+    <value>Stop running</value>
+  </data>
+  <data name="&gt;&gt;buttonKill.Name" xml:space="preserve">
+    <value>buttonKill</value>
+  </data>
+  <data name="&gt;&gt;buttonKill.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonKill.Parent" xml:space="preserve">
+    <value>flowLayoutPanel20</value>
+  </data>
+  <data name="&gt;&gt;buttonKill.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel20.Name" xml:space="preserve">
+    <value>flowLayoutPanel20</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel20.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel20.Parent" xml:space="preserve">
+    <value>tableLayoutPanel10</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel20.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonConClr.Text" xml:space="preserve">
+    <value>Clear terminal</value>
+  </data>
+  <data name="&gt;&gt;buttonConClr.Name" xml:space="preserve">
+    <value>buttonConClr</value>
+  </data>
+  <data name="&gt;&gt;buttonConClr.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonConClr.Parent" xml:space="preserve">
+    <value>flowLayoutPanel19</value>
+  </data>
+  <data name="&gt;&gt;buttonConClr.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonConSave.Text" xml:space="preserve">
+    <value>Save log</value>
+  </data>
+  <data name="&gt;&gt;buttonConSave.Name" xml:space="preserve">
+    <value>buttonConSave</value>
+  </data>
+  <data name="&gt;&gt;buttonConSave.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonConSave.Parent" xml:space="preserve">
+    <value>flowLayoutPanel19</value>
+  </data>
+  <data name="&gt;&gt;buttonConSave.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel19.Name" xml:space="preserve">
+    <value>flowLayoutPanel19</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel19.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel19.Parent" xml:space="preserve">
+    <value>tableLayoutPanel10</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel19.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel10.Name" xml:space="preserve">
+    <value>tableLayoutPanel10</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel10.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel10.Parent" xml:space="preserve">
+    <value>groupBox3</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel10.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox3.Text" xml:space="preserve">
+    <value>Run/terminal</value>
+  </data>
+  <data name="&gt;&gt;groupBox3.Name" xml:space="preserve">
+    <value>groupBox3</value>
+  </data>
+  <data name="&gt;&gt;groupBox3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox3.Parent" xml:space="preserve">
+    <value>flowLayoutPanel8</value>
+  </data>
+  <data name="&gt;&gt;groupBox3.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="buttonMfcuk.Text" xml:space="preserve">
+    <value>Fully encrypted blasting</value>
+  </data>
+  <data name="buttonMfcuk.ToolTip" xml:space="preserve">
+    <value>Implement the Darkside tool on the card (not necessarily successful)</value>
+  </data>
+  <data name="&gt;&gt;buttonMfcuk.Name" xml:space="preserve">
+    <value>buttonMfcuk</value>
+  </data>
+  <data name="&gt;&gt;buttonMfcuk.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonMfcuk.Parent" xml:space="preserve">
+    <value>flowLayoutPanel17</value>
+  </data>
+  <data name="&gt;&gt;buttonMfcuk.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="buttonHexTool.Text" xml:space="preserve">
+    <value>Hex editor</value>
+  </data>
+  <data name="&gt;&gt;buttonHexTool.Name" xml:space="preserve">
+    <value>buttonHexTool</value>
+  </data>
+  <data name="&gt;&gt;buttonHexTool.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonHexTool.Parent" xml:space="preserve">
+    <value>flowLayoutPanel10</value>
+  </data>
+  <data name="&gt;&gt;buttonHexTool.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonDiffTool.Text" xml:space="preserve">
+    <value>Difference comparison</value>
+  </data>
+  <data name="&gt;&gt;buttonDiffTool.Name" xml:space="preserve">
+    <value>buttonDiffTool</value>
+  </data>
+  <data name="&gt;&gt;buttonDiffTool.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonDiffTool.Parent" xml:space="preserve">
+    <value>flowLayoutPanel9</value>
+  </data>
+  <data name="&gt;&gt;buttonDiffTool.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonCheckEncrypt.Text" xml:space="preserve">
+    <value>Check encryption</value>
+  </data>
+  <data name="buttonCheckEncrypt.ToolTip" xml:space="preserve">
+    <value>Check card encryption.</value>
+  </data>
+  <data name="&gt;&gt;buttonCheckEncrypt.Name" xml:space="preserve">
+    <value>buttonCheckEncrypt</value>
+  </data>
+  <data name="&gt;&gt;buttonCheckEncrypt.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonCheckEncrypt.Parent" xml:space="preserve">
+    <value>flowLayoutPanel18</value>
+  </data>
+  <data name="&gt;&gt;buttonCheckEncrypt.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonLockUfuid.Text" xml:space="preserve">
+    <value>Lock Ufuid</value>
+  </data>
+  <data name="buttonLockUfuid.ToolTip" xml:space="preserve">
+    <value>Locked UFUID card 0 block data (testing)</value>
+  </data>
+  <data name="&gt;&gt;buttonLockUfuid.Name" xml:space="preserve">
+    <value>buttonLockUfuid</value>
+  </data>
+  <data name="&gt;&gt;buttonLockUfuid.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonLockUfuid.Parent" xml:space="preserve">
+    <value>flowLayoutPanel16</value>
+  </data>
+  <data name="&gt;&gt;buttonLockUfuid.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="buttonCmfWrite.Text" xml:space="preserve">
+    <value>Write CUID</value>
+  </data>
+  <data name="buttonCmfWrite.ToolTip" xml:space="preserve">
+    <value>Write CUID/FUID card (may need a key file)</value>
+  </data>
+  <data name="&gt;&gt;buttonCmfWrite.Name" xml:space="preserve">
+    <value>buttonCmfWrite</value>
+  </data>
+  <data name="&gt;&gt;buttonCmfWrite.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonCmfWrite.Parent" xml:space="preserve">
+    <value>flowLayoutPanel21</value>
+  </data>
+  <data name="&gt;&gt;buttonCmfWrite.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="buttonDictMfoc.Text" xml:space="preserve">
+    <value>Dictionary test</value>
+  </data>
+  <data name="buttonDictMfoc.ToolTip" xml:space="preserve">
+    <value>Import the dictionary file for Nested crack.</value>
+  </data>
+  <data name="&gt;&gt;buttonDictMfoc.Name" xml:space="preserve">
+    <value>buttonDictMfoc</value>
+  </data>
+  <data name="&gt;&gt;buttonDictMfoc.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonDictMfoc.Parent" xml:space="preserve">
+    <value>flowLayoutPanel18</value>
+  </data>
+  <data name="&gt;&gt;buttonDictMfoc.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="buttonnKeysMfoc.Text" xml:space="preserve">
+    <value>Know n</value>
+  </data>
+  <data name="buttonnKeysMfoc.ToolTip" xml:space="preserve">
+    <value>Enter the known key for Nested cracking.</value>
+  </data>
+  <data name="&gt;&gt;buttonnKeysMfoc.Name" xml:space="preserve">
+    <value>buttonnKeysMfoc</value>
+  </data>
+  <data name="&gt;&gt;buttonnKeysMfoc.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonnKeysMfoc.Parent" xml:space="preserve">
+    <value>flowLayoutPanel17</value>
+  </data>
+  <data name="&gt;&gt;buttonnKeysMfoc.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel10.Name" xml:space="preserve">
+    <value>flowLayoutPanel10</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel10.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel10.Parent" xml:space="preserve">
+    <value>tableLayoutPanel6</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel10.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonMFF08.Text" xml:space="preserve">
+    <value>MFF08 CUID repair</value>
+  </data>
+  <data name="&gt;&gt;buttonMFF08.Name" xml:space="preserve">
+    <value>buttonMFF08</value>
+  </data>
+  <data name="&gt;&gt;buttonMFF08.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonMFF08.Parent" xml:space="preserve">
+    <value>flowLayoutPanel9</value>
+  </data>
+  <data name="&gt;&gt;buttonMFF08.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel9.Name" xml:space="preserve">
+    <value>flowLayoutPanel9</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel9.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel9.Parent" xml:space="preserve">
+    <value>tableLayoutPanel6</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel9.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel6.Name" xml:space="preserve">
+    <value>tableLayoutPanel6</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel6.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel6.Parent" xml:space="preserve">
+    <value>groupBox4</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel6.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox4.Text" xml:space="preserve">
+    <value>Integrated help</value>
+  </data>
+  <data name="&gt;&gt;groupBox4.Name" xml:space="preserve">
+    <value>groupBox4</value>
+  </data>
+  <data name="&gt;&gt;groupBox4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox4.Parent" xml:space="preserve">
+    <value>flowLayoutPanel8</value>
+  </data>
+  <data name="&gt;&gt;groupBox4.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="label8.Text" xml:space="preserve">
+    <value>Please put new card</value>
+  </data>
+  <data name="&gt;&gt;label8.Name" xml:space="preserve">
+    <value>label8</value>
+  </data>
+  <data name="&gt;&gt;label8.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label8.Parent" xml:space="preserve">
+    <value>flowLayoutPanel1</value>
+  </data>
+  <data name="&gt;&gt;label8.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;pictureBox3.Name" xml:space="preserve">
+    <value>pictureBox3</value>
+  </data>
+  <data name="&gt;&gt;pictureBox3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;pictureBox3.Parent" xml:space="preserve">
+    <value>flowLayoutPanel1</value>
+  </data>
+  <data name="&gt;&gt;pictureBox3.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel1.Name" xml:space="preserve">
+    <value>flowLayoutPanel1</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel1.Parent" xml:space="preserve">
+    <value>tableLayoutPanel2</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel1.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="label7.Text" xml:space="preserve">
+    <value>Please put
+Original card</value>
+  </data>
+  <data name="&gt;&gt;label7.Name" xml:space="preserve">
+    <value>label7</value>
+  </data>
+  <data name="&gt;&gt;label7.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label7.Parent" xml:space="preserve">
+    <value>tableLayoutPanel1</value>
+  </data>
+  <data name="&gt;&gt;label7.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonEscan.Text" xml:space="preserve">
+    <value>Detect connection</value>
+  </data>
+  <data name="&gt;&gt;buttonEscan.Name" xml:space="preserve">
+    <value>buttonEscan</value>
+  </data>
+  <data name="&gt;&gt;buttonEscan.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonEscan.Parent" xml:space="preserve">
+    <value>tableLayoutPanel1</value>
+  </data>
+  <data name="&gt;&gt;buttonEscan.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="buttonECheckEncrypt.Text" xml:space="preserve">
+    <value>Detect encryption</value>
+  </data>
+  <data name="&gt;&gt;buttonECheckEncrypt.Name" xml:space="preserve">
+    <value>buttonECheckEncrypt</value>
+  </data>
+  <data name="&gt;&gt;buttonECheckEncrypt.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonECheckEncrypt.Parent" xml:space="preserve">
+    <value>tableLayoutPanel1</value>
+  </data>
+  <data name="&gt;&gt;buttonECheckEncrypt.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="buttoEScanCard.Text" xml:space="preserve">
+    <value>Scan card</value>
+  </data>
+  <data name="&gt;&gt;buttoEScanCard.Name" xml:space="preserve">
+    <value>buttoEScanCard</value>
+  </data>
+  <data name="&gt;&gt;buttoEScanCard.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttoEScanCard.Parent" xml:space="preserve">
+    <value>tableLayoutPanel1</value>
+  </data>
+  <data name="&gt;&gt;buttoEScanCard.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;pictureBox1.Name" xml:space="preserve">
+    <value>pictureBox1</value>
+  </data>
+  <data name="&gt;&gt;pictureBox1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;pictureBox1.Parent" xml:space="preserve">
+    <value>tableLayoutPanel1</value>
+  </data>
+  <data name="&gt;&gt;pictureBox1.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;pictureBox2.Name" xml:space="preserve">
+    <value>pictureBox2</value>
+  </data>
+  <data name="&gt;&gt;pictureBox2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;pictureBox2.Parent" xml:space="preserve">
+    <value>tableLayoutPanel1</value>
+  </data>
+  <data name="&gt;&gt;pictureBox2.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel1.Name" xml:space="preserve">
+    <value>tableLayoutPanel1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel1.Parent" xml:space="preserve">
+    <value>tableLayoutPanel15</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel1.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="label13.Text" xml:space="preserve">
+    <value>tool only supports SAK=08/18/28
+Card copy. SAK28 has no one key to decrypt.
+To copy S70 cards, please in the advanced world
+Uncheck "Data Write Protection" on the surface.</value>
+  </data>
+  <data name="&gt;&gt;label13.Name" xml:space="preserve">
+    <value>label13</value>
+  </data>
+  <data name="&gt;&gt;label13.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label13.Parent" xml:space="preserve">
+    <value>tableLayoutPanel15</value>
+  </data>
+  <data name="&gt;&gt;label13.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel15.Name" xml:space="preserve">
+    <value>tableLayoutPanel15</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel15.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel15.Parent" xml:space="preserve">
+    <value>groupBox16</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel15.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox16.Text" xml:space="preserve">
+    <value>Start here</value>
+  </data>
+  <data name="&gt;&gt;groupBox16.Name" xml:space="preserve">
+    <value>groupBox16</value>
+  </data>
+  <data name="&gt;&gt;groupBox16.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox16.Parent" xml:space="preserve">
+    <value>tableLayoutPanel2</value>
+  </data>
+  <data name="&gt;&gt;groupBox16.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="buttonEReadUID.Text" xml:space="preserve">
+    <value>Read back from UID card</value>
+  </data>
+  <data name="&gt;&gt;buttonEReadUID.Name" xml:space="preserve">
+    <value>buttonEReadUID</value>
+  </data>
+  <data name="&gt;&gt;buttonEReadUID.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonEReadUID.Parent" xml:space="preserve">
+    <value>tableLayoutPanel11</value>
+  </data>
+  <data name="&gt;&gt;buttonEReadUID.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonEMfRead.Text" xml:space="preserve">
+    <value>Known key reading</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfRead.Name" xml:space="preserve">
+    <value>buttonEMfRead</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfRead.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfRead.Parent" xml:space="preserve">
+    <value>tableLayoutPanel11</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfRead.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="buttonECmfoc.Text" xml:space="preserve">
+    <value>Know a secret crack</value>
+  </data>
+  <data name="&gt;&gt;buttonECmfoc.Name" xml:space="preserve">
+    <value>buttonECmfoc</value>
+  </data>
+  <data name="&gt;&gt;buttonECmfoc.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonECmfoc.Parent" xml:space="preserve">
+    <value>tableLayoutPanel11</value>
+  </data>
+  <data name="&gt;&gt;buttonECmfoc.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="buttonEMfoc.Text" xml:space="preserve">
+    <value>One-click solution</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfoc.Name" xml:space="preserve">
+    <value>buttonEMfoc</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfoc.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfoc.Parent" xml:space="preserve">
+    <value>tableLayoutPanel11</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfoc.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="buttonESelectKey.Text" xml:space="preserve">
+    <value>Load key...</value>
+  </data>
+  <data name="&gt;&gt;buttonESelectKey.Name" xml:space="preserve">
+    <value>buttonESelectKey</value>
+  </data>
+  <data name="&gt;&gt;buttonESelectKey.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonESelectKey.Parent" xml:space="preserve">
+    <value>tableLayoutPanel11</value>
+  </data>
+  <data name="&gt;&gt;buttonESelectKey.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel11.Name" xml:space="preserve">
+    <value>tableLayoutPanel11</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel11.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel11.Parent" xml:space="preserve">
+    <value>groupBox5</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel11.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox5.Text" xml:space="preserve">
+    <value>[2]Read the original card</value>
+  </data>
+  <data name="&gt;&gt;groupBox5.Name" xml:space="preserve">
+    <value>groupBox5</value>
+  </data>
+  <data name="&gt;&gt;groupBox5.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox5.Parent" xml:space="preserve">
+    <value>tableLayoutPanel2</value>
+  </data>
+  <data name="&gt;&gt;groupBox5.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;pictureBox4.Name" xml:space="preserve">
+    <value>pictureBox4</value>
+  </data>
+  <data name="&gt;&gt;pictureBox4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.PictureBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;pictureBox4.Parent" xml:space="preserve">
+    <value>flowLayoutPanel24</value>
+  </data>
+  <data name="&gt;&gt;pictureBox4.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="label6.Text" xml:space="preserve">
+    <value>Try to see if it succeeds</value>
+  </data>
+  <data name="&gt;&gt;label6.Name" xml:space="preserve">
+    <value>label6</value>
+  </data>
+  <data name="&gt;&gt;label6.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label6.Parent" xml:space="preserve">
+    <value>flowLayoutPanel24</value>
+  </data>
+  <data name="&gt;&gt;label6.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel24.Name" xml:space="preserve">
+    <value>flowLayoutPanel24</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel24.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel24.Parent" xml:space="preserve">
+    <value>tableLayoutPanel3</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel24.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonEStop.Text" xml:space="preserve">
+    <value>stop</value>
+  </data>
+  <data name="&gt;&gt;buttonEStop.Name" xml:space="preserve">
+    <value>buttonEStop</value>
+  </data>
+  <data name="&gt;&gt;buttonEStop.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonEStop.Parent" xml:space="preserve">
+    <value>tableLayoutPanel3</value>
+  </data>
+  <data name="&gt;&gt;buttonEStop.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel3.Name" xml:space="preserve">
+    <value>tableLayoutPanel3</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel3.Parent" xml:space="preserve">
+    <value>tableLayoutPanel2</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel3.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="buttonEUIDWrite.Text" xml:space="preserve">
+    <value>Write (UF) UID card</value>
+  </data>
+  <data name="&gt;&gt;buttonEUIDWrite.Name" xml:space="preserve">
+    <value>buttonEUIDWrite</value>
+  </data>
+  <data name="&gt;&gt;buttonEUIDWrite.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonEUIDWrite.Parent" xml:space="preserve">
+    <value>tableLayoutPanel13</value>
+  </data>
+  <data name="&gt;&gt;buttonEUIDWrite.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="button4.Text" xml:space="preserve">
+    <value>Lock UFUID card</value>
+  </data>
+  <data name="&gt;&gt;button4.Name" xml:space="preserve">
+    <value>button4</value>
+  </data>
+  <data name="&gt;&gt;button4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;button4.Parent" xml:space="preserve">
+    <value>tableLayoutPanel13</value>
+  </data>
+  <data name="&gt;&gt;button4.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="buttonECuidWrite.Text" xml:space="preserve">
+    <value>Write C/FUID card</value>
+  </data>
+  <data name="&gt;&gt;buttonECuidWrite.Name" xml:space="preserve">
+    <value>buttonECuidWrite</value>
+  </data>
+  <data name="&gt;&gt;buttonECuidWrite.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonECuidWrite.Parent" xml:space="preserve">
+    <value>tableLayoutPanel13</value>
+  </data>
+  <data name="&gt;&gt;buttonECuidWrite.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="buttonEMfWrite.Text" xml:space="preserve">
+    <value>Write ordinary card</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfWrite.Name" xml:space="preserve">
+    <value>buttonEMfWrite</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfWrite.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfWrite.Parent" xml:space="preserve">
+    <value>tableLayoutPanel13</value>
+  </data>
+  <data name="&gt;&gt;buttonEMfWrite.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel13.Name" xml:space="preserve">
+    <value>tableLayoutPanel13</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel13.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel13.Parent" xml:space="preserve">
+    <value>groupBox7</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel13.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox7.Text" xml:space="preserve">
+    <value>[3] write new card</value>
+  </data>
+  <data name="&gt;&gt;groupBox7.Name" xml:space="preserve">
+    <value>groupBox7</value>
+  </data>
+  <data name="&gt;&gt;groupBox7.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox7.Parent" xml:space="preserve">
+    <value>tableLayoutPanel2</value>
+  </data>
+  <data name="&gt;&gt;groupBox7.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel2.Name" xml:space="preserve">
+    <value>tableLayoutPanel2</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel2.Parent" xml:space="preserve">
+    <value>tabPage2</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel2.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="tabPage2.ImageKey" xml:space="preserve">
+    <value>sharp_file_copy_black_18pt_1x.png</value>
+  </data>
+  <data name="tabPage2.Text" xml:space="preserve">
+    <value>Copy card mode</value>
+  </data>
+  <data name="&gt;&gt;tabPage2.Name" xml:space="preserve">
+    <value>tabPage2</value>
+  </data>
+  <data name="&gt;&gt;tabPage2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tabPage2.Parent" xml:space="preserve">
+    <value>tabControl1</value>
+  </data>
+  <data name="&gt;&gt;tabPage2.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="buttonHardNested.Text" xml:space="preserve">
+    <value>Bitsliced Cropto-1</value>
+  </data>
+  <data name="&gt;&gt;buttonHardNested.Name" xml:space="preserve">
+    <value>buttonHardNested</value>
+  </data>
+  <data name="&gt;&gt;buttonHardNested.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonHardNested.Parent" xml:space="preserve">
+    <value>flowLayoutPanel18</value>
+  </data>
+  <data name="&gt;&gt;buttonHardNested.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel18.Name" xml:space="preserve">
+    <value>flowLayoutPanel18</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel18.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel18.Parent" xml:space="preserve">
+    <value>tableLayoutPanel8</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel18.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel17.Name" xml:space="preserve">
+    <value>flowLayoutPanel17</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel17.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel17.Parent" xml:space="preserve">
+    <value>tableLayoutPanel8</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel17.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel8.Name" xml:space="preserve">
+    <value>tableLayoutPanel8</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel8.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel8.Parent" xml:space="preserve">
+    <value>groupBox10</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel8.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox10.Text" xml:space="preserve">
+    <value>Crack tool</value>
+  </data>
+  <data name="&gt;&gt;groupBox10.Name" xml:space="preserve">
+    <value>groupBox10</value>
+  </data>
+  <data name="&gt;&gt;groupBox10.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox10.Parent" xml:space="preserve">
+    <value>flowLayoutPanel8</value>
+  </data>
+  <data name="&gt;&gt;groupBox10.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel8.Name" xml:space="preserve">
+    <value>flowLayoutPanel8</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel8.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel8.Parent" xml:space="preserve">
+    <value>tableLayoutPanel4</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel8.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel16.Name" xml:space="preserve">
+    <value>flowLayoutPanel16</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel16.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel16.Parent" xml:space="preserve">
+    <value>tableLayoutPanel9</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel16.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel15.Name" xml:space="preserve">
+    <value>flowLayoutPanel15</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel15.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel15.Parent" xml:space="preserve">
+    <value>tableLayoutPanel9</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel15.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel9.Name" xml:space="preserve">
+    <value>tableLayoutPanel9</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel9.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel9.Parent" xml:space="preserve">
+    <value>groupBox8</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel9.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox8.Text" xml:space="preserve">
+    <value>UID/UFUID card operation</value>
+  </data>
+  <data name="&gt;&gt;groupBox8.Name" xml:space="preserve">
+    <value>groupBox8</value>
+  </data>
+  <data name="&gt;&gt;groupBox8.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox8.Parent" xml:space="preserve">
+    <value>flowLayoutPanel7</value>
+  </data>
+  <data name="&gt;&gt;groupBox8.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="label1.Text" xml:space="preserve">
+    <value>The card is read
+Same as ordinary card</value>
+  </data>
+  <data name="&gt;&gt;label1.Name" xml:space="preserve">
+    <value>label1</value>
+  </data>
+  <data name="&gt;&gt;label1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label1.Parent" xml:space="preserve">
+    <value>flowLayoutPanel21</value>
+  </data>
+  <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel21.Name" xml:space="preserve">
+    <value>flowLayoutPanel21</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel21.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel21.Parent" xml:space="preserve">
+    <value>groupBox9</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel21.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox9.Text" xml:space="preserve">
+    <value>C/FUID card operation</value>
+  </data>
+  <data name="&gt;&gt;groupBox9.Name" xml:space="preserve">
+    <value>groupBox9</value>
+  </data>
+  <data name="&gt;&gt;groupBox9.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox9.Parent" xml:space="preserve">
+    <value>flowLayoutPanel7</value>
+  </data>
+  <data name="&gt;&gt;groupBox9.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel7.Name" xml:space="preserve">
+    <value>flowLayoutPanel7</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel7.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel7.Parent" xml:space="preserve">
+    <value>tableLayoutPanel4</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel7.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel4.Name" xml:space="preserve">
+    <value>tableLayoutPanel4</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel4.Parent" xml:space="preserve">
+    <value>tabPage1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel4.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="tabPage1.ImageKey" xml:space="preserve">
+    <value>round_build_black_18pt_1x.png</value>
+  </data>
+  <data name="tabPage1.Text" xml:space="preserve">
+    <value>Advanced mode of operation</value>
+  </data>
+  <data name="&gt;&gt;tabPage1.Name" xml:space="preserve">
+    <value>tabPage1</value>
+  </data>
+  <data name="&gt;&gt;tabPage1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tabPage1.Parent" xml:space="preserve">
+    <value>tabControl1</value>
+  </data>
+  <data name="&gt;&gt;tabPage1.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="checkBoxAutoABN.Text" xml:space="preserve">
+    <value>Automatically determine Key(beta)</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoABN.Name" xml:space="preserve">
+    <value>checkBoxAutoABN</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoABN.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoABN.Parent" xml:space="preserve">
+    <value>flowLayoutPanel2</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoABN.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="checkBoxAutoLoadKey.Text" xml:space="preserve">
+    <value>Automatically load the uid.Key file</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoLoadKey.Name" xml:space="preserve">
+    <value>checkBoxAutoLoadKey</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoLoadKey.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoLoadKey.Parent" xml:space="preserve">
+    <value>flowLayoutPanel2</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoLoadKey.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="checkBoxWriteProtect.Text" xml:space="preserve">
+    <value>Data write protection (recommended)</value>
+  </data>
+  <data name="&gt;&gt;checkBoxWriteProtect.Name" xml:space="preserve">
+    <value>checkBoxWriteProtect</value>
+  </data>
+  <data name="&gt;&gt;checkBoxWriteProtect.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;checkBoxWriteProtect.Parent" xml:space="preserve">
+    <value>flowLayoutPanel2</value>
+  </data>
+  <data name="&gt;&gt;checkBoxWriteProtect.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="checkBoxCuidKeyOver.Text" xml:space="preserve">
+    <value>CUID write empty card patch</value>
+  </data>
+  <data name="&gt;&gt;checkBoxCuidKeyOver.Name" xml:space="preserve">
+    <value>checkBoxCuidKeyOver</value>
+  </data>
+  <data name="&gt;&gt;checkBoxCuidKeyOver.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;checkBoxCuidKeyOver.Parent" xml:space="preserve">
+    <value>flowLayoutPanel2</value>
+  </data>
+  <data name="&gt;&gt;checkBoxCuidKeyOver.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel2.Name" xml:space="preserve">
+    <value>flowLayoutPanel2</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel2.Parent" xml:space="preserve">
+    <value>groupBox6</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel2.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox6.Text" xml:space="preserve">
+    <value>Card operation related</value>
+  </data>
+  <data name="&gt;&gt;groupBox6.Name" xml:space="preserve">
+    <value>groupBox6</value>
+  </data>
+  <data name="&gt;&gt;groupBox6.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox6.Parent" xml:space="preserve">
+    <value>flowLayoutPanel6</value>
+  </data>
+  <data name="&gt;&gt;groupBox6.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;numericCLIFontSize.Name" xml:space="preserve">
+    <value>numericCLIFontSize</value>
+  </data>
+  <data name="&gt;&gt;numericCLIFontSize.Type" xml:space="preserve">
+    <value>System.Windows.Forms.NumericUpDown, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;numericCLIFontSize.Parent" xml:space="preserve">
+    <value>tableLayoutPanel12</value>
+  </data>
+  <data name="&gt;&gt;numericCLIFontSize.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="label9.Text" xml:space="preserve">
+    <value>Terminal text color</value>
+  </data>
+  <data name="&gt;&gt;label9.Name" xml:space="preserve">
+    <value>label9</value>
+  </data>
+  <data name="&gt;&gt;label9.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label9.Parent" xml:space="preserve">
+    <value>tableLayoutPanel12</value>
+  </data>
+  <data name="&gt;&gt;label9.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="buttonCLIColor.Text" xml:space="preserve">
+    <value>#M1T#</value>
+  </data>
+  <data name="&gt;&gt;buttonCLIColor.Name" xml:space="preserve">
+    <value>buttonCLIColor</value>
+  </data>
+  <data name="&gt;&gt;buttonCLIColor.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;buttonCLIColor.Parent" xml:space="preserve">
+    <value>tableLayoutPanel12</value>
+  </data>
+  <data name="&gt;&gt;buttonCLIColor.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="label10.Text" xml:space="preserve">
+    <value>Terminal text size</value>
+  </data>
+  <data name="&gt;&gt;label10.Name" xml:space="preserve">
+    <value>label10</value>
+  </data>
+  <data name="&gt;&gt;label10.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label10.Parent" xml:space="preserve">
+    <value>tableLayoutPanel12</value>
+  </data>
+  <data name="&gt;&gt;label10.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel12.Name" xml:space="preserve">
+    <value>tableLayoutPanel12</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel12.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel12.Parent" xml:space="preserve">
+    <value>groupBox12</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel12.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox12.Text" xml:space="preserve">
+    <value>Interface settings</value>
+  </data>
+  <data name="&gt;&gt;groupBox12.Name" xml:space="preserve">
+    <value>groupBox12</value>
+  </data>
+  <data name="&gt;&gt;groupBox12.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox12.Parent" xml:space="preserve">
+    <value>flowLayoutPanel6</value>
+  </data>
+  <data name="&gt;&gt;groupBox12.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="checkBoxNewScan.Text" xml:space="preserve">
+    <value>Reduce device delay</value>
+  </data>
+  <data name="&gt;&gt;checkBoxNewScan.Name" xml:space="preserve">
+    <value>checkBoxNewScan</value>
+  </data>
+  <data name="&gt;&gt;checkBoxNewScan.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;checkBoxNewScan.Parent" xml:space="preserve">
+    <value>flowLayoutPanel5</value>
+  </data>
+  <data name="&gt;&gt;checkBoxNewScan.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="checkBoxMultiDev.Text" xml:space="preserve">
+    <value>Multi-instance operation mode will disable multi-open detection. Please specify the device by yourself.</value>
+  </data>
+  <data name="&gt;&gt;checkBoxMultiDev.Name" xml:space="preserve">
+    <value>checkBoxMultiDev</value>
+  </data>
+  <data name="&gt;&gt;checkBoxMultiDev.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;checkBoxMultiDev.Parent" xml:space="preserve">
+    <value>flowLayoutPanel5</value>
+  </data>
+  <data name="&gt;&gt;checkBoxMultiDev.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="label11.Text" xml:space="preserve">
+    <value>Designated device</value>
+  </data>
+  <data name="&gt;&gt;label11.Name" xml:space="preserve">
+    <value>label11</value>
+  </data>
+  <data name="&gt;&gt;label11.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label11.Parent" xml:space="preserve">
+    <value>flowLayoutPanel5</value>
+  </data>
+  <data name="&gt;&gt;label11.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;SetDeviceCombo.Name" xml:space="preserve">
+    <value>SetDeviceCombo</value>
+  </data>
+  <data name="&gt;&gt;SetDeviceCombo.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SetDeviceCombo.Parent" xml:space="preserve">
+    <value>flowLayoutPanel5</value>
+  </data>
+  <data name="&gt;&gt;SetDeviceCombo.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel5.Name" xml:space="preserve">
+    <value>flowLayoutPanel5</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel5.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel5.Parent" xml:space="preserve">
+    <value>groupBox14</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel5.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox14.Text" xml:space="preserve">
+    <value>Optimization settings</value>
+  </data>
+  <data name="&gt;&gt;groupBox14.Name" xml:space="preserve">
+    <value>groupBox14</value>
+  </data>
+  <data name="&gt;&gt;groupBox14.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox14.Parent" xml:space="preserve">
+    <value>flowLayoutPanel6</value>
+  </data>
+  <data name="&gt;&gt;groupBox14.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel6.Name" xml:space="preserve">
+    <value>flowLayoutPanel6</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel6.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel6.Parent" xml:space="preserve">
+    <value>tableLayoutPanel14</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel6.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="label12.Text" xml:space="preserve">
+    <value>Select interface language</value>
+  </data>
+  <data name="&gt;&gt;label12.Name" xml:space="preserve">
+    <value>label12</value>
+  </data>
+  <data name="&gt;&gt;label12.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;label12.Parent" xml:space="preserve">
+    <value>flowLayoutPanel23</value>
+  </data>
+  <data name="&gt;&gt;label12.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="comboBox1.Items" xml:space="preserve">
+    <value>Chinese</value>
+  </data>
+  <data name="comboBox1.Items1" xml:space="preserve">
+    <value>Russian</value>
+  </data>
+  <data name="comboBox1.Items2" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="&gt;&gt;comboBox1.Name" xml:space="preserve">
+    <value>comboBox1</value>
+  </data>
+  <data name="&gt;&gt;comboBox1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;comboBox1.Parent" xml:space="preserve">
+    <value>flowLayoutPanel23</value>
+  </data>
+  <data name="&gt;&gt;comboBox1.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel23.Name" xml:space="preserve">
+    <value>flowLayoutPanel23</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel23.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel23.Parent" xml:space="preserve">
+    <value>groupBox15</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel23.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox15.Text" xml:space="preserve">
+    <value>Language and region</value>
+  </data>
+  <data name="&gt;&gt;groupBox15.Name" xml:space="preserve">
+    <value>groupBox15</value>
+  </data>
+  <data name="&gt;&gt;groupBox15.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox15.Parent" xml:space="preserve">
+    <value>flowLayoutPanel22</value>
+  </data>
+  <data name="&gt;&gt;groupBox15.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="checkBoxDefIsAdv.Text" xml:space="preserve">
+    <value>Automatically go to advanced mode of operation</value>
+  </data>
+  <data name="&gt;&gt;checkBoxDefIsAdv.Name" xml:space="preserve">
+    <value>checkBoxDefIsAdv</value>
+  </data>
+  <data name="&gt;&gt;checkBoxDefIsAdv.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;checkBoxDefIsAdv.Parent" xml:space="preserve">
+    <value>flowLayoutPanel4</value>
+  </data>
+  <data name="&gt;&gt;checkBoxDefIsAdv.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="checkBoxAutoSave.Text" xml:space="preserve">
+    <value>Automatically save files with UID name</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoSave.Name" xml:space="preserve">
+    <value>checkBoxAutoSave</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoSave.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoSave.Parent" xml:space="preserve">
+    <value>flowLayoutPanel4</value>
+  </data>
+  <data name="&gt;&gt;checkBoxAutoSave.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel4.Name" xml:space="preserve">
+    <value>flowLayoutPanel4</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel4.Parent" xml:space="preserve">
+    <value>groupBox13</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel4.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox13.Text" xml:space="preserve">
+    <value>Preferences</value>
+  </data>
+  <data name="&gt;&gt;groupBox13.Name" xml:space="preserve">
+    <value>groupBox13</value>
+  </data>
+  <data name="&gt;&gt;groupBox13.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox13.Parent" xml:space="preserve">
+    <value>flowLayoutPanel22</value>
+  </data>
+  <data name="&gt;&gt;groupBox13.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="checkBoxHardLowCost.Text" xml:space="preserve">
+    <value>Single-threaded computing</value>
+  </data>
+  <data name="&gt;&gt;checkBoxHardLowCost.Name" xml:space="preserve">
+    <value>checkBoxHardLowCost</value>
+  </data>
+  <data name="&gt;&gt;checkBoxHardLowCost.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;checkBoxHardLowCost.Parent" xml:space="preserve">
+    <value>flowLayoutPanel3</value>
+  </data>
+  <data name="&gt;&gt;checkBoxHardLowCost.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel3.Name" xml:space="preserve">
+    <value>flowLayoutPanel3</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel3.Parent" xml:space="preserve">
+    <value>groupBox11</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel3.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="groupBox11.Text" xml:space="preserve">
+    <value>HardNested</value>
+  </data>
+  <data name="&gt;&gt;groupBox11.Name" xml:space="preserve">
+    <value>groupBox11</value>
+  </data>
+  <data name="&gt;&gt;groupBox11.Type" xml:space="preserve">
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;groupBox11.Parent" xml:space="preserve">
+    <value>flowLayoutPanel22</value>
+  </data>
+  <data name="&gt;&gt;groupBox11.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel22.Name" xml:space="preserve">
+    <value>flowLayoutPanel22</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel22.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FlowLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel22.Parent" xml:space="preserve">
+    <value>tableLayoutPanel14</value>
+  </data>
+  <data name="&gt;&gt;flowLayoutPanel22.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel14.Name" xml:space="preserve">
+    <value>tableLayoutPanel14</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel14.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel14.Parent" xml:space="preserve">
+    <value>tabPage3</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel14.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="tabPage3.ImageKey" xml:space="preserve">
+    <value>round_settings_black_18pt_1x.png</value>
+  </data>
+  <data name="tabPage3.Text" xml:space="preserve">
+    <value>Software settings</value>
+  </data>
+  <data name="&gt;&gt;tabPage3.Name" xml:space="preserve">
+    <value>tabPage3</value>
+  </data>
+  <data name="&gt;&gt;tabPage3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tabPage3.Parent" xml:space="preserve">
+    <value>tabControl1</value>
+  </data>
+  <data name="&gt;&gt;tabPage3.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <metadata name="imageList2.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>384, 17</value>
+  </metadata>
+  <data name="&gt;&gt;tabControl1.Name" xml:space="preserve">
+    <value>tabControl1</value>
+  </data>
+  <data name="&gt;&gt;tabControl1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tabControl1.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;tabControl1.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <metadata name="statusStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>157, 17</value>
+  </metadata>
+  <data name="statusLabel.Text" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="runTimeLabel.Text" xml:space="preserve">
+    <value>Timer</value>
+  </data>
+  <data name="toolStripCheckUpdate.Text" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="toolStripCheckUpdate.ToolTipText" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="statusStrip1.Text" xml:space="preserve">
+    <value>statusStrip1</value>
+  </data>
+  <data name="&gt;&gt;statusStrip1.Name" xml:space="preserve">
+    <value>statusStrip1</value>
+  </data>
+  <data name="&gt;&gt;statusStrip1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.StatusStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;statusStrip1.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;statusStrip1.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <metadata name="timer1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>297, 17</value>
+  </metadata>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>41</value>
+  </metadata>
+  <data name="$this.Text" xml:space="preserve">
+    <value>MifareOne Tool</value>
+  </data>
+  <data name="&gt;&gt;toolTipHelp.Name" xml:space="preserve">
+    <value>toolTipHelp</value>
+  </data>
+  <data name="&gt;&gt;toolTipHelp.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolTip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;imageList2.Name" xml:space="preserve">
+    <value>imageList2</value>
+  </data>
+  <data name="&gt;&gt;imageList2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ImageList, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;statusLabel.Name" xml:space="preserve">
+    <value>statusLabel</value>
+  </data>
+  <data name="&gt;&gt;statusLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripStatusLabel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;runTimeLabel.Name" xml:space="preserve">
+    <value>runTimeLabel</value>
+  </data>
+  <data name="&gt;&gt;runTimeLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripStatusLabel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;localVersionLabel.Name" xml:space="preserve">
+    <value>localVersionLabel</value>
+  </data>
+  <data name="&gt;&gt;localVersionLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripStatusLabel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;curDevice.Name" xml:space="preserve">
+    <value>curDevice</value>
+  </data>
+  <data name="&gt;&gt;curDevice.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripStatusLabel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripCheckUpdate.Name" xml:space="preserve">
+    <value>toolStripCheckUpdate</value>
+  </data>
+  <data name="&gt;&gt;toolStripCheckUpdate.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSplitButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;timer1.Name" xml:space="preserve">
+    <value>timer1</value>
+  </data>
+  <data name="&gt;&gt;timer1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Timer, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>Form1</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Form, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+</root>

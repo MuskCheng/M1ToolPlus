@@ -1531,23 +1531,28 @@ namespace MifareOneTool
 
         private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (comboBox1.SelectedItem.ToString() == Resources.标准)
+            // 按索引切换语言（0=中文 1=俄语 2=英语），
+            // 不再用文案比对匹配——各语言资源的下拉文案不同，索引式对新增语言更稳
+            string culture;
+            switch (comboBox1.SelectedIndex)
             {
-                System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("zh-cn");
-                System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("zh-cn");
-                Properties.Settings.Default.Language = "zh-cn";
-                Properties.Settings.Default.Save();
-                Application.Restart();
+                case 1:
+                    culture = "ru-RU";
+                    break;
+                case 2:
+                    culture = "en-US";
+                    break;
+                case 0:
+                    culture = "zh-cn";
+                    break;
+                default:
+                    return;
             }
-            else if (comboBox1.SelectedItem.ToString() == Resources.俄语)
-            {
-                System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("ru-RU");
-                System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("ru-RU");
-                Properties.Settings.Default.Language = "ru-RU";
-                Properties.Settings.Default.Save();
-                Application.Restart();
-
-            }
+            System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(culture);
+            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+            Properties.Settings.Default.Language = culture;
+            Properties.Settings.Default.Save();
+            Application.Restart();
         }
     }
 }

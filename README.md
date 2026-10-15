@@ -10,7 +10,7 @@ A GUI Mifare Classic tool on Windows（Windows 平台 Mifare Classic 图形化�
 - 支持 PN532（推荐）/ ACR122U 读卡器（libnfc）
 - 读/写/格式化 M1 卡，MFOC 暴力破解、MFCUK 恢复 Key
 - Hardnested 攻击、UID/CUID/FUID/UFUID 写卡、卡对比、HEX 编辑器
-- 界面语言：简体中文（默认）/ 俄语 / 英语（开发中）
+- 界面语言：简体中文（默认）/ 英语 / 俄语
 
 ## 快速开始（用户）
 

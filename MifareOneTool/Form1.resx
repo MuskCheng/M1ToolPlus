@@ -4406,6 +4406,9 @@
   <data name="comboBox1.Items1" xml:space="preserve">
     <value>俄语</value>
   </data>
+  <data name="comboBox1.Items2" xml:space="preserve">
+    <value>English</value>
+  </data>
   <data name="comboBox1.Location" type="System.Drawing.Point, System.Drawing">
     <value>3, 18</value>
   </data>
