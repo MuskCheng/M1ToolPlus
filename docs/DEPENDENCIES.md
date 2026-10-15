@@ -15,8 +15,9 @@ GUI 通过子进程调用这些工具完成全部 NFC 操作。二进制来自�
 | `mfoc.exe` / `mfoc2.exe` | [mfoc](https://github.com/eubuntu/mfoc) | BSD-3-Clause | 暴力破解已知/未知扇区 Key |
 | `mfcuk.exe` / `mfcuk2.exe` | [mfcuk](https://github.com/xxmagic/mfcuk) | BSD-3-Clause | 恢复 Key 攻击 |
 | `libnfc_hardnested.exe` / `libnfc_hardnestedlc.exe` | [libnfc-hardnested](https://github.com/nlpub/libnfc-hardnested)（Proxmark3 算法移植） | GPL-3.0 | 与主程序同许可，无冲突 |
-| `collect.exe` | 内嵌 hardnested 字符串，疑似同一项目配套采集工具，**源码未公开** | 未知（推断 GPL/LGPL） | 待查证 |
-| `mfdetect.exe` | 疑似作者自编译定制工具，**源码未公开** | 未知 | 仅用于设备检测 |
+| `collect.exe`（Hardnested nonce 采集） | 上游为 [aczid/crypto1_bs](https://github.com/aczid/crypto1_bs) 内附的 libnfc 采集程序（"libnfc app + bitsliced cracker"），即 miLazyCracker 生态 | 源于 crypto1_bs（GPL 类，待最终确认） | 已定位到可重建源码分支：[GSWXXN/crypto1_bs `libnfc_collect`](https://github.com/GSWXXN/crypto1_bs/tree/libnfc_collect)（NFCToolsGUI 同款），可据此重新编译替换无源码二进制 |
+| `mfdetect.exe` | **mfoc 修改版**（代码注释 Form1.cs:1168 原话："其实mfdetect就是个mfoc的修改版"），支持自定义 `-f -k` 参数 | BSD-3-Clause | 源码分支已定位：[GSWXXN/mfoc `nfc-mfdetect`](https://github.com/GSWXXN/mfoc/tree/nfc-mfdetect)，可重建 |
+| `mff08.exe` | 作者基于 libnfc examples 自编译的定制工具（版本信息 libnfc.org 1.7.1），功能：修复写卡失败导致 0 块损坏的卡（`c`/`u` 命令写 block0，见 FormMFF08.cs） | 未公开源码 | **仍不明**：无公开对应项目，作者未提供源码。按 GPL-3.0 第 4 条，若作者曾分发本工具二进制，可向作者索取对应源码 |
 | `libusb0.dll` | [libusb-win32](https://sourceforge.net/projects/libusb-win32/) | LGPL-2.1+ | |
 | `data\`（mfcuk 模板指纹、proxmark3 日志） | 随 mfcuk / libnfc 数据分发 | 同上游 | |
 
@@ -25,8 +26,9 @@ GUI 通过子进程调用这些工具完成全部 NFC 操作。二进制来自�
 
 1. 分发时保留本文件 + 各上游项目声明
 2. 提供对应开源项目源码获取地址（见上表链接）
-3. `collect.exe` / `mfdetect.exe` / `mff08.exe` 三个来源不明项，在查清前
-   **我们自己的 Release 不主动重打包**，只引导用户从原作者 Release 下载
+3. `collect.exe` / `mfdetect.exe` 已定位到可重建的源码分支（见表），后续
+   优先替换为自编译版本；`mff08.exe` 来源仍不明，查清前我们自己的
+   Release **不重打包该文件**，只引导用户从原作者 Release 获取
    （`scripts/fetch-deps.ps1` 即为此设计，nfc-bin 不入 git）
 
 ## 二、winhex.exe（⚠️ 不分发）
@@ -54,7 +56,7 @@ GUI 通过子进程调用这些工具完成全部 NFC 操作。二进制来自�
 
 - [ ] 不含 `winhex.exe`
 - [ ] 不含 CH341 等厂商驱动（除非拿到授权）
-- [ ] nfc-bin 若整体重打包：附上游源码链接声明；来源不明三件套
-      （collect/mfdetect/mff08）查清或改为"引导下载官方包"
+- [ ] nfc-bin 若整体重打包：附上游源码链接声明；`mff08.exe` 来源不明，
+      查清/取得源码前不重打包该文件（改为引导下载官方包）
 - [ ] 保留 GPL-3.0 LICENSE + 本依赖文档
 - [ ] `docs\` 与 README 版本号、AssemblyInfo 版本一致
