@@ -184,7 +184,9 @@ namespace MifareOneTool
                 {
                     if (!string.IsNullOrEmpty(_e.Data))
                     {
-                        Match m = Regex.Match(_e.Data, "pn532_uart:COM\\d+:115200");
+                        //Issue #26/#9: 原仅匹配 pn532_uart, ACR122U(acr122_pcsc) 等设备永远无法进入设备列表,
+                        //这里放宽为常见 libnfc 连接串前缀
+                        Match m = Regex.Match(_e.Data, "(?i)\\b(pn532_uart:COM\\d+:\\d+|acr122_pcsc:[^\\s\"']+|pn532_[a-z]+:[^\\s\"']+|openpcsc:[^\\s\"']+|arygon:[^\\s\"']+|freegd:[^\\s\"']+)\\b");
                         if (m.Success)
                         {
                             myReader.Add(m.Value);
@@ -221,6 +223,27 @@ namespace MifareOneTool
             {
                 tabControl1.SelectedIndex = 1;
             }
+            //Issue #26: 恢复上次使用的设备，避免重复全量扫描
+            //（勾选 NewScan 后每次全扫, Win10 下 libnfc 串口轮询可超 100 秒）
+            //仅恢复显示与当前配置, 不重写 libnfc.conf（保护用户手写的 allow_autoscan=false 等）
+            try
+            {
+                if (File.Exists("libnfc.conf"))
+                {
+                    Match lastDevMatch = Regex.Match(File.ReadAllText("libnfc.conf"), "device\\.connstring\\s*=\\s*\"([^\"]+)\"");
+                    if (lastDevMatch.Success && !string.IsNullOrEmpty(lastDevMatch.Groups[1].Value))
+                    {
+                        string lastDev = lastDevMatch.Groups[1].Value;
+                        SetDeviceCombo.SelectedIndexChanged -= SetDeviceCombo_SelectedIndexChanged;
+                        SetDeviceCombo.Items.Add(lastDev);
+                        SetDeviceCombo.SelectedIndex = SetDeviceCombo.Items.Count - 1;
+                        SetDeviceCombo.SelectedIndexChanged += SetDeviceCombo_SelectedIndexChanged;
+                        curDevice.Text = Resources.设备串口 + lastDev.Replace("pn532_uart:", "").Replace(":115200", "");
+                        logAppend(Resources.已恢复上次使用的设备 + lastDev);
+                    }
+                }
+            }
+            catch (Exception) { /* libnfc.conf 损坏时忽略, 走正常手动检测流程 */ }
             //File.Delete("libnfc.conf");//用户COM口一般不常变化
             checkBoxMultiDev.Checked = Properties.Settings.Default.MultiMode;
             if (Properties.Settings.Default.MultiMode)

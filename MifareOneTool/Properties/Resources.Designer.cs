@@ -1485,6 +1485,15 @@ namespace MifareOneTool.Properties {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на 已恢复上次使用的设备：.
+        /// </summary>
+        public static string 已恢复上次使用的设备 {
+            get {
+                return ResourceManager.GetString("已恢复上次使用的设备", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на 错误.
         /// </summary>
         public static string 错误 {

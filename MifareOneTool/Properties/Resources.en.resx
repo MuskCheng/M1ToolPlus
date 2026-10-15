@@ -563,4 +563,7 @@ Unable to recover after locking! Unable to change 0 blocks again! Please confirm
     <value>error</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="已恢复上次使用的设备" xml:space="preserve">
+    <value>Restored last used device: </value>
+  </data>
 </root>
