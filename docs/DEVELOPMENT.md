@@ -1,0 +1,93 @@
+# MifareOneTool 开发文档
+
+## 技术栈
+
+- C# / .NET Framework 4.0 Client Profile / x86 / WinForms
+- VS2010 解决方案格式（`MifareOneTool.sln`），可用 VS2022 Build Tools 构建
+- 唯一 NuGet 外部依赖：`Newtonsoft.Json.dll`（仓库内直接附带二进制，非 packages.config 管理）
+
+## 构建
+
+```powershell
+.\scripts\build.ps1              # Release 构建
+.\scripts\build.ps1 -Configuration Debug
+.\scripts\build.ps1 -Pack        # 打包到 artifacts\M1T-local-build.zip
+.\scripts\build.ps1 -Clean       # 清理重建
+.\scripts\fetch-deps.ps1         # 回收 nfc-bin 运行依赖
+```
+
+### al.exe 问题（重要）
+
+原工程依赖 Windows SDK 的 `al.exe` 生成中/俄文卫星程序集（`ru\`、`zh\` 目录）。
+未安装 Windows SDK 时 MSBuild 报 `MSB3086`。`build.ps1` 的处理：
+
+1. 自动搜索 `al.exe`；找到 -> 走标准 MSBuild 全量构建
+2. 找不到 -> 仍执行 `/t:Build`（主 exe 会成功产出，仅卫星步骤失败），然后用
+   `csc` 手工把 `obj\...\*.ru.resources` / `*.zh.resources` 编译成
+   `ru\MifareOneTool.ru.dll` / `zh\MifareOneTool.zh.dll`（嵌入 AssemblyCulture）
+
+> 注意：不要用 `/t:CoreCompile` 单独编译，它会跳过引用解析，报一堆
+> CS0518/CS0246（System.Object 未定义）——必须 `/t:Build`。
+
+### 运行
+
+`bin\Release\` 下需要 `nfc-bin\`（`fetch-deps.ps1` 回收）才能实际读卡。
+GUI 程序启动后主窗口标题为 `MifareOne Tool`，即为冒烟测试通过。
+
+## 代码架构
+
+```
+Program.cs          入口 + 单实例 Mutex
+Form1.cs            主窗口，几乎全部业务逻辑（1456 行，待拆分）
+Form1.Designer.cs   主窗口布局（1679 行）
+ClassMifareS50.cs   S50/S70 卡数据模型 + MCT 格式转换
+FormHTool.cs        S50HTool（卡数据分析/修复/转 MCT）
+FormDiff.cs         卡数据对比
+FormHardNes.cs      Hardnested 攻击对话框
+FormMFF08.cs        mff08 工具对话框
+SelectLanguage.cs   语言选择
+GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR 设置）
+```
+
+### 工作模式（Form1）
+
+- **子进程调用**：所有 NFC 操作通过 `Process.Start("nfc-bin/xxx.exe")` 调用
+  libnfc 工具链（nfc-list / nfc-mfclassic / nfc-mfsetuid / mfoc / mfcuk /
+  libnfc_hardnested / mfdetect / mff08），GUI 解析 stdout 输出刷新界面
+- **后台执行**：`BackgroundWorker`，进度码约定：
+  - `100` = 任务结束（普通）
+  - `101` = 任务结束且需要处理 dump 文件（自动保存到 `auto_keys\` 或弹保存框）
+- **配置**：`libnfc.conf` 由 `writeConfig()` 写入（设备 connstring），
+  `NewScan` 设置会先删除旧配置触发重扫
+- **设备切换**：ACR122U / PN532 通过交换 `nfc-bin\libnfc(ACR122U.dll)` 等
+  dll 文件名实现（`File.Move` 三交换，见 Form1.cs ~1136 行）
+
+### 本地化
+
+- 中性资源 = 简体中文（`Form1.resx` 界面文本即中文）
+- 卫星：`Form1.zh.resx`（中文覆盖）、`Form1.ru.resx`（俄语）
+- 运行时在 `Form1()` 构造里按 `Settings.Language` 设置 `CurrentUICulture`
+- 文案全部经 `Properties\Resources` 强类型访问（`Resources.xxx`）
+
+### 设置项（Properties.Settings）
+
+`GitHubR`(应用配置) + 用户级：`Language` `AutoABN` `WriteCheck`
+`AutoLoadUidKey` `MainCLIColor` `MainCLIFontSize` `DefIsAdv` `AutoSave`
+`HardLowCost` `LastTryKey` `NewScan` `MultiMode` `CuidKeyOver`
+
+## 测试
+
+无自动化测试。改动后最低验证线：
+
+1. `.\scripts\build.ps1` 构建成功
+2. 启动 `bin\Release\MifareOneTool.exe`，主窗口正常显示
+3. 涉及读卡逻辑的改动需要真机（PN532/ACR122U + 卡片）回归——
+   本环境无硬件，需协作者配合
+
+## 已知问题 / 技术债
+
+- `Form1.cs` 巨石类承担全部业务逻辑，UI 与逻辑强耦合，是重构第一优先级
+- .NET Framework 4.0 Client Profile 已过支持期（现代化目标：.NET 8+ WinForms）
+- `GitHubUpdate.cs` 未启用 TLS12 显式设置（.NET4.0 默认行为，迁移时注意）
+- 无 CI（后续加 GitHub Actions），无单元测试
+- 官方 Release 包不含卫星程序集（历史问题），我们 build.ps1 已解决
