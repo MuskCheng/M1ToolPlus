@@ -331,3 +331,10 @@ ASALocalRun/
 
 nfc-bin.zip
 DirectOP/
+
+# 本地工作区（非仓库内容）
+# wiki 独立仓库（对应 GitHub Wiki，单独 clone/推送）
+/wiki/
+# 发布产物：Release 官方包、打包输出等二进制资料
+/artifacts/
+nfc-bin/
