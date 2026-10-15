@@ -31,7 +31,7 @@ git clone <本仓库> && cd MifareOneTool
 要求：Windows + .NET Framework 4.0 目标包 + MSBuild（VS 2022 Build Tools 即可）。
 无需 Windows SDK：`build.ps1` 会自动用 `csc` 绕过缺失的 `al.exe` 生成中/俄文卫星程序集。
 
-完整开发文档见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)，第三方依赖与合规见 [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)。
+完整开发文档见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)，第三方依赖与合规见 [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)，常见问题见 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)。
 
 ## 目录结构
 
