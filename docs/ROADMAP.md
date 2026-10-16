@@ -39,11 +39,11 @@
 2. 复核两项暂缓决策（发布前定下来）：
    - `M1ToolPlus\app.config` 与 Settings 中 `GitHubR = xcicode/MifareOneTool`：目前为休眠配置（GitHubUpdate 类未启用）。若启用更新检查，需改为新仓库。
    - `M1ToolPlus\Form1.cs:1261` 硬编码原作者 releases 链接（下载最新版按钮），发布时决定改为新仓库或保留双链接。
-3. 打开发布包：`.\scripts\build.ps1 -Pack` → `artifacts\M1ToolPlus-local-build.zip`；
-   按 `docs/DEPENDENCIES.md` 的发布检查清单核对（重点：**不得打包 winhex.exe**；mff08.exe 来源不明，是否随包待定）。
-4. 版本号策略：AssemblyInfo 仍为 1.7.0.0（延续原版），首次发布前决定新版本号。
+3. ~~打开发布包~~ ✅ 已完成（2026-10-16）：`.\scripts\build.ps1 -Pack` → `artifacts\M1ToolPlus-local-build.zip`；
+   合规检查项已由脚本自动落实并实测通过（详见下方 A'）。
+4. 版本号策略：AssemblyInfo 仍为 1.7.0.0（延续原版）。**2026-10-16 决策：首发 Release 延后到真机回归之后**，届时再定版本号（建议 1.8.0）。
 
-### A' 发布包合规核对（2026-10-16 实测：`artifacts\M1ToolPlus-local-build.zip`，53 条目 / 3.0 MB）
+### A' 发布包合规核对（2026-10-16 实测：`artifacts\M1ToolPlus-local-build.zip`，55 条目 / 3.0 MB）
 
 | 检查项 | 结果 |
 |---|---|
@@ -58,8 +58,11 @@
 
 ### B. 真机回归（本开发环境无硬件，必须待真机）
 
+**照着 `docs/TESTPLAN.md` 执行即可**（含准备清单、逐项勾选、问题记录模板、回归后收尾步骤）。
+
 - Issue #26 修复实测：PN532 / ACR122U 启动与设备恢复。
 - en/ru/zh 界面切换实测（下拉索引 0=zh / 1=ru / 2=en）。
+- MFF08 对话框缺失提示：应弹窗后自动关闭，不崩溃。
 - 无回归后，到原作者仓库对应 Issue 下回复（措辞注意：非官方衍生、GPL-3.0、避免暗示原作者背书）。
 
 ### C. 阶段④现代化（未开始，需先装 .NET SDK）
