@@ -3,6 +3,7 @@
 > 面向接续开发的交接文档：记录项目现状、已完成工作、待办事项与开发环境要点。
 > 最后更新：2026-10-16（项目更名为 M1ToolPlus 时）。
 > 注意：本仓库原位于 `D:\repositories\MifareOneTool`，已更名为 **`D:\repositories\M1ToolPlus`**（纯文件夹改名，git 历史与远程配置不受影响）。
+> **进行中的工作**：问题驱动审计（对照原作者 16 个 open Issue）与六步修复计划见 [docs/FIXPLAN.md](FIXPLAN.md)。
 
 ## 一、项目速览
 
