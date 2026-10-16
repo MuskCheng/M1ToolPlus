@@ -11,13 +11,13 @@
 | 名称 | M1ToolPlus（原名 MifareOneTool，原作者 xcicode 已停更） |
 | 定位 | Windows 平台 Mifare Classic 图形化工具（C# WinForms，.NET Framework 4.0 Client，x86） |
 | 许可 | GPL-3.0：衍生发布须保留原版权声明、标注修改、提供对应源码（见 docs/DEPENDENCIES.md 检查清单） |
-| 分支/状态 | `dev` 分支，本地领先 origin/dev **8 个提交**，**全部未推送** |
+| 分支/状态 | `dev` 分支，本地领先 origin/dev（**全部未推送**，数量见 `git log origin/dev..dev`） |
 | origin | `https://github.com/xcicode/MifareOneTool.git`（原作者仓库，**只作参考，切勿 push**） |
 | 构建产物 | `M1ToolPlus\bin\Release\M1ToolPlus.exe`（+ en/ru/zh 卫星程序集 + nfc-bin） |
 | 构建命令 | `.\scripts\build.ps1`（参数见 README / docs/DEVELOPMENT.md） |
 | 用途声明 | 仅限对你有授权的卡片的安全研究（README 同样声明） |
 
-## 二、已完成（8 个本地提交）
+## 二、已完成（本地提交清单）
 
 | 提交 | 内容 |
 |---|---|
@@ -82,3 +82,41 @@
 3. `git log --oneline -3` 应包含 `1b97708`（更名）与 `19d6094`（README 存档）。
 4. 快速构建验证：`.\scripts\build.ps1 -Clean`，确认输出 `M1ToolPlus.exe` + en/ru/zh 卫星。
 5. 阅读：README.md、docs/DEVELOPMENT.md、docs/DEPENDENCIES.md、docs/TROUBLESHOOTING.md，然后按「三、待办」从 A 开始推进。
+
+## 六、原仓库 Issue 跟进清单（快照 2026-10-16，共 16 个 open）
+
+| Issue | 标题（简） | 状态 / 建议动作 |
+|---|---|---|
+| #42 | win10 点「一键解原卡」蓝屏（2025-07，最新） | **最高关注**：代码路径已定位（见下），需真机复现 + 崩溃转储；先回复索取卡型/读卡器/系统信息，并在 TROUBLESHOOTING.md 加风险提示 |
+| #41 | English version? | ✅ 已实现（8e4df10）→ 推送后回复 |
+| #40 | CUID 加密卡（已知密钥）如何清卡 | 评估「清 M1 卡」是否覆盖该场景，能答复则答复，否则记为功能需求 |
+| #39 | PN532 检测一直显示「运行中」 | 与 #26 同源，f5f5771 可能覆盖 → 真机验证后回复 |
+| #38 | Eng translation | ✅ 已实现（8e4df10）→ 推送后回复 |
+| #37 | hardnested 只采集不计算，不生成 .txt？ | 已离线定位（见下）→ 可直接答复；可选改进见下 |
+| #35 | 补写 dump 到小米手环 6 报认证失败 | 卡片兼容性（SaferKey / 已知密钥场景）→ 需真机 |
+| #34 | 非 Classic 卡（SAK 00）读取报错 | 非目标支持场景 → 说明即可 |
+| #33 | 支持滚动码卡（GTU/GDM/GUID） | 不支持（滚动码防复制）→ 说明即可 |
+| #32 | nfc-mfsetuid 来源 / 是否开源 | 合规相关 → 引用 docs/DEPENDENCIES.md 的来源结论答复 |
+| #31 | ACR122U 支持不完善、响应慢 | 与 #26 同源 → 真机验证后回复 |
+| #30 | Hardnested 云计算服务端程序 | 原作者服务已失效（见 #29），自行实现成本高 → 低优先，说明现状 |
+| #29 | GCP 一键部署脚本 | 同 #30 |
+| #28 | hardnested 时移动窗口报「无法创建堆栈防护页面」 | 离线未能定位（见下）→ 需真机 + 用户环境信息 |
+| #26 | win10 扫描设备巨慢 | ✅ 已修（f5f5771）→ 真机验证后回复 |
+| #9 | 无法连接 ACR122U（29 条评论） | 设备兼容老问题 → 真机验证后回复 |
+
+> 回复纪律：先推送本 fork；回复中注明「非官方衍生、GPL-3.0、未经原作者背书」，再引用对应提交号。
+
+### 离线分析结论（2026-10-16，勿重复劳动）
+
+- **#42「一键解原卡」代码路径**：`buttonEMfoc_Click`（Form1.cs 1078）直接转调 `buttonMfoc_Click`，其 worker 启动 `nfc-bin/mfoc.exe`（Form1.cs 588），输出 `Mfoc.tmp`；另一路 `buttonECmfoc_Click`（带已知 Key）走 1348 行的 mfoc2 路径（参数 `/T:0A`）。蓝屏发生在 mfoc 进程运行期间，需崩溃转储才能定位。
+- **#37「只采集」行为**：勾选「只采集」→ `FormHardNes.collectOnly()` 为真 → `Form1.CollectNonce` 启动 `nfc-bin/collect.exe`，参数仅含 key / 块号 / A-B（`GetArg()`），**不含输出文件名**；输出 .txt 由 collect.exe 按默认名生成在程序目录，退出码 0 时进度码 102 只提示「Nonce 收集完毕，可上传云计算」。GUI 原本有改名逻辑（`GetFileAfter()` 生成 `_<块号>AB.txt` 后缀），但 Form1.cs 1396 行已注释，故文件名不带 UID。
+  - 可选改进：恢复 1396 行或参照 101 分支的 `auto_keys\` 自动归档逻辑（需真机验证）。
+- **#28「无法创建堆栈防护页面」**：核查本地与原版官方 `nfc-bin` **均不含 stackguard.exe / stackguard.dll**，`libnfc_hardnested.exe`、`libnfc_hardnestedlc.exe`、`collect.exe` 中也**无 stackguard 字符串引用** → 离线无法定位报错来源；需真机复现并收集用户系统环境（Win 版本、杀软、DEP 设置）。
+- **#26 / #31 / #39 / #9** 同属设备连接与扫描耗时问题，f5f5771 的改动集中在「启动恢复上次设备 + 设备正则放宽」，理论上覆盖 #39/#26 的常见场景，但 ACR122U 本身在 Win10 上的 ~100s 延迟另有根因（#26 报告人提到所有 ACR122U 操作都慢），真机回归时要分开观察。
+
+## 七、本次核查发现的杂项
+
+- `artifacts\M1T-local-build.zip`（改名前旧产物）与 `artifacts\package\`（旧打包中间目录）已过期，可清理；`artifacts\M1T-Release\`（官方包解压）与 `M1T-Release.zip` 保留为素材（`artifacts/` 整体已被 gitignore）。
+- `dotnet` 命令存在但**未安装任何 SDK**（报 `No .NET SDKs were found`）→ 阶段④开始前需安装 8.x。
+- `.gitignore` 与 `.github` 模板里的中文注释本身是**正常 UTF-8**；用 PowerShell 5.1 的 `Get-Content`（默认按 GBK）读取会显示乱码——排查时加 `-Encoding UTF8`，不要误判为文件损坏。
+- 单实例互斥锁用 `Application.ProductName`（现为 M1ToolPlus），与改名一致，无需处理。
