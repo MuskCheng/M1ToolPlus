@@ -715,7 +715,7 @@ namespace M1ToolPlus
 
         private void buttonBmfRead_Click(object sender, EventArgs e)
         {
-            if (lprocess) { MessageBox.Show(Resources.有任务运行中_不可执行, Resources.设备忙, MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Form1.ActiveForm.Text = "M1ToolPlus - 运行中";
+            if (lprocess) { MessageBox.Show(Resources.有任务运行中_不可执行, Resources.设备忙, MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Form1.ActiveForm.Text = Resources.MifareOne_Tool_运行中;
             string rmfd = "BmfRead.tmp";
             if (checkBoxAutoSave.Checked)
             {
@@ -763,11 +763,11 @@ namespace M1ToolPlus
 
         private void buttonBmfWrite_Click(object sender, EventArgs e)
         {
-            if (lprocess) { MessageBox.Show(Resources.有任务运行中_不可执行, Resources.设备忙, MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Form1.ActiveForm.Text = "M1ToolPlus - 运行中";
+            if (lprocess) { MessageBox.Show(Resources.有任务运行中_不可执行, Resources.设备忙, MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Form1.ActiveForm.Text = Resources.MifareOne_Tool_运行中;
             string rmfd = "";
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.CheckFileExists = true;
-            ofd.Filter = "MFD文件|*.mfd;*.dump";
+            ofd.Filter = Resources.MFD文件_mfd_dump;
             ofd.Title = Resources.请选择需要写入的MFD文件;
             ofd.Multiselect = false;
             if (ofd.ShowDialog() == DialogResult.OK)
@@ -1396,17 +1396,28 @@ namespace M1ToolPlus
         void mfocCMD(object sender, DoWorkEventArgs e)
         {
             if (lprocess) { return; }
-            ProcessStartInfo psi = new ProcessStartInfo("cmd.exe");
+            ProcessStartInfo psi = new ProcessStartInfo("nfc-bin/mfoc.exe");
             string[] args = (string[])e.Argument;
             psi.WorkingDirectory = "./";
-            psi.Arguments = "/T:0A " + args[2] + @" nfc-bin\mfoc.exe " + args[1] + " -O \"" + args[0] + "\"";
+            // 原实现经 cmd.exe 拼接命令（Issue #35/#42 风险点）：字典文件名带引号/空格时易出错，
+            // 且存在命令注入面。这里改为直接调用 mfoc.exe，输出重定向到界面终端区。
+            psi.Arguments = args[1] + "-O \"" + args[0] + "\"";
+            psi.CreateNoWindow = true;
+            psi.UseShellExecute = false;
+            psi.RedirectStandardOutput = true;
+            psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
             process = Process.Start(psi); 
             b.ReportProgress(0, Resources.开始执行字典模式MFOC解密); running = true;
+            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
+            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            process.WaitForExit();
             process.WaitForExit();
             lprocess = false; running = false;
-            if (process.ExitCode == -1073741510)    //Why this
+            if (process.ExitCode == 0)    // 直调 mfoc 后以其自身退出码为准（原判断的 -1073741510 是 cmd.exe 的返回码）
             {
                 b.ReportProgress(101, Resources._运行完毕);
             }

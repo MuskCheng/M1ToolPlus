@@ -1244,7 +1244,7 @@ Uncheck "Data Write Protection" on the surface.</value>
     <value>0</value>
   </data>
   <data name="buttonHardNested.Text" xml:space="preserve">
-    <value>Bitsliced Cropto-1</value>
+    <value>Bitsliced Crypto-1</value>
   </data>
   <data name="&gt;&gt;buttonHardNested.Name" xml:space="preserve">
     <value>buttonHardNested</value>
