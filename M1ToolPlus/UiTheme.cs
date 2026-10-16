@@ -11,7 +11,7 @@ namespace M1ToolPlus
     /// 定位说明：本项目界面是 VS2010 时代用绝对定位搭的（FixedSingle 窗体 + 固定坐标），
     /// 改 Designer/resx 布局会导致控件错位，因此**不改任何布局参数**，只在运行时统一外观。
     ///
-    /// 风格参考 Windows 11 Fluent Design（Mica / 圆角 / Segoe UI），并按能力自适应降级：
+    /// 风格参考 Windows 11 Fluent Design（Mica / 圆角 / 雅黑字体），并按能力自适应降级：
     ///   · Win11 22H2+ 自动启用 Mica 背景与窗口圆角，标题栏随深浅色切换；
     ///   · Win10 或不支持时自动回退为纯色深/浅主题，功能与可读性不受影响；
     ///   · 主题跟随系统（HKCU\...\Themes\Personalize\AppsUseLightTheme），系统切换时即时响应，
@@ -48,27 +48,85 @@ namespace M1ToolPlus
         private static bool _dark;
         private static Color _accent = DefaultAccent;
         private static Font _font;
+        private static Font _terminalFont;
         private static Form _host;
 
         /// <summary>是否处于深色模式。</summary>
         internal static bool IsDark { get { return _dark; } }
 
-        /// <summary>统一界面字体：Segoe UI 优先（与 Fluent 一致），中文回退雅黑。</summary>
+        /// <summary>
+        /// 界面字号（pt）。原作 8.25pt 在屏幕上偏小、久看吃力，提到 9pt。
+        /// 不再往大调：按钮列宽是 84~97px 的固定值（绝对定位布局的既成事实），
+        /// 字号再大「从UID卡读回」「写(UF)UID卡」等文案就会溢出。
+        /// </summary>
+        private const float UiFontSize = 9F;
+
+        /// <summary>
+        /// 按钮左右内边距（像素）。列宽是 84~97px 的固定值，
+        /// 内边距取 18px 是在「观感留白」与「文案能放下」之间的折中。
+        /// </summary>
+        private const int ButtonPaddingX = 18;
+
+        /// <summary>
+        /// 界面字体。
+        ///
+        /// 为什么不用 Segoe UI：它是**拉丁字体，不含中文字形**，中文全靠系统回退渲染，
+        /// 中英混排时字重与基线不一致——这正是「难以辨识」的根因。
+        /// 微软雅黑是 Windows 中文环境清晰度最高的常规字体：笔画均匀、
+        /// 有 Light/Regular/Bold 分级、屏幕小字号下辨识度好。
+        /// 逐级回退保证任何环境都不会出现方框字。
+        /// </summary>
         internal static Font UiFont
         {
             get
             {
                 if (_font == null)
                 {
-                    string family = "Segoe UI";
-                    try { using (Font probe = new Font(family, 8.25F)) { } _font = new Font(family, 8.25F, FontStyle.Regular, GraphicsUnit.Point); }
-                    catch (Exception)
+                    string[] candidates = new string[] { "Microsoft YaHei UI", "Microsoft YaHei", "微软雅黑" };
+                    for (int i = 0; i < candidates.Length; i++)
                     {
-                        try { _font = new Font("Microsoft YaHei UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point); }
+                        try
+                        {
+                            using (Font probe = new Font(candidates[i], UiFontSize)) { }
+                            _font = new Font(candidates[i], UiFontSize, FontStyle.Regular, GraphicsUnit.Point);
+                            break;
+                        }
+                        catch (Exception) { }
+                    }
+                    if (_font == null)
+                    {
+                        try { _font = new Font(SystemFonts.MessageBoxFont.FontFamily, UiFontSize); }
                         catch (Exception) { _font = SystemFonts.MessageBoxFont; }
                     }
                 }
                 return _font;
+            }
+        }
+
+        /// <summary>
+        /// 终端输出区字体：等宽字体让 libnfc 输出的十六进制、扇区号逐行对齐，便于核对。
+        /// Consolas 无中文字形，中文会回退到雅黑（等宽回退恰为全角，视觉上仍对齐）。
+        /// </summary>
+        internal static Font TerminalFont
+        {
+            get
+            {
+                if (_terminalFont == null)
+                {
+                    string[] candidates = new string[] { "Consolas", "Cascadia Mono", "Courier New" };
+                    for (int i = 0; i < candidates.Length; i++)
+                    {
+                        try
+                        {
+                            using (Font probe = new Font(candidates[i], UiFontSize)) { }
+                            _terminalFont = new Font(candidates[i], UiFontSize, FontStyle.Regular, GraphicsUnit.Point);
+                            break;
+                        }
+                        catch (Exception) { }
+                    }
+                    if (_terminalFont == null) { _terminalFont = UiFont; }
+                }
+                return _terminalFont;
             }
         }
 
@@ -261,6 +319,7 @@ namespace M1ToolPlus
             else if (c is ComboBox) StyleInput((ComboBox)c);
             else if (c is NumericUpDown) StyleInput((NumericUpDown)c);
             else if (c is CheckBox) StyleCheckBox((CheckBox)c);
+            else if (c is RadioButton) StyleCheckBox((CheckBox)c);   // RadioButton 继承 CheckedBox，属性相同
             else if (c is Panel || c is FlowLayoutPanel || c is TableLayoutPanel)
             {
                 if (c is GroupBox) { /* handled */ }
@@ -312,7 +371,7 @@ namespace M1ToolPlus
             try
             {
                 if (!(b.Parent is FlowLayoutPanel)) { return; }
-                int need = MeasureTextWidth(b.Text, b.Font) + 24;   // 22px 内边距 + 2px 余量
+                int need = MeasureTextWidth(b.Text, b.Font) + ButtonPaddingX;   // 左右内边距
                 if (b.Width < need) { b.Width = need; }
             }
             catch (Exception) { }
@@ -570,10 +629,18 @@ namespace M1ToolPlus
             nud.ForeColor = _dark ? DText : LText;
         }
 
+        /// <summary>
+        /// 复选框 / 单选框适配。
+        ///
+        /// 坑：设 BackColor=Transparent 时，WinForms 会取**父容器**的背景色绘制。
+        /// 本项目里这些控件的父容器（TableLayoutPanel / FlowLayoutPanel）仍是浅色，
+        /// 于是深色主题下会出现「浅色文字 + 白底」——几乎看不清。
+        /// 解决办法：显式给一个与主题一致的实色背景，不依赖父容器继承。
+        /// </summary>
         private static void StyleCheckBox(CheckBox cb)
         {
             cb.ForeColor = _dark ? DText : LText;
-            cb.BackColor = Color.Transparent;
+            cb.BackColor = _dark ? DSurface : LSurface;
         }
 
         /// <summary>
@@ -582,6 +649,9 @@ namespace M1ToolPlus
         /// </summary>
         private static void StyleTerminal(RichTextBox rt)
         {
+            // 等宽字体：让 libnfc 输出里的十六进制、扇区号对齐，便于逐行核对
+            try { rt.Font = TerminalFont; } catch (Exception) { }
+
             if (_dark)
             {
                 rt.BackColor = Color.FromArgb(0x18, 0x18, 0x18);
