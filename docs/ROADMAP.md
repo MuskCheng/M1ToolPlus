@@ -109,9 +109,19 @@
 - **跟随系统深浅色**：读 `HKCU\...\Themes\Personalize\AppsUseLightTheme`，并监听 `WM_SETTINGCHANGE` 即时刷新；
   调试可用环境变量 `M1TOOL_THEME=light|dark` 强制指定。
 - **按能力降级**：Win11 21H2+ 自动圆角、22H2+ 尝试 Mica；Win10 或不支持时回退纯色，功能不受影响。
-- **截图验证**：`.\scripts\screenshot.ps1 -Out <png>`（启动 → 等主窗体 → `PrintWindow` → 自动退出）。
+- **截图验证**：`.\scripts\screenshot.ps1 -Out <png>`（启动 → 等主窗体 → `PrintWindow` → 自动退出）；
+  逐标签页用 `.\scripts\screenshot-tabs.ps1 -MaxWidth 1400`（配合程序的 `--tab N` 参数）。
   改 UI 后用它肉眼对比深浅两套效果；确认脚本需 UTF-8 BOM（本仓库脚本统一要求）。
-- 已知遗留：第二列旁「清放新卡」标签仍会竖排，属原作绝对定位布局的既有问题（非本次引入），暂未改动。
+- **⚠️ 不要在 Resize 事件里修改控件尺寸**：会触发父容器 SizeChanged 形成无限重排循环，
+  表现为界面卡死（已踩过一次，见提交 7a1af2c 的回退）。需要动态调整尺寸时，
+  只在初始化阶段做一次，或用防抖 + 标记位避免重入。
+- **⚠️ GroupBox 无法干净自绘**：系统已绘制标题，自绘边框会与之重影、或边框线横穿标题。
+  深色下只调 `ForeColor`，不要接管 Paint。
+- **自动回归**：`.\scripts\regression-auto.ps1` —— 覆盖无需硬件的部分（子进程依赖完整性、
+  ACR122U 驱动变体、启动冒烟、设备扫描行为、缺文件保护），结果写入 `artifacts\regression-auto-report.md`。
+  需真机的部分见 `docs/TESTPLAN.md`。
+- 已知遗留：「C/FUID卡操作」等分组框标题仍折行（受原作固定列宽限制，非本次引入）；
+  要根治需重排该区域列布局，或留到阶段④随布局重构一并处理。
 
 ## 六、原仓库 Issue 跟进清单（快照 2026-10-16，共 16 个 open）
 
