@@ -278,6 +278,8 @@ namespace M1ToolPlus
                     }
                 }
             }
+            // 统一界面外观（集中式主题，不改动布局参数）
+            UiTheme.Apply(this);
         }
 
         private void buttonScanCard_Click(object sender, EventArgs e)
@@ -1360,6 +1362,7 @@ namespace M1ToolPlus
         private void buttonHexTool_Click(object sender, EventArgs e)
         {
             FormHTool fht = new FormHTool();
+            UiTheme.Apply(fht);
             fht.Show();
         }
 
@@ -1376,6 +1379,7 @@ namespace M1ToolPlus
         private void buttonDiffTool_Click(object sender, EventArgs e)
         {
             FormDiff df = new FormDiff();
+            UiTheme.Apply(df);
             df.Show();
         }
 
@@ -1514,6 +1518,7 @@ namespace M1ToolPlus
         {
             if (lprocess) { MessageBox.Show(Resources.有任务运行中_不可执行, Resources.设备忙, MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Form1.ActiveForm.Text = Resources.MifareOne_Tool_运行中;
             FormHardNes fhn = new FormHardNes();
+            UiTheme.Apply(fhn);
             if (fhn.ShowDialog() == DialogResult.Yes)
             {
                 string hardargs = fhn.GetArg();
@@ -1682,6 +1687,7 @@ namespace M1ToolPlus
         private void buttonMFF08_Click(object sender, EventArgs e)
         {
             FormMFF08 mff08 = new FormMFF08();
+            UiTheme.Apply(mff08);
             mff08.ShowDialog();
         }
 
