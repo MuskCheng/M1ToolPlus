@@ -105,7 +105,114 @@ namespace M1ToolPlus
             form.BackColor = _dark ? DBack : LBack;
             foreach (Control c in form.Controls) { Prepare(c); }
             StyleChildren(form);
+            ApplyAdaptiveLayout(form);
             try { ApplyTitleBar(form); } catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 自适应布局修复。
+        ///
+        /// 原窗体是 FixedSingle（不可缩放）+ 绝对定位，内容宽度写死 726px。
+        /// 一旦文案变长（如按钮按文本加宽），超出部分就会被裁掉——这是文字显示不完整的根因。
+        /// 这里把窗体改为可缩放，并把三个顶层区域（状态栏 / 功能区 / 终端）改为 Dock 布局：
+        ///   · 窗口放大时，终端区自动铺满剩余空间；
+        ///   · 窗口缩小时，由 MinimumSize 保证功能区仍有足够宽度；
+        ///   · 标签页内部的绝对定位保持不变（改动风险最小）。
+        /// </summary>
+        private static void ApplyAdaptiveLayout(Form form)
+        {
+            try
+            {
+                // 1) 允许缩放，并给出足够容纳功能区的最小尺寸
+                if (form.FormBorderStyle == FormBorderStyle.FixedSingle)
+                {
+                    form.FormBorderStyle = FormBorderStyle.Sizable;
+                }
+                form.MaximizeBox = true;
+                form.MinimumSize = new Size(900, 640);
+                if (form.StartPosition == FormStartPosition.WindowsDefaultLocation)
+                {
+                    form.StartPosition = FormStartPosition.CenterScreen;
+                }
+
+                // 2) 顶层三区改为 Dock：状态栏贴底、功能区贴顶、终端区填满剩余
+                foreach (Control c in form.Controls)
+                {
+                    if (c is StatusStrip) { c.Dock = DockStyle.Bottom; }
+                    else if (c is TabControl) { c.Dock = DockStyle.Top; }
+                    else if (c is RichTextBox) { c.Dock = DockStyle.Fill; }
+                }
+
+                TabControl tabs = FindTabControl(form);
+                if (tabs != null)
+                {
+                    // 3) 宽度变化时重排功能区（TabControl 内的绝对定位控件默认不会重排）
+                    tabs.Resize += delegate { LayoutFlowPanels(tabs); };
+                    LayoutFlowPanels(tabs);
+
+                    // 4) 功能区实测所需宽度：窗口初始宽度不足时自动扩展，
+                    //    避免按钮加宽后把右侧控件（提示文字、停止按钮）挤出可视区。
+                    int needed = MeasureRequiredWidth(tabs);
+                    if (needed > tabs.Width)
+                    {
+                        form.ClientSize = new Size(needed + 12, form.ClientSize.Height);
+                    }
+                }
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>测量功能区实际需要的最宽一行（含绝对定位控件的右边缘）。</summary>
+        private static int MeasureRequiredWidth(Control root)
+        {
+            int max = 0;
+            try
+            {
+                foreach (Control c in root.Controls)
+                {
+                    int right = c.Left + c.Width;
+                    if (right > max) { max = right; }
+                    int nested = MeasureRequiredWidth(c);
+                    if (nested > max) { max = nested; }
+                }
+            }
+            catch (Exception) { }
+            return max;
+        }
+
+        /// <summary>让所有流式容器在宽度变化后重新计算内边距与换行。</summary>
+        private static void LayoutFlowPanels(Control root)
+        {
+            foreach (Control c in root.Controls)
+            {
+                FlowLayoutPanel flp = c as FlowLayoutPanel;
+                if (flp != null)
+                {
+                    try
+                    {
+                        flp.PerformLayout();
+                        foreach (Control child in flp.Controls)
+                        {
+                            FitButtonWidth(child as Button);
+                            FitGroupWidth(child as GroupBox);
+                        }
+                    }
+                    catch (Exception) { }
+                }
+                LayoutFlowPanels(c);
+            }
+        }
+
+        private static TabControl FindTabControl(Control root)
+        {
+            foreach (Control c in root.Controls)
+            {
+                TabControl t = c as TabControl;
+                if (t != null) { return t; }
+                TabControl nested = FindTabControl(c);
+                if (nested != null) { return nested; }
+            }
+            return null;
         }
 
         private static void WatchSystemTheme(Form form)
@@ -194,17 +301,47 @@ namespace M1ToolPlus
             b.MouseLeave += delegate { b.BackColor = bg; };
         }
 
+        /// <summary>
+        /// 按钮文字溢出修复：按实际文本测量宽度（含内边距与边框），
+        /// 不足则加宽。仅在流式容器内进行——FlowLayoutPanel 会自动重排，
+        /// 若在 TableLayoutPanel 固定列里加宽反而会挤压其它控件。
+        /// </summary>
         private static void FitButtonWidth(Button b)
         {
+            if (b == null) { return; }
             try
             {
-                using (Graphics g = b.CreateGraphics())
-                {
-                    int need = (int)Math.Ceiling(g.MeasureString(b.Text, b.Font).Width) + 22;
-                    if (b.Width < need) { b.Width = need; }
-                }
+                if (!(b.Parent is FlowLayoutPanel)) { return; }
+                int need = MeasureTextWidth(b.Text, b.Font) + 24;   // 22px 内边距 + 2px 余量
+                if (b.Width < need) { b.Width = need; }
             }
             catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 测量单行文本宽度。用 TextRenderer（GDI，与控件实际绘制一致）避免 Graphics 依赖控件句柄。
+        /// </summary>
+        private static int MeasureTextWidth(string text, Font font)
+        {
+            if (string.IsNullOrEmpty(text)) { return 0; }
+            try
+            {
+                Size s = TextRenderer.MeasureText(text, font, new Size(10000, 10000),
+                    TextFormatFlags.NoPadding | TextFormatFlags.SingleLine);
+                return s.Width;
+            }
+            catch (Exception) { return 0; }
+        }
+
+        private static int MeasureTextHeight(string text, Font font, int width)
+        {
+            if (string.IsNullOrEmpty(text) || width <= 0) { return 0; }
+            try
+            {
+                return TextRenderer.MeasureText(text, font, new Size(width, 10000),
+                    TextFormatFlags.WordBreak).Height;
+            }
+            catch (Exception) { return 0; }
         }
 
         /// <summary>深色下把按钮高度留出一点余量，避免文字贴边显得拥挤。</summary>
@@ -268,50 +405,68 @@ namespace M1ToolPlus
             catch (Exception) { }
         }
 
+        /// <summary>分组框标题溢出修复：标题过长时 WinForms 会折成两行（竖排），按需放宽。</summary>
         private static void FitGroupWidth(GroupBox g)
         {
+            if (g == null) { return; }
             try
             {
-                using (Graphics gr = g.CreateGraphics())
-                {
-                    int need = (int)Math.Ceiling(gr.MeasureString(g.Text, g.Font).Width) + g.Padding.Horizontal + 26;
-                    if (g.Width < need) { g.Width = need; }
-                }
+                if (!(g.Parent is FlowLayoutPanel)) { return; }
+                int need = MeasureTextWidth(g.Text, g.Font) + g.Padding.Horizontal + 28;
+                if (g.Width < need) { g.Width = need; }
             }
             catch (Exception) { }
         }
 
         // ---------------- 标签 ----------------
+        /// <summary>
+        /// 标签溢出修复。原作的标签多为固定尺寸 + 绝对定位，换字体或换语言后文字会被裁，
+        /// 这里按实测需求调整尺寸：
+        ///   · 单行放不下 → 优先加宽（若父容器允许），否则改自动尺寸；
+        ///   · 多行被裁 → 按实测高度增高；
+        ///   · 宽度已足够但仍竖排 → 放宽所在列（仅固定像素列）。
+        /// </summary>
         private static void StyleLabel(Label l)
         {
-            if (l.AutoSize || string.IsNullOrEmpty(l.Text)) { return; }
+            if (l == null) { return; }
 
             // SAK 支持说明是原作者刻意用蓝色强调的重要提示（原本靠父容器继承），
             // 分组框配色会覆盖继承色，这里显式补回。
             if (l.Name == "label13") { l.ForeColor = _dark ? Color.FromArgb(0x8A, 0xC0, 0xFF) : Color.FromArgb(0x0D, 0x47, 0xA1); }
             else if (l.ForeColor == SystemColors.ControlText) { l.ForeColor = _dark ? DText : LText; }
 
+            if (l.AutoSize || string.IsNullOrEmpty(l.Text)) { return; }
+
             try
             {
-                const int Probe = 10000;
-                Size need = TextRenderer.MeasureText(l.Text, l.Font, new Size(l.Width, Probe), TextFormatFlags.WordBreak);
-                if (need.Height > l.Height && need.Height - l.Height <= 40)
+                bool hasBreak = l.Text.IndexOf('\n') >= 0;
+                if (hasBreak)
                 {
-                    l.Height = need.Height;
+                    // 文案自带换行：只需保证高度足够
+                    int need = MeasureTextHeight(l.Text, l.Font, l.Width);
+                    if (need > l.Height && need - l.Height <= 60) { l.Height = need; }
+                    return;
                 }
-                else if (need.Height > l.Height)
+
+                int textW = MeasureTextWidth(l.Text, l.Font);
+                int needW = textW + 8;
+                if (needW <= l.Width) { return; }   // 放得下，不动
+
+                // 单行放不下
+                if (l.Parent is FlowLayoutPanel || l.Parent is TableLayoutPanel)
                 {
-                    int lineWidth = TextRenderer.MeasureText(l.Text, l.Font, new Size(Probe, Probe), TextFormatFlags.WordBreak).Width;
-                    if (lineWidth > 0 && lineWidth - l.Width <= 160)
-                    {
-                        if (l.Parent is FlowLayoutPanel) { l.Width = lineWidth + 8; }
-                        else { GrowParentColumn(l, lineWidth); }
-                    }
+                    if (l.Parent is FlowLayoutPanel) { l.Width = needW; }
+                    else { GrowParentColumn(l, needW); if (l.Width < needW) { l.Width = needW; } }
+                    return;
                 }
+
+                // 父容器是固定尺寸面板：让标签自动适应宽度，交给父容器决定是否滚动/裁剪
+                if (needW - l.Width <= 200) { l.AutoSize = true; }
             }
             catch (Exception) { }
         }
 
+        /// <summary>把标签所在容器的固定像素列放宽到能容下文本。</summary>
         private static void GrowParentColumn(Control c, int neededWidth)
         {
             TableLayoutPanel tlp = c.Parent as TableLayoutPanel;
@@ -322,8 +477,11 @@ namespace M1ToolPlus
                 if (col < 0 || col >= tlp.ColumnStyles.Count) { return; }
                 ColumnStyle cs = tlp.ColumnStyles[col];
                 if (cs.SizeType != System.Windows.Forms.SizeType.Absolute) { return; }
-                int add = neededWidth + 8 - c.Width;
-                if (add > 0 && add <= 160) { tlp.ColumnStyles[col] = new ColumnStyle(System.Windows.Forms.SizeType.Absolute, cs.Width + add); }
+                int add = neededWidth - c.Width;
+                if (add > 0 && add <= 200)
+                {
+                    tlp.ColumnStyles[col] = new ColumnStyle(System.Windows.Forms.SizeType.Absolute, cs.Width + add);
+                }
             }
             catch (Exception) { }
         }
