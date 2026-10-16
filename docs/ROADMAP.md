@@ -12,7 +12,8 @@
 | 定位 | Windows 平台 Mifare Classic 图形化工具（C# WinForms，.NET Framework 4.0 Client，x86） |
 | 许可 | GPL-3.0：衍生发布须保留原版权声明、标注修改、提供对应源码（见 docs/DEPENDENCIES.md 检查清单） |
 | 分支/状态 | `dev` 分支，本地领先 origin/dev（**全部未推送**，数量见 `git log origin/dev..dev`） |
-| origin | `https://github.com/xcicode/MifareOneTool.git`（原作者仓库，**只作参考，切勿 push**） |
+| origin | `https://github.com/MuskCheng/M1ToolPlus.git`（**本人仓库，已推送 dev 分支**） |
+| upstream | `https://github.com/xcicode/MifareOneTool.git`（原作者仓库，只读参考，用于 `fetch`） |
 | 构建产物 | `M1ToolPlus\bin\Release\M1ToolPlus.exe`（+ en/ru/zh 卫星程序集 + nfc-bin） |
 | 构建命令 | `.\scripts\build.ps1`（参数见 README / docs/DEVELOPMENT.md） |
 | 用途声明 | 仅限对你有授权的卡片的安全研究（README 同样声明） |
@@ -34,14 +35,24 @@
 
 ### A. 发布准备（推送前必做/必决策）
 
-1. **在 GitHub 建仓库**（建议名 M1ToolPlus）→ `git remote add my <新仓库地址>` → `git push my dev`。
-   **切勿推送到 origin**（原作者仓库）。
+1. ~~**在 GitHub 建仓库并推送**~~ ✅ 已完成（2026-10-16）：`https://github.com/MuskCheng/M1ToolPlus`（public，默认分支 `dev`，GitHub 已识别 GPL-3.0，已设置简介与 10 个 topics）。远程布局：`origin` = 本人仓库，`upstream` = 原作者仓库（只读）。
 2. 复核两项暂缓决策（发布前定下来）：
    - `M1ToolPlus\app.config` 与 Settings 中 `GitHubR = xcicode/MifareOneTool`：目前为休眠配置（GitHubUpdate 类未启用）。若启用更新检查，需改为新仓库。
    - `M1ToolPlus\Form1.cs:1261` 硬编码原作者 releases 链接（下载最新版按钮），发布时决定改为新仓库或保留双链接。
 3. 打开发布包：`.\scripts\build.ps1 -Pack` → `artifacts\M1ToolPlus-local-build.zip`；
    按 `docs/DEPENDENCIES.md` 的发布检查清单核对（重点：**不得打包 winhex.exe**；mff08.exe 来源不明，是否随包待定）。
 4. 版本号策略：AssemblyInfo 仍为 1.7.0.0（延续原版），首次发布前决定新版本号。
+
+### A' 发布包合规核对（2026-10-16 实测：`artifacts\M1ToolPlus-local-build.zip`，53 条目 / 3.0 MB）
+
+| 检查项 | 结果 |
+|---|---|
+| 主程序为 `M1ToolPlus.exe` + `M1ToolPlus.exe.config` | ✅ |
+| en/ru/zh 三套卫星程序集齐全 | ✅ |
+| winhex.exe 未打包（专有软件） | ✅ |
+| **mff08.exe 仍在包内** | ❌ 与既定策略冲突（来源不明），**待决策**：剔除 + GUI 加"文件缺失"友好提示，或保留并在发布说明中标注来源不明 |
+| nfc-bin 内 `*.bak`（libnfc.dll.bak、libnfc(532).dll 等） | 必须保留：Form1 的设备切换（ACR122U/PN532  dll 三交换）依赖这些备份 |
+| nfc-bin\data\logs_proxmark3\trace*.txt | 官方包自带的日志残留，无害，可选清理 |
 
 ### B. 真机回归（本开发环境无硬件，必须待真机）
 
@@ -74,6 +85,7 @@
 - **git 身份**：本地提交使用 `-c user.name="CXF" -c user.email="cxf@local"`（沿用惯例，可按需更换）。
 - **语言资源**：切换按“下拉索引”映射（0=zh-cn 1=ru-RU 2=en-US）；新增语言三步：加 `.xx.resx` 并注册 csproj、combo 加一项、switch 加分支。
 - 依赖再获取：`.\scripts\fetch-deps.ps1`（默认从原作者 releases v1.7.0 的 M1T-Release.zip 回收 nfc-bin）。
+- **浅克隆教训（重要）**：本仓库最初从原作者克隆时使用了 `--depth`（浅克隆），推送到空仓库时报 `remote unpack failed: did not receive expected object`，且该对象在本地也不存在（`git cat-file` 失败）；已用 `git fetch --unshallow upstream` 修复（现 109 个提交、非浅克隆）。今后重建克隆**不要加 `--depth`**。
 
 ## 五、接手检查清单（新会话/新开发者第一步）
 
