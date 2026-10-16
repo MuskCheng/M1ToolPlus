@@ -101,6 +101,18 @@
 4. 快速构建验证：`.\scripts\build.ps1 -Clean`，确认输出 `M1ToolPlus.exe` + en/ru/zh 卫星。
 5. 阅读：README.md、docs/DEVELOPMENT.md、docs/DEPENDENCIES.md、docs/TROUBLESHOOTING.md，然后按「三、待办」从 A 开始推进。
 
+### UI 主题与截图验证
+
+- **主题实现**：`M1ToolPlus\UiTheme.cs`，集中式皮肤，**运行时应用、不改 Designer 布局**。
+  该界面是 VS2010 时代的绝对定位布局（FixedSingle 窗体 + 固定坐标），改布局会导致控件错位，
+  因此改配色一律改 `UiTheme.cs`，不要动 Designer 里 `DodgerBlue` 之类的硬编码色。
+- **跟随系统深浅色**：读 `HKCU\...\Themes\Personalize\AppsUseLightTheme`，并监听 `WM_SETTINGCHANGE` 即时刷新；
+  调试可用环境变量 `M1TOOL_THEME=light|dark` 强制指定。
+- **按能力降级**：Win11 21H2+ 自动圆角、22H2+ 尝试 Mica；Win10 或不支持时回退纯色，功能不受影响。
+- **截图验证**：`.\scripts\screenshot.ps1 -Out <png>`（启动 → 等主窗体 → `PrintWindow` → 自动退出）。
+  改 UI 后用它肉眼对比深浅两套效果；确认脚本需 UTF-8 BOM（本仓库脚本统一要求）。
+- 已知遗留：第二列旁「清放新卡」标签仍会竖排，属原作绝对定位布局的既有问题（非本次引入），暂未改动。
+
 ## 六、原仓库 Issue 跟进清单（快照 2026-10-16，共 16 个 open）
 
 | Issue | 标题（简） | 状态 / 建议动作 |

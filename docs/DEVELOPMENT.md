@@ -38,8 +38,10 @@ GUI 程序启动后主窗口标题为 `M1ToolPlus`，即为冒烟测试通过。
 
 ```
 Program.cs          入口 + 单实例 Mutex
-Form1.cs            主窗口，几乎全部业务逻辑（1456 行，待拆分）
-Form1.Designer.cs   主窗口布局（1679 行）
+Form1.cs            主窗口，几乎全部业务逻辑（1490 行，待拆分）
+Form1.Designer.cs   主窗口布局（1687 行，绝对定位，勿改布局）
+ToolProcess.cs      子进程启动 + UTF-8 输出解码封装
+UiTheme.cs          运行时 UI 主题（跟随系统深浅色，改配色只改这里）
 ClassMifareS50.cs   S50/S70 卡数据模型 + MCT 格式转换
 FormHTool.cs        S50HTool（卡数据分析/修复/转 MCT）
 FormDiff.cs         卡数据对比
@@ -48,6 +50,14 @@ FormMFF08.cs        mff08 工具对话框
 SelectLanguage.cs   语言选择
 GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR 设置）
 ```
+
+### UI 主题（UiTheme.cs）
+
+- **运行时集中应用**，不改 Designer/resx 布局：本界面是 VS2010 时代的绝对定位布局，改坐标会导致控件错位
+- **跟随系统深浅色**：读 `AppsUseLightTheme` 注册表值，监听 `WM_SETTINGCHANGE` 即时切换
+- **按能力降级**：Win11 21H2+ 圆角、22H2+ Mica，Win10 回退纯色；所有 DWM 调用失败均静默忽略
+- 改配色只改 `UiTheme.cs`；`M1TOOL_THEME=light|dark` 环境变量可强制主题（调试用）
+- 截图验证：`.\scripts\screenshot.ps1 -Out <png>`（脚本需 UTF-8 BOM）
 
 ### 工作模式（Form1）
 
