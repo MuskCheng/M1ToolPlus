@@ -280,6 +280,31 @@ namespace M1ToolPlus
             }
             // 统一界面外观（集中式主题，不改动布局参数）
             UiTheme.Apply(this);
+            ApplyInitialTab();
+        }
+
+        /// <summary>
+        /// 支持以命令行参数指定初始标签页：M1ToolPlus.exe --tab 2
+        /// 供自动化截图脚本（scripts\screenshot-tabs.ps1）切换页面用，不影响正常启动。
+        /// </summary>
+        private void ApplyInitialTab()
+        {
+            try
+            {
+                string[] args = Environment.GetCommandLineArgs();
+                for (int i = 0; i < args.Length - 1; i++)
+                {
+                    if (args[i] == "--tab")
+                    {
+                        int idx;
+                        if (int.TryParse(args[i + 1], out idx) && idx >= 0 && idx < tabControl1.TabPages.Count)
+                        {
+                            tabControl1.SelectedIndex = idx;
+                        }
+                    }
+                }
+            }
+            catch (Exception) { }
         }
 
         private void buttonScanCard_Click(object sender, EventArgs e)
