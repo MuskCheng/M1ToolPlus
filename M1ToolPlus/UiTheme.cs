@@ -129,32 +129,18 @@ namespace M1ToolPlus
                     form.FormBorderStyle = FormBorderStyle.Sizable;
                 }
                 form.MaximizeBox = true;
-                form.MinimumSize = new Size(900, 560);
+                form.MinimumSize = new Size(900, 640);
                 if (form.StartPosition == FormStartPosition.WindowsDefaultLocation)
                 {
                     form.StartPosition = FormStartPosition.CenterScreen;
                 }
 
-                // 2) 顶层改为：状态栏贴底、功能区贴顶、终端区填充，
-                //    并插入一条可拖拽的分隔条，让用户自行分配工作区/终端的高度。
-                RichTextBox terminal = null;
+                // 2) 顶层三区改为 Dock：状态栏贴底、功能区贴顶、终端区填满剩余
                 foreach (Control c in form.Controls)
                 {
                     if (c is StatusStrip) { c.Dock = DockStyle.Bottom; }
                     else if (c is TabControl) { c.Dock = DockStyle.Top; }
-                    else if (c is RichTextBox) { terminal = (RichTextBox)c; }
-                }
-                if (terminal != null && FindSplitter(form) == null)
-                {
-                    terminal.Dock = DockStyle.Fill;
-                    Splitter splitter = new Splitter();
-                    splitter.Dock = DockStyle.Top;
-                    splitter.Height = 6;
-                    splitter.BackColor = _dark ? DBorder : LBorder;
-                    splitter.MinSize = 0;
-                    // 放到最后插入的控件需要抬到最前才能显示
-                    form.Controls.Add(splitter);
-                    form.Controls.SetChildIndex(splitter, 0);
+                    else if (c is RichTextBox) { c.Dock = DockStyle.Fill; }
                 }
 
                 TabControl tabs = FindTabControl(form);
@@ -164,101 +150,19 @@ namespace M1ToolPlus
                     tabs.Resize += delegate { LayoutFlowPanels(tabs); };
                     LayoutFlowPanels(tabs);
 
-                    // 4) 功能区实测所需宽度：遍历所有标签页取最大值
-                    int needed = 0;
-                    foreach (TabPage page in tabs.TabPages)
+                    // 4) 功能区实测所需宽度：窗口初始宽度不足时自动扩展，
+                    //    避免按钮加宽后把右侧控件（提示文字、停止按钮）挤出可视区。
+                    int needed = MeasureRequiredWidth(tabs);
+                    if (needed > tabs.Width)
                     {
-                        int w = MeasureRequiredWidth(page);
-                        if (w > needed) { needed = w; }
-                    }
-
-                    // 4a) 容器跟随窗口宽度：标签页内的表格/流式容器若写死了尺寸，
-                    //     窗口变宽后右侧控件仍会溢出。这里让顶层容器随窗口一起伸缩，
-                    //     并按需放大内部的绝对定位容器，使所有控件都在可视区内。
-                    tabs.Resize += delegate
-                    {
-                        try
-                        {
-                            foreach (TabPage page in tabs.TabPages)
-                            {
-                                StretchPage(page, tabs.ClientSize.Width);
-                            }
-                        }
-                        catch (Exception) { }
-                    };
-                    foreach (TabPage page in tabs.TabPages) { StretchPage(page, tabs.ClientSize.Width); }
-
-                    // 4b) 初始宽度取所有页面的最大需求，确保第一次打开就不裁剪。
-                    //     上限为屏幕工作区宽度——超出屏幕的部分用户本来就看不到，
-                    //     强行放大只会让窗口移出可视区。
-                    int screenMax = GetWorkingAreaWidth() - 24;
-                    int want = needed + 16;
-                    if (want > tabs.Width)
-                    {
-                        if (want > screenMax) { want = screenMax; }
-                        form.ClientSize = new Size(want, form.ClientSize.Height);
-                        // 同步刷新容器宽度
-                        foreach (TabPage page in tabs.TabPages) { StretchPage(page, want - 8); }
+                        form.ClientSize = new Size(needed + 12, form.ClientSize.Height);
                     }
                 }
             }
             catch (Exception) { }
         }
 
-        /// <summary>
-        /// 让页面内的顶层容器跟随可用宽度伸缩。
-        /// 原设计的表格容器是固定尺寸绝对定位，窗口变宽时右侧会空出或溢出，
-        /// 这里同步放大容器宽度；多出来的宽度分给最后一列，
-        /// 让原本固定像素的列把空间让给内容较多的右侧区域。
-        /// </summary>
-        private static void StretchPage(TabPage page, int available)
-        {
-            try
-            {
-                foreach (Control c in page.Controls)
-                {
-                    c.Dock = DockStyle.None;
-                    int need = MeasureRequiredWidth(c);
-                    int target = available - 8;
-                    if (target < need) { target = need; }
-                    if (target > c.Width)
-                    {
-                        c.Width = target;
-                        AbsorbExtraWidth(c, target - MeasureRequiredWidth(c));
-                    }
-                    LayoutFlowPanels(c);
-                }
-            }
-            catch (Exception) { }
-        }
-
-        /// <summary>把容器多出来的宽度分给最外层表格的最后一列。</summary>
-        private static void AbsorbExtraWidth(Control c, int extra)
-        {
-            if (extra <= 0) { return; }
-            try
-            {
-                foreach (Control child in c.Controls)
-                {
-                    TableLayoutPanel tlp = child as TableLayoutPanel;
-                    if (tlp != null)
-                    {
-                        tlp.Width += extra;
-                        AbsorbExtraWidth(tlp, extra);
-                        return;
-                    }
-                    FlowLayoutPanel flp = child as FlowLayoutPanel;
-                    if (flp != null) { flp.Width += extra; AbsorbExtraWidth(flp, extra); return; }
-                }
-            }
-            catch (Exception) { }
-        }
-
-        /// <summary>
-        /// 测量容器内控件的**绝对**右边缘。
-        /// 注意：控件的 Left/Width 是相对父容器的，必须沿父链累加偏移，
-        /// 否则嵌套在 TableLayoutPanel 里的控件会被严重低估（曾导致窗口宽度算不够而裁剪）。
-        /// </summary>
+        /// <summary>测量功能区实际需要的最宽一行（含绝对定位控件的右边缘）。</summary>
         private static int MeasureRequiredWidth(Control root)
         {
             int max = 0;
@@ -266,28 +170,14 @@ namespace M1ToolPlus
             {
                 foreach (Control c in root.Controls)
                 {
-                    Point p = c.Parent == null ? c.Location : c.Location;
-                    int absRight = AbsoluteRight(c, 0);
-                    if (absRight > max) { max = absRight; }
+                    int right = c.Left + c.Width;
+                    if (right > max) { max = right; }
+                    int nested = MeasureRequiredWidth(c);
+                    if (nested > max) { max = nested; }
                 }
             }
             catch (Exception) { }
             return max;
-        }
-
-        /// <summary>沿父链累加偏移，得到控件相对最外层容器的右边缘。</summary>
-        private static int AbsoluteRight(Control c, int accumulatedLeft)
-        {
-            try
-            {
-                int right = accumulatedLeft + c.Left + c.Width;
-                if (c.Parent != null && !(c.Parent is Form) && !(c.Parent is TabPage))
-                {
-                    right = AbsoluteRight(c.Parent, accumulatedLeft + c.Left);
-                }
-                return right;
-            }
-            catch (Exception) { return 0; }
         }
 
         /// <summary>让所有流式容器在宽度变化后重新计算内边距与换行。</summary>
@@ -311,18 +201,6 @@ namespace M1ToolPlus
                 }
                 LayoutFlowPanels(c);
             }
-        }
-
-        private static Splitter FindSplitter(Control root)
-        {
-            foreach (Control c in root.Controls)
-            {
-                Splitter s = c as Splitter;
-                if (s != null) { return s; }
-                Splitter nested = FindSplitter(c);
-                if (nested != null) { return nested; }
-            }
-            return null;
         }
 
         private static TabControl FindTabControl(Control root)
@@ -365,75 +243,6 @@ namespace M1ToolPlus
             {
                 StyleControl(c);
                 StyleChildren(c);
-            }
-            // 同一层级排版统一（仅对流式容器生效，TableLayoutPanel 的行高是设计时定的，勿动）
-            NormalizeFlowLayout(parent);
-        }
-
-        /// <summary>
-        /// 流式容器排版规范化：
-        ///   · 统一间距（原作 2px 过于拥挤）；
-        ///   · 纵向排列时统一按钮高度与宽度，消除大小不一的参差感；
-        ///   · 容器四周留白，避免控件紧贴分组框边框。
-        /// </summary>
-        private static void NormalizeFlowLayout(Control parent)
-        {
-            foreach (Control c in parent.Controls)
-            {
-                FlowLayoutPanel flp = c as FlowLayoutPanel;
-                if (flp == null) { continue; }
-                try
-                {
-                    flp.Padding = new Padding(6, 4, 6, 6);
-
-                    bool vertical = (flp.FlowDirection == FlowDirection.TopDown
-                                  || flp.FlowDirection == FlowDirection.BottomUp);
-
-                    if (vertical)
-                    {
-                        // 纵向列：统一高度，并把宽度对齐到该列最宽者（+内边距），视觉成一条整齐的带
-                        int h = 0;
-                        int w = 0;
-                        foreach (Control child in flp.Controls)
-                        {
-                            Button b = child as Button;
-                            if (b == null) { continue; }
-                            int bh = b.Font.Height + 12;
-                            if (bh > h) { h = bh; }
-                            int bw = MeasureTextWidth(b.Text, b.Font) + 24;
-                            if (bw > w) { w = bw; }
-                        }
-                        foreach (Control child in flp.Controls)
-                        {
-                            child.Margin = new Padding(3, 3, 3, 3);
-                            Button b = child as Button;
-                            if (b != null)
-                            {
-                                if (h > b.Height) { b.Height = h; }
-                                if (w > b.Width) { b.Width = w; }
-                            }
-                            else if (child is Label)
-                            {
-                                child.Margin = new Padding(3, 8, 3, 3);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        foreach (Control child in flp.Controls)
-                        {
-                            child.Margin = new Padding(3);
-                            Button b = child as Button;
-                            if (b != null)
-                            {
-                                int bh = b.Font.Height + 10;
-                                if (bh > b.Height) { b.Height = bh; }
-                            }
-                        }
-                    }
-                    flp.PerformLayout();
-                }
-                catch (Exception) { }
             }
         }
 
@@ -566,45 +375,63 @@ namespace M1ToolPlus
             g.ForeColor = _dark ? DText : Color.FromArgb(0x37, 0x47, 0x4F);
             g.BackColor = Color.Transparent;
             g.Padding = new Padding(6, 4, 6, 6);
-            if (g.Parent is FlowLayoutPanel) { FitGroupWidth(g); }
-            PaintGroupBorder(g);
+            FitGroupWidth(g);
         }
+        // 注：GroupBox 的标题由系统绘制（顶边留缺口），一旦自绘就会与系统标题重影。
+        // 深色下边框呈浅灰属于系统观感，强行改色需要 owner-draw GroupBox（.NET 4.0 无现成实现），
+        // 故此处只调 ForeColor，不自绘边框。
 
         /// <summary>
-        /// 深色下 GroupBox 的系统边框仍是浅灰，在深底上非常突兀；
-        /// 这里自绘一条与主题一致的圆角边框并置为透明背景。
+        /// 分组框标题溢出修复：标题过长时 WinForms 会折成两行（显示成竖排）。
+        /// · 流式容器：直接放宽自身，容器会自动重排；
+        /// · 表格容器：先放宽所在列，再让整张表（含各级父容器）跟着长宽，
+        ///   否则分组框被列宽卡住，加宽自身会溢出到相邻列上。
         /// </summary>
-        private static void PaintGroupBorder(GroupBox g)
-        {
-            if (!_dark) { return; }
-            try
-            {
-                Color border = DBorder;
-                g.Paint += delegate(object sender, PaintEventArgs e)
-                {
-                    GroupBox box = (GroupBox)sender;
-                    Rectangle r = new Rectangle(0, 7, box.Width - 1, box.Height - 14);
-                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                    using (Pen pen = new Pen(border))
-                    using (SolidBrush fill = new SolidBrush(box.BackColor))
-                    {
-                        e.Graphics.FillRectangle(fill, r);
-                        e.Graphics.DrawRectangle(pen, r);
-                    }
-                };
-            }
-            catch (Exception) { }
-        }
-
-        /// <summary>分组框标题溢出修复：标题过长时 WinForms 会折成两行（竖排），按需放宽。</summary>
         private static void FitGroupWidth(GroupBox g)
         {
             if (g == null) { return; }
             try
             {
-                if (!(g.Parent is FlowLayoutPanel)) { return; }
-                int need = MeasureTextWidth(g.Text, g.Font) + g.Padding.Horizontal + 28;
-                if (g.Width < need) { g.Width = need; }
+                int need = MeasureTextWidth(g.Text, g.Font) + g.Padding.Horizontal + 34;
+                if (g.Width >= need) { return; }
+
+                if (g.Parent is FlowLayoutPanel)
+                {
+                    g.Width = need;
+                    return;
+                }
+
+                TableLayoutPanel tlp = g.Parent as TableLayoutPanel;
+                if (tlp != null)
+                {
+                    GrowParentColumn(g, need);
+                    if (g.Width < need) { g.Width = need; }
+                    GrowAncestors(tlp, need - g.Width + 34);
+                }
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>把表格容器及其各级父容器同步放宽 delta 像素。</summary>
+        private static void GrowAncestors(Control c, int delta)
+        {
+            if (c == null || delta <= 0) { return; }
+            try
+            {
+                Control parent = c.Parent;
+                if (parent == null || parent is Form || parent is TabPage) { return; }
+
+                // 表格/流式容器自身宽度受限：先把自身撑开
+                int target = c.Width + delta;
+                if (target > c.Width) { c.Width = target; }
+
+                // 父容器若是表格，同样按增量放宽它所在的列
+                TableLayoutPanel pt = parent as TableLayoutPanel;
+                if (pt != null)
+                {
+                    GrowParentColumn(pt, pt.Width + delta);
+                }
+                GrowAncestors(parent, delta);
             }
             catch (Exception) { }
         }
@@ -862,24 +689,6 @@ namespace M1ToolPlus
 
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
-
-        /// <summary>取主屏工作区宽度（避开 System.Windows.Forms.Screen 的命名冲突）。</summary>
-        private static int GetWorkingAreaWidth()
-        {
-            try
-            {
-                RECT r = new RECT();
-                if (System.Windows.Forms.SystemInformation.WorkingArea.Width > 0)
-                {
-                    return System.Windows.Forms.SystemInformation.WorkingArea.Width;
-                }
-            }
-            catch (Exception) { }
-            return 1600;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct RECT { public int Left, Top, Right, Bottom; }
 
         // ================= 系统主题变更消息钩子 =================
 

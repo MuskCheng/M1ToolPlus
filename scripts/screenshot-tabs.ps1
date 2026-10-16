@@ -1,4 +1,4 @@
-﻿param([string]$ExePath = "M1ToolPlus\bin\Release\M1ToolPlus.exe", [string]$OutDir = "$env:TEMP", [int]$TabCount = 3)
+﻿param([string]$ExePath = "M1ToolPlus\bin\Release\M1ToolPlus.exe", [string]$OutDir = "$env:TEMP", [int]$TabCount = 3, [int]$MaxWidth = 0)
 # 逐个标签页截图（用于检查各页排版）
 # 依赖程序支持的命令行参数 --tab N（见 Form1.ApplyInitialTab）
 Add-Type -AssemblyName System.Drawing
@@ -23,6 +23,18 @@ for ($i = 0; $i -lt $TabCount; $i++) {
     }
     [Win]::SetForegroundWindow($p.MainWindowHandle) | Out-Null
     Start-Sleep -Milliseconds 700
+
+    if ($MaxWidth -gt 0) {
+        # 放大到指定宽度，便于检查宽屏下的排版
+        $rr0 = New-Object Win+RECT
+        [Win]::GetWindowRect($p.MainWindowHandle, [ref]$rr0) | Out-Null
+        Add-Type @"
+using System; using System.Runtime.InteropServices;
+public class Resize { [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr h, IntPtr a, int x, int y, int cx, int cy, uint f); }
+"@ -ErrorAction SilentlyContinue
+        [Resize]::SetWindowPos($p.MainWindowHandle, [IntPtr]::Zero, 20, 20, $MaxWidth, 900, 0x004) | Out-Null
+        Start-Sleep -Milliseconds 800
+    }
 
     $r = New-Object Win+RECT
     [Win]::GetWindowRect($p.MainWindowHandle, [ref]$r) | Out-Null
