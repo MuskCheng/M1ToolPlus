@@ -1,4 +1,4 @@
-﻿using MifareOneTool.Properties;
+﻿using M1ToolPlus.Properties;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,7 +10,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.IO;
 
-namespace MifareOneTool
+namespace M1ToolPlus
 {
     public partial class FormMFF08 : Form
     {

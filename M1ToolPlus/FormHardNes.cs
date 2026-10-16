@@ -1,4 +1,4 @@
-﻿using MifareOneTool.Properties;
+﻿using M1ToolPlus.Properties;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,7 +9,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
 
-namespace MifareOneTool
+namespace M1ToolPlus
 {
     public partial class FormHardNes : Form
     {

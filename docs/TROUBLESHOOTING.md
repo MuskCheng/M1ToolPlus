@@ -13,7 +13,7 @@
 解决方案（任选其一）：
 
 1. **本仓库 v1.7.1+ 已内置修复**：启动时自动恢复上次设备，无需再全扫
-2. 手动 workaround（对旧版有效）：在 MifareOneTool.exe 同目录新建
+2. 手动 workaround（对旧版有效）：在 M1ToolPlus.exe 同目录新建
    `libnfc.conf`，写入正确 COM 口后**直接点"扫描卡片"，不要点"检测设备"**：
 
    ```

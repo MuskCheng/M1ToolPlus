@@ -1,4 +1,4 @@
-﻿using MifareOneTool.Properties;
+﻿using M1ToolPlus.Properties;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 using System.Security.Cryptography;
 using Microsoft.VisualBasic;
 
-namespace MifareOneTool
+namespace M1ToolPlus
 {
     public partial class FormHTool : Form
     {

@@ -1,9 +1,9 @@
-# MifareOneTool 开发文档
+# M1ToolPlus 开发文档
 
 ## 技术栈
 
 - C# / .NET Framework 4.0 Client Profile / x86 / WinForms
-- VS2010 解决方案格式（`MifareOneTool.sln`），可用 VS2022 Build Tools 构建
+- VS2010 解决方案格式（`M1ToolPlus.sln`），可用 VS2022 Build Tools 构建
 - 唯一 NuGet 外部依赖：`Newtonsoft.Json.dll`（仓库内直接附带二进制，非 packages.config 管理）
 
 ## 构建
@@ -11,7 +11,7 @@
 ```powershell
 .\scripts\build.ps1              # Release 构建
 .\scripts\build.ps1 -Configuration Debug
-.\scripts\build.ps1 -Pack        # 打包到 artifacts\M1T-local-build.zip
+.\scripts\build.ps1 -Pack        # 打包到 artifacts\M1ToolPlus-local-build.zip
 .\scripts\build.ps1 -Clean       # 清理重建
 .\scripts\fetch-deps.ps1         # 回收 nfc-bin 运行依赖
 ```
@@ -24,7 +24,7 @@
 1. 自动搜索 `al.exe`；找到 -> 走标准 MSBuild 全量构建
 2. 找不到 -> 仍执行 `/t:Build`（主 exe 会成功产出，仅卫星步骤失败），然后用
    `csc` 手工把 `obj\...\*.ru.resources` / `*.zh.resources` 编译成
-   `ru\MifareOneTool.ru.dll` / `zh\MifareOneTool.zh.dll`（嵌入 AssemblyCulture）
+   `ru\M1ToolPlus.ru.dll` / `zh\M1ToolPlus.zh.dll`（嵌入 AssemblyCulture）
 
 > 注意：不要用 `/t:CoreCompile` 单独编译，它会跳过引用解析，报一堆
 > CS0518/CS0246（System.Object 未定义）——必须 `/t:Build`。
@@ -32,7 +32,7 @@
 ### 运行
 
 `bin\Release\` 下需要 `nfc-bin\`（`fetch-deps.ps1` 回收）才能实际读卡。
-GUI 程序启动后主窗口标题为 `MifareOne Tool`，即为冒烟测试通过。
+GUI 程序启动后主窗口标题为 `M1ToolPlus`，即为冒烟测试通过。
 
 ## 代码架构
 
@@ -84,7 +84,7 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
 无自动化测试。改动后最低验证线：
 
 1. `.\scripts\build.ps1` 构建成功
-2. 启动 `bin\Release\MifareOneTool.exe`，主窗口正常显示
+2. 启动 `bin\Release\M1ToolPlus.exe`，主窗口正常显示
 3. 涉及读卡逻辑的改动需要真机（PN532/ACR122U + 卡片）回归——
    本环境无硬件，需协作者配合
 

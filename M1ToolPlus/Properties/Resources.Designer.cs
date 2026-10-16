@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace MifareOneTool.Properties {
+namespace M1ToolPlus.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace MifareOneTool.Properties {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("MifareOneTool.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("M1ToolPlus.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -305,7 +305,7 @@ namespace MifareOneTool.Properties {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на MifareOne Tool.
+        ///   Ищет локализованную строку, похожую на M1ToolPlus.
         /// </summary>
         public static string MifareOne_Tool {
             get {
@@ -314,7 +314,7 @@ namespace MifareOneTool.Properties {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на MifareOne Tool - 已取消.
+        ///   Ищет локализованную строку, похожую на M1ToolPlus - 已取消.
         /// </summary>
         public static string MifareOne_Tool_已取消 {
             get {
@@ -323,7 +323,7 @@ namespace MifareOneTool.Properties {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на MifareOne Tool - 已终止.
+        ///   Ищет локализованную строку, похожую на M1ToolPlus - 已终止.
         /// </summary>
         public static string MifareOne_Tool_已终止 {
             get {
@@ -332,7 +332,7 @@ namespace MifareOneTool.Properties {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на MifareOne Tool - 运行中.
+        ///   Ищет локализованную строку, похожую на M1ToolPlus - 运行中.
         /// </summary>
         public static string MifareOne_Tool_运行中 {
             get {
@@ -341,7 +341,7 @@ namespace MifareOneTool.Properties {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на MifareOne Tool - 运行完毕.
+        ///   Ищет локализованную строку, похожую на M1ToolPlus - 运行完毕.
         /// </summary>
         public static string MifareOne_Tool_运行完毕 {
             get {
@@ -922,7 +922,7 @@ namespace MifareOneTool.Properties {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на 您已经运行了MifareOne Tool，打开多个本程序可能会造成冲突及不可预料到的错误。
+        ///   Ищет локализованную строку, похожую на 您已经运行了M1ToolPlus，打开多个本程序可能会造成冲突及不可预料到的错误。
         ///确认要继续吗？.
         /// </summary>
         public static string 您已经运行了MifareOne_Tool_打开多个本程序可能 {

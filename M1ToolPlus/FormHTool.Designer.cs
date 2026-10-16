@@ -1,4 +1,4 @@
-﻿namespace MifareOneTool
+﻿namespace M1ToolPlus
 {
     partial class FormHTool
     {
@@ -497,7 +497,7 @@
             // 
             // s50BindingSource
             // 
-            this.s50BindingSource.DataSource = typeof(MifareOneTool.S50);
+            this.s50BindingSource.DataSource = typeof(M1ToolPlus.S50);
             // 
             // FormHTool
             // 

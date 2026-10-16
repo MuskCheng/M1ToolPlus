@@ -1,4 +1,4 @@
-﻿using MifareOneTool.Properties;
+﻿using M1ToolPlus.Properties;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 using System.Net;
 using System.IO;
 
-namespace MifareOneTool
+namespace M1ToolPlus
 {
     class GitHubUpdate
     {

@@ -8,8 +8,8 @@
     <ProjectGuid>{CDB26016-FC77-403F-B22A-A011F8622FCF}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MifareOneTool</RootNamespace>
-    <AssemblyName>MifareOneTool</AssemblyName>
+    <RootNamespace>M1ToolPlus</RootNamespace>
+    <AssemblyName>M1ToolPlus</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>

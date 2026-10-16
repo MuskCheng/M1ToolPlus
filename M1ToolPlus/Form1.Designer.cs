@@ -1,4 +1,4 @@
-﻿namespace MifareOneTool
+﻿namespace M1ToolPlus
 {
     partial class Form1
     {
@@ -675,7 +675,7 @@
             // pictureBox3
             // 
             resources.ApplyResources(this.pictureBox3, "pictureBox3");
-            this.pictureBox3.Image = global::MifareOneTool.Properties.Resources.round_chevron_right_black_24dp;
+            this.pictureBox3.Image = global::M1ToolPlus.Properties.Resources.round_chevron_right_black_24dp;
             this.pictureBox3.Name = "pictureBox3";
             this.pictureBox3.TabStop = false;
             // 
@@ -745,13 +745,13 @@
             // pictureBox1
             // 
             resources.ApplyResources(this.pictureBox1, "pictureBox1");
-            this.pictureBox1.Image = global::MifareOneTool.Properties.Resources.round_chevron_right_black_24dp;
+            this.pictureBox1.Image = global::M1ToolPlus.Properties.Resources.round_chevron_right_black_24dp;
             this.pictureBox1.Name = "pictureBox1";
             this.pictureBox1.TabStop = false;
             // 
             // pictureBox2
             // 
-            this.pictureBox2.Image = global::MifareOneTool.Properties.Resources.round_chevron_right_black_24dp;
+            this.pictureBox2.Image = global::M1ToolPlus.Properties.Resources.round_chevron_right_black_24dp;
             resources.ApplyResources(this.pictureBox2, "pictureBox2");
             this.pictureBox2.Name = "pictureBox2";
             this.pictureBox2.TabStop = false;
@@ -848,7 +848,7 @@
             // 
             // pictureBox4
             // 
-            this.pictureBox4.Image = global::MifareOneTool.Properties.Resources.round_done_outline_black_24pt_1x;
+            this.pictureBox4.Image = global::M1ToolPlus.Properties.Resources.round_done_outline_black_24pt_1x;
             resources.ApplyResources(this.pictureBox4, "pictureBox4");
             this.pictureBox4.Name = "pictureBox4";
             this.pictureBox4.TabStop = false;
@@ -1365,21 +1365,21 @@
             // 
             // statusLabel
             // 
-            this.statusLabel.Image = global::MifareOneTool.Properties.Resources.round_sync_black_18pt_1x;
+            this.statusLabel.Image = global::M1ToolPlus.Properties.Resources.round_sync_black_18pt_1x;
             resources.ApplyResources(this.statusLabel, "statusLabel");
             this.statusLabel.Margin = new System.Windows.Forms.Padding(0, 0, 50, 0);
             this.statusLabel.Name = "statusLabel";
             // 
             // runTimeLabel
             // 
-            this.runTimeLabel.Image = global::MifareOneTool.Properties.Resources.round_timer_black_18pt_1x;
+            this.runTimeLabel.Image = global::M1ToolPlus.Properties.Resources.round_timer_black_18pt_1x;
             resources.ApplyResources(this.runTimeLabel, "runTimeLabel");
             this.runTimeLabel.Margin = new System.Windows.Forms.Padding(50, 0, 50, 0);
             this.runTimeLabel.Name = "runTimeLabel";
             // 
             // localVersionLabel
             // 
-            this.localVersionLabel.Image = global::MifareOneTool.Properties.Resources.outline_info_black_18pt_1x;
+            this.localVersionLabel.Image = global::M1ToolPlus.Properties.Resources.outline_info_black_18pt_1x;
             resources.ApplyResources(this.localVersionLabel, "localVersionLabel");
             this.localVersionLabel.Margin = new System.Windows.Forms.Padding(50, 0, 50, 0);
             this.localVersionLabel.Name = "localVersionLabel";

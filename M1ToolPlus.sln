@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MifareOneTool", "MifareOneTool\MifareOneTool.csproj", "{CDB26016-FC77-403F-B22A-A011F8622FCF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "M1ToolPlus", "M1ToolPlus\M1ToolPlus.csproj", "{CDB26016-FC77-403F-B22A-A011F8622FCF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

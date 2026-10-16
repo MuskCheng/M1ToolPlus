@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // 有关程序集的常规信息通过以下
 // 特性集控制。更改这些特性值可修改
 // 与程序集关联的信息。
-[assembly: AssemblyTitle("MifareOneTool")]
+[assembly: AssemblyTitle("M1ToolPlus")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("XciCode")]
-[assembly: AssemblyProduct("MifareOneTool")]
-[assembly: AssemblyCopyright("Copyright © XciCode 2018-2019")]
+[assembly: AssemblyProduct("M1ToolPlus")]
+[assembly: AssemblyCopyright("Copyright © XciCode 2018-2019; modifications © 2026 M1ToolPlus project")]
 [assembly: AssemblyTrademark("M1T")]
 [assembly: AssemblyCulture("")]
 

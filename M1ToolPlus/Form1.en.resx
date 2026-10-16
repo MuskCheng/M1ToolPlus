@@ -1983,7 +1983,7 @@ Same as ordinary card</value>
     <value>41</value>
   </metadata>
   <data name="$this.Text" xml:space="preserve">
-    <value>MifareOne Tool</value>
+    <value>M1ToolPlus</value>
   </data>
   <data name="&gt;&gt;toolTipHelp.Name" xml:space="preserve">
     <value>toolTipHelp</value>

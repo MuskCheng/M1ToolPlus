@@ -11,7 +11,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
-if (-not $TargetDir) { $TargetDir = Join-Path $repoRoot "MifareOneTool\bin\Release" }
+if (-not $TargetDir) { $TargetDir = Join-Path $repoRoot "M1ToolPlus\bin\Release" }
 
 $zipPath   = Join-Path $repoRoot "artifacts\M1T-Release.zip"
 $relDir    = Join-Path $repoRoot "artifacts\M1T-Release"

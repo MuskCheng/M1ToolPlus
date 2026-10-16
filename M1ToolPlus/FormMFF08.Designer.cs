@@ -1,4 +1,4 @@
-﻿namespace MifareOneTool
+﻿namespace M1ToolPlus
 {
     partial class FormMFF08
     {

@@ -1,4 +1,4 @@
-﻿using MifareOneTool.Properties;
+﻿using M1ToolPlus.Properties;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Reflection;
 
-namespace MifareOneTool
+namespace M1ToolPlus
 {
     static class Program
     {

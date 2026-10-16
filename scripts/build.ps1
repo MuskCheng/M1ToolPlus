@@ -1,4 +1,4 @@
-﻿# build.ps1 - MifareOneTool 构建脚本
+﻿# build.ps1 - M1ToolPlus 构建脚本
 # 用法:
 #   .\scripts\build.ps1                 # Release 构建（默认）
 #   .\scripts\build.ps1 -Configuration Debug
@@ -16,8 +16,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot   = Split-Path -Parent $PSScriptRoot
-$projDir    = Join-Path $repoRoot "MifareOneTool"
-$csproj     = Join-Path $projDir "MifareOneTool.csproj"
+$projDir    = Join-Path $repoRoot "M1ToolPlus"
+$csproj     = Join-Path $projDir "M1ToolPlus.csproj"
 $outDir     = Join-Path $projDir "bin\$Configuration"
 $objDir     = Join-Path $projDir "obj\x86\$Configuration"
 $platform   = "x86"
@@ -69,7 +69,7 @@ $fullBuildOk = $false
 
 if ($al) {
     Write-Host "[build] 找到 al.exe ($al)，执行标准 MSBuild 构建" -ForegroundColor Green
-    & $msbuild $repoRoot\MifareOneTool.sln /t:Rebuild `
+    & $msbuild $repoRoot\M1ToolPlus.sln /t:Rebuild `
         /p:Configuration=$Configuration /p:Platform=$platform `
         /v:minimal /nologo
     if ($LASTEXITCODE -eq 0) { $fullBuildOk = $true }
@@ -85,7 +85,7 @@ if (-not $fullBuildOk) {
     $buildLog = & $msbuild $csproj /t:Build `
         /p:Configuration=$Configuration /p:Platform=$platform `
         /v:minimal /nologo 2>&1
-    $mainExe = Join-Path $objDir "MifareOneTool.exe"
+    $mainExe = Join-Path $objDir "M1ToolPlus.exe"
     if (-not (Test-Path $mainExe)) {
         $buildLog | ForEach-Object { Write-Host $_ }
         throw "[build] 编译失败：未产出主程序（非 al.exe 问题，见上方 MSBuild 输出）"
@@ -95,9 +95,9 @@ if (-not $fullBuildOk) {
 
     # 2) 布局输出目录
     New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-    Copy-Item (Join-Path $objDir "MifareOneTool.exe") $outDir -Force
+    Copy-Item (Join-Path $objDir "M1ToolPlus.exe") $outDir -Force
     Copy-Item (Join-Path $projDir "Newtonsoft.Json.dll") $outDir -Force
-    Copy-Item (Join-Path $projDir "app.config") (Join-Path $outDir "MifareOneTool.exe.config") -Force
+    Copy-Item (Join-Path $projDir "app.config") (Join-Path $outDir "M1ToolPlus.exe.config") -Force
 
     # 3) 用 csc 生成卫星程序集 ru/zh（绕过缺失的 al.exe）
     $csc = "$env:WINDIR\Microsoft.NET\Framework\v4.0.30319\csc.exe"
@@ -111,7 +111,7 @@ if (-not $fullBuildOk) {
         if (-not $resFiles) { Write-Warning "[$cult] 无卫星资源，跳过"; continue }
 
         $satSrc = Join-Path $objDir "sat_$cult.cs"
-        $satDll = Join-Path $objDir "MifareOneTool.$cult.dll"
+        $satDll = Join-Path $objDir "M1ToolPlus.$cult.dll"
         @"
 [assembly: System.Reflection.AssemblyCulture("$cult")]
 [assembly: System.Reflection.AssemblyVersion("$ver")]
@@ -119,7 +119,7 @@ if (-not $fullBuildOk) {
 
         $cscArgs = @("/nologo", "/target:library", "/out:`"$satDll`"")
         foreach ($r in $resFiles) {
-            # MifareOneTool.Form1.ru.resources -> 逻辑名 MifareOneTool.Form1.resources
+            # M1ToolPlus.Form1.ru.resources -> 逻辑名 M1ToolPlus.Form1.resources
             $logical = $r.Name -replace "\.$cult\.resources$", ".resources"
             $cscArgs += "/resource:`"$($r.FullName)`",$logical"
         }
@@ -129,8 +129,8 @@ if (-not $fullBuildOk) {
 
         $cultDir = Join-Path $outDir $cult
         New-Item -ItemType Directory -Force -Path $cultDir | Out-Null
-        Copy-Item $satDll (Join-Path $cultDir "MifareOneTool.$cult.dll") -Force
-        Write-Host "[build] 卫星程序集已生成: $cult\MifareOneTool.$cult.dll" -ForegroundColor Green
+        Copy-Item $satDll (Join-Path $cultDir "M1ToolPlus.$cult.dll") -Force
+        Write-Host "[build] 卫星程序集已生成: $cult\M1ToolPlus.$cult.dll" -ForegroundColor Green
     }
 }
 
@@ -144,12 +144,12 @@ if ((Test-Path $nfcBinSrc) -and -not (Test-Path (Join-Path $outDir "nfc-bin"))) 
 }
 
 # 5) 汇总
-$exe = Join-Path $outDir "MifareOneTool.exe"
+$exe = Join-Path $outDir "M1ToolPlus.exe"
 if (Test-Path $exe) {
     $fi = Get-Item $exe
     Write-Host "[build] 成功: $($fi.FullName) ($([math]::Round($fi.Length/1KB,1)) KB) v$ver" -ForegroundColor Green
 } else {
-    throw "[build] 未产出 MifareOneTool.exe"
+    throw "[build] 未产出 M1ToolPlus.exe"
 }
 
 if ($Pack) {
@@ -158,7 +158,7 @@ if ($Pack) {
     New-Item -ItemType Directory -Force -Path $pkgDir | Out-Null
     Copy-Item (Join-Path $outDir "*") $pkgDir -Recurse -Force
     # winhex 等专有软件不打包（合规），见 docs/DEPENDENCIES.md
-    $zip = Join-Path $repoRoot "artifacts\M1T-local-build.zip"
+    $zip = Join-Path $repoRoot "artifacts\M1ToolPlus-local-build.zip"
     if (Test-Path $zip) { Remove-Item $zip -Force }
     Compress-Archive -Path (Join-Path $pkgDir "*") -DestinationPath $zip
     Write-Host "[build] 打包完成: $zip" -ForegroundColor Green

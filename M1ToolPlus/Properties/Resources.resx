@@ -200,19 +200,19 @@
     <value>MFD文件|*.mfd|DUMP文件|*.dump</value>
   </data>
   <data name="MifareOne_Tool" xml:space="preserve">
-    <value>MifareOne Tool</value>
+    <value>M1ToolPlus</value>
   </data>
   <data name="MifareOne_Tool_已取消" xml:space="preserve">
-    <value>MifareOne Tool - 已取消</value>
+    <value>M1ToolPlus - 已取消</value>
   </data>
   <data name="MifareOne_Tool_已终止" xml:space="preserve">
-    <value>MifareOne Tool - 已终止</value>
+    <value>M1ToolPlus - 已终止</value>
   </data>
   <data name="MifareOne_Tool_运行中" xml:space="preserve">
-    <value>MifareOne Tool - 运行中</value>
+    <value>M1ToolPlus - 运行中</value>
   </data>
   <data name="MifareOne_Tool_运行完毕" xml:space="preserve">
-    <value>MifareOne Tool - 运行完毕</value>
+    <value>M1ToolPlus - 运行完毕</value>
   </data>
   <data name="nfc_bin_collect_exe" xml:space="preserve">
     <value>nfc-bin/collect.exe</value>
@@ -363,7 +363,7 @@
     <value>您可以上传到云计算服务节点进行计算。</value>
   </data>
   <data name="您已经运行了MifareOne_Tool_打开多个本程序可能" xml:space="preserve">
-    <value>您已经运行了MifareOne Tool，打开多个本程序可能会造成冲突及不可预料到的错误。
+    <value>您已经运行了M1ToolPlus，打开多个本程序可能会造成冲突及不可预料到的错误。
 确认要继续吗？</value>
   </data>
   <data name="您正在试图重复运行" xml:space="preserve">

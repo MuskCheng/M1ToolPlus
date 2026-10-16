@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace MifareOneTool.Properties {
+namespace M1ToolPlus.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

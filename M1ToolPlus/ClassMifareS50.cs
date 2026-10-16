@@ -1,4 +1,4 @@
-﻿using MifareOneTool.Properties;
+﻿using M1ToolPlus.Properties;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Security.Cryptography;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace MifareOneTool
+namespace M1ToolPlus
 {
     class Utils
     {

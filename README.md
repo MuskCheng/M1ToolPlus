@@ -1,9 +1,14 @@
-# MifareOneTool
+# M1ToolPlus
 
 A GUI Mifare Classic tool on Windows（Windows 平台 Mifare Classic 图形化工具）
 
-> 原作者已停止维护（v1.7.0, 2019）。本仓库为接手续开发版本，遵循原 GPL-3.0 协议。
-> The original author discontinued development (v1.7.0, 2019). This is a continuation under GPL-3.0.
+> **衍生版本说明 / Derivative work notice**
+> 本仓库是 [xcicode/MifareOneTool](https://github.com/xcicode/MifareOneTool) 的**非官方衍生版本**（modified version），
+> 自 2026 年 10 月起由 M1ToolPlus 项目独立修改与维护，与原作者无隶属关系、未获其背书
+> （not affiliated with or endorsed by the original author）。
+> 原始项目 Copyright © 2018-2019 XciCode 及贡献者，GPL-3.0；本仓库的全部修改同样以 GPL-3.0 发布，修改明细见 git 提交历史。
+> The original author discontinued development (last release v1.7.0, 2019). This is an independent community continuation under GPL-3.0.
+> 原作者最后一版完整 README 已存档：[docs/README.original.md](docs/README.original.md)。
 
 ## 功能
 
@@ -14,16 +19,16 @@ A GUI Mifare Classic tool on Windows（Windows 平台 Mifare Classic 图形化�
 
 ## 快速开始（用户）
 
-1. 从 [Releases](https://github.com/xcicode/MifareOneTool/releases) 下载最新 `M1T-Release.zip`
-2. 解压后双击 `MifareOneTool.exe`
+1. 从 [Releases](https://github.com/xcicode/MifareOneTool/releases) 下载原作者最新 `M1T-Release.zip`
+2. 解压后双击主程序（原作者包内为 `MifareOneTool.exe`；本仓库构建产物为 `M1ToolPlus.exe`）
 3. 详细使用见 [Wiki](https://github.com/xcicode/MifareOneTool/wiki)
 
 ## 构建（开发者）
 
 ```powershell
-git clone <本仓库> && cd MifareOneTool
-.\scripts\build.ps1              # Release 构建 -> MifareOneTool\bin\Release\
-.\scripts\build.ps1 -Pack        # 构建 + 打包 -> artifacts\M1T-local-build.zip
+git clone <本仓库> && cd M1ToolPlus
+.\scripts\build.ps1              # Release 构建 -> M1ToolPlus\bin\Release\
+.\scripts\build.ps1 -Pack        # 构建 + 打包 -> artifacts\M1ToolPlus-local-build.zip
 .\scripts\fetch-deps.ps1         # 回收 nfc-bin 运行依赖（首次需要）
 .\scripts\build.ps1 -Clean       # 清理重建
 ```
@@ -37,7 +42,7 @@ git clone <本仓库> && cd MifareOneTool
 
 | 路径 | 说明 |
 |---|---|
-| `MifareOneTool\` | C# WinForms 源码工程（.NET Framework 4.0 Client, x86） |
+| `M1ToolPlus\` | C# WinForms 源码工程（.NET Framework 4.0 Client, x86） |
 | `scripts\` | 构建 / 依赖回收 / 打包脚本 |
 | `docs\` | 开发文档、依赖合规说明 |
 | `wiki\` | GitHub Wiki 镜像（独立仓库，不入主库） |

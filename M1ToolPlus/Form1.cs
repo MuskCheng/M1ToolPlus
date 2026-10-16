@@ -1,4 +1,4 @@
-﻿using MifareOneTool.Properties;
+﻿using M1ToolPlus.Properties;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,7 +16,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Globalization;
 
-namespace MifareOneTool
+namespace M1ToolPlus
 {
     public partial class Form1 : Form
     {
@@ -701,7 +701,7 @@ namespace MifareOneTool
 
         private void buttonBmfRead_Click(object sender, EventArgs e)
         {
-            if (lprocess) { MessageBox.Show(Resources.有任务运行中_不可执行, Resources.设备忙, MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Form1.ActiveForm.Text = "MifareOne Tool - 运行中";
+            if (lprocess) { MessageBox.Show(Resources.有任务运行中_不可执行, Resources.设备忙, MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Form1.ActiveForm.Text = "M1ToolPlus - 运行中";
             string rmfd = "BmfRead.tmp";
             if (checkBoxAutoSave.Checked)
             {
@@ -749,7 +749,7 @@ namespace MifareOneTool
 
         private void buttonBmfWrite_Click(object sender, EventArgs e)
         {
-            if (lprocess) { MessageBox.Show(Resources.有任务运行中_不可执行, Resources.设备忙, MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Form1.ActiveForm.Text = "MifareOne Tool - 运行中";
+            if (lprocess) { MessageBox.Show(Resources.有任务运行中_不可执行, Resources.设备忙, MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Form1.ActiveForm.Text = "M1ToolPlus - 运行中";
             string rmfd = "";
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.CheckFileExists = true;
@@ -1154,7 +1154,7 @@ namespace MifareOneTool
         {
             if (lprocess) { MessageBox.Show(Resources.有任务运行中_不可执行, Resources.设备忙, MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Form1.ActiveForm.Text = Resources.MifareOne_Tool_运行中;
             if (MessageBox.Show(Resources.同时打开ACR122U支持可能会引起操作速度下降_请确认是否, Resources.提示信息, MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) == DialogResult.Cancel)
-            { Text = "MifareOne Tool"; return; }
+            { Text = "M1ToolPlus"; return; }
             lprocess = true;
             if (File.Exists("nfc-bin/libnfc(PN532Only).dll"))
             {

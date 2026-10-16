@@ -3,7 +3,7 @@
 # 键基准 = 本仓库中性 resx；英文值 = fork 中性 resx（其默认即英文）
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$projDir  = Join-Path $repoRoot "MifareOneTool"
+$projDir  = Join-Path $repoRoot "M1ToolPlus"
 $srcDir   = Join-Path $env:TEMP "m1t_en"   # 由调用者预先下载
 
 if (-not (Test-Path $srcDir)) { throw "缺少英文资源源目录: $srcDir" }
