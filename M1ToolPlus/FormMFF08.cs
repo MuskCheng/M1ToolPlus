@@ -94,12 +94,13 @@ namespace M1ToolPlus
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
             b.ReportProgress(1);
-            process = Process.Start(psi);
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                b.ReportProgress(100, Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false;
             b.ReportProgress(100, Resources._运行完毕);

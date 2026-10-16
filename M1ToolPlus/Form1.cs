@@ -174,30 +174,34 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi); 
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行检测设备); running = true;
             List<string> myReader = new List<string>();
-            process.OutputDataReceived += (s, _e) =>
+            // 该处需在读取输出的同时收集设备名（Issue #26/#9），故传入行处理器而非直接输出到终端区。
+            // libnfc 输出为 UTF-8；.NET 4.0 无 StandardOutputEncoding，默认按 ANSI 解码会中文乱码。
+            ToolProcess.PumpOutput(process, b, delegate(string line)
             {
-                b.ReportProgress(0, _e.Data);
                 if (Properties.Settings.Default.NewScan)
                 {
-                    if (!string.IsNullOrEmpty(_e.Data))
+                    if (!string.IsNullOrEmpty(line))
                     {
                         //Issue #26/#9: 原仅匹配 pn532_uart, ACR122U(acr122_pcsc) 等设备永远无法进入设备列表,
                         //这里放宽为常见 libnfc 连接串前缀
-                        Match m = Regex.Match(_e.Data, "(?i)\\b(pn532_uart:COM\\d+:\\d+|acr122_pcsc:[^\\s\"']+|pn532_[a-z]+:[^\\s\"']+|openpcsc:[^\\s\"']+|arygon:[^\\s\"']+|freegd:[^\\s\"']+)\\b");
+                        Match m = Regex.Match(line, "(?i)\\b(pn532_uart:COM\\d+:\\d+|acr122_pcsc:[^\\s\"']+|pn532_[a-z]+:[^\\s\"']+|openpcsc:[^\\s\"']+|arygon:[^\\s\"']+|freegd:[^\\s\"']+)\\b");
                         if (m.Success)
                         {
                             myReader.Add(m.Value);
                         }
                     }
                 }
-            };
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            });
             // Issue #39 修复：nfc-scan-device 在无设备 / 不兼容读卡器上可能长时间阻塞
             // （Win10 上有用户报告达 100s 以上），无超时等待会让界面永久停在运行中状态。
             // 这里设 60 秒上限，超时则终止子进程；先 WaitForExit(超时) 再无参 WaitForExit()，
@@ -296,14 +300,17 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
-            b.ReportProgress(0,Resources.开始执行扫描卡片);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
+            b.ReportProgress(0, Resources.开始执行扫描卡片);
             running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             b.ReportProgress(100, Resources._运行完毕);
@@ -318,9 +325,15 @@ namespace M1ToolPlus
             psi.UseShellExecute = false;
             psi.RedirectStandardOutput = true;
             psi.RedirectStandardError = true;
-            Process p = Process.Start(psi);
+            Process p;
+            if (!ToolProcess.Start(psi, out p)) { return ""; }
             p.WaitForExit();
-            string rawStr = p.StandardOutput.ReadToEnd();
+            // 显式按 UTF-8 解码：nfc-list 的中文提示为 UTF-8，默认 ANSI 解码会乱码
+            string rawStr;
+            using (StreamReader sr = new StreamReader(p.StandardOutput.BaseStream, System.Text.Encoding.UTF8))
+            {
+                rawStr = sr.ReadToEnd();
+            }
             string uid;
             string pattern = @"UID\s\(NFCID1\)\: ([0-9A-Fa-f]{2}\s\s[0-9A-Fa-f]{2}\s\s[0-9A-Fa-f]{2}\s\s[0-9A-Fa-f]{2})";
             if (Regex.IsMatch(rawStr, pattern))
@@ -418,13 +431,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行读取卡片); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             if (process.ExitCode == 0)
@@ -440,9 +456,11 @@ namespace M1ToolPlus
 
         private void buttonCLI_Click(object sender, EventArgs e)
         {
+            if (!Directory.Exists("nfc-bin")) { logAppend(Resources.加载的文件不存在); return; }
             ProcessStartInfo psi = new ProcessStartInfo("cmd.exe");
             psi.WorkingDirectory = "nfc-bin";
-            Process.Start(psi);
+            Process cli;
+            ToolProcess.Start(psi, out cli);
         }
 
         private string keymfd = "";
@@ -551,13 +569,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行写入M1卡片); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             b.ReportProgress(100, Resources._运行完毕);
@@ -608,13 +629,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行MFOC解密); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             if (process.ExitCode == 0)
@@ -663,13 +687,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行重置UID卡片卡号); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             b.ReportProgress(100, Resources._运行完毕);
@@ -701,13 +728,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行UID卡片全格); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             b.ReportProgress(100, Resources._运行完毕);
@@ -741,13 +771,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行UID卡片读取); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             if (process.ExitCode == 0)
@@ -801,13 +834,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行UID卡片写入); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             b.ReportProgress(100, Resources._运行完毕);
@@ -858,13 +894,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行UID卡片设定卡号); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             b.ReportProgress(100, Resources._运行完毕);
@@ -889,7 +928,14 @@ namespace M1ToolPlus
             psi.WorkingDirectory = "nfc-bin";
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行全加密卡片爆破);
             process.WaitForExit();
             lprocess = false; running = false;
@@ -968,13 +1014,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行CUID_FUID卡片写入); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             if (cuidKeyOver == true)
@@ -1025,13 +1074,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi); 
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行UFUID卡片锁定); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             b.ReportProgress(100, Resources._运行完毕);
@@ -1077,13 +1129,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi);
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行格式化M1卡片); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             b.ReportProgress(100, Resources._运行完毕);
@@ -1279,13 +1334,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi); 
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行检测卡片加密); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             File.Delete("dummy.tmp");
             lprocess = false; running = false;
@@ -1408,12 +1466,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi); 
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行字典模式MFOC解密); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             process.WaitForExit();
             lprocess = false; running = false;
@@ -1489,13 +1551,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi); 
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行HardNested解密强化卡); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             if (process.ExitCode == 0)
@@ -1519,13 +1584,16 @@ namespace M1ToolPlus
             psi.RedirectStandardError = true;
             lprocess = true;
             BackgroundWorker b = (BackgroundWorker)sender;
-            process = Process.Start(psi); 
+            if (!ToolProcess.Start(psi, out process))
+            {
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._运行出错);
+                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                return;
+            }
             b.ReportProgress(0, Resources.开始执行HardNested收集数据); running = true;
-            process.OutputDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            process.ErrorDataReceived += (s, _e) => b.ReportProgress(0, _e.Data);
-            //StreamReader stderr = process.StandardError;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            ToolProcess.PumpOutput(process, b);
             process.WaitForExit();
             lprocess = false; running = false;
             if (process.ExitCode == 0)

@@ -77,12 +77,12 @@
 
 | 步 | 状态 | 提交 |
 |---|---|---|
-| 1 P1 ACR122U | ✅ 已完成（待真机） | 与步 2 同一提交 |
-| 2 P2 扫描超时 | ✅ 已完成（待真机） | 与步 2 同一提交 |
-| 3 P3 mfocCMD | ⬜ 未开始 | — |
-| 4 框架 v4.8 | ⬜ 未开始 | — |
-| 5 硬编码+typo | ⬜ 未开始 | — |
-| 6 StartTool 保护 | ⬜ 未开始 | — |
+| 1 P1 ACR122U | ✅ 已完成（待真机） | `7001d6e` |
+| 2 P2 扫描超时 | ✅ 已完成（待真机） | `7001d6e` |
+| 3 P3 mfocCMD | ✅ 已完成（待真机） | `5054e19` |
+| 4 框架 v4.8 | ⛔ 阻塞（缺目标包），**已用 .NET 4.0 兼容方案绕过** | 本次提交 |
+| 5 硬编码+typo | ✅ 已完成 | `5054e19` |
+| 6 StartTool 保护 | ✅ 已完成（顺带修复终端乱码） | 本次提交 |
 
 ### 步 1 实施要点（已完成）
 
@@ -97,3 +97,30 @@
 - `Form1.cs` `list_dev`：`process.WaitForExit()` → `WaitForExit(60000)`，超时则 `Kill()` + 提示「程序已被强制停止」并正常收尾（复位 `lprocess`/`running`）
 - 采用两步等待（先带超时、再无参）确保异步输出事件处理完毕，避免丢失最后的设备列表行
 - 只给**设备扫描**加超时；hardnested / mfcuk 等长任务未受影响
+
+### 步 3 实施要点（已完成）
+
+- `Form1.cs` `mfocCMD`：`cmd.exe /T:0A /k nfc-bin\mfoc.exe ...` → 直接 `nfc-bin/mfoc.exe`
+- 补上原本缺失的 stdout/stderr 重定向，输出回到界面终端区（与其它 mfoc 路径一致）
+- 退出码判断由 `-1073741510`（cmd.exe 的 `STATUS_CONTROL_C_EXIT`）改为 `0`（mfoc 自身退出码）
+
+### 步 4 结论：阻塞，改用 .NET 4.0 兼容方案
+
+本机只安装了 v3.5 / v4.0 目标包（`C:\Program Files (x86)\Reference Assemblies\...`），运行库虽是 4.8 但缺 **targeting pack**，切 v4.8 会直接 `error MSB3644` 构建失败。安装开发包属于环境变更，不擅自执行。
+
+因此改用不依赖框架版本的方案解决终端乱码：新增 `ToolProcess.PumpOutput()`，用 `StreamReader(stream, Encoding.UTF8)` 显式解码子进程输出（见步 6）。框架升级本身留待阶段④连同 .NET 8 迁移一起处理。
+
+### 步 5 实施要点（已完成）
+
+- `Form1.cs` 两处硬编码 `"M1ToolPlus - 运行中"` → `Resources.MifareOne_Tool_运行中`（三语言已有）
+- `Form1.cs` 硬编码 `"MFD文件|*.mfd;*.dump"` → `Resources.MFD文件_mfd_dump`（en/ru 已有对应翻译）
+- `Form1.en.resx` 英文 typo `Bitsliced Cropto-1` → `Bitsliced Crypto-1`
+
+### 步 6 实施要点（已完成）
+
+- 新增 `M1ToolPlus\ToolProcess.cs`：
+  - `Start()`：启动前 `File.Exists` 检查 + 捕获异常，返回 bool，**nfc-bin 缺失时不再崩溃**
+  - `PumpOutput()`：UTF-8 显式解码 stdout/stderr，双线程池读取避免管道写满死锁
+- 改造范围：`Form1.cs` 18 处 + `FormMFF08.cs` 1 处 `Process.Start` 全部走 `ToolProcess.Start`
+- `GetUID()` 的 `ReadToEnd()` 也改为 UTF-8 `StreamReader`（否则 UID 读取在非 UTF-8 环境下可能误判）
+- `buttonCLI_Click` 增加 `nfc-bin` 目录存在性判断
