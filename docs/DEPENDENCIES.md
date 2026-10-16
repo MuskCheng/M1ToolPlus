@@ -54,9 +54,10 @@ GUI 通过子进程调用这些工具完成全部 NFC 操作。二进制来自�
 
 打包自己的 Release 前逐项确认：
 
-- [ ] 不含 `winhex.exe`
-- [ ] 不含 CH341 等厂商驱动（除非拿到授权）
-- [ ] nfc-bin 若整体重打包：附上游源码链接声明；`mff08.exe` 来源不明，
-      查清/取得源码前不重打包该文件（改为引导下载官方包）
-- [ ] 保留 GPL-3.0 LICENSE + 本依赖文档
-- [ ] `docs\` 与 README 版本号、AssemblyInfo 版本一致
+- [x] 不含 `winhex.exe`（`build.ps1` 只取 `nfc-bin\` 子目录，已验证）
+- [x] 不含 CH341 等厂商驱动（从未打包）
+- [x] nfc-bin 若整体重打包：附上游源码链接声明（本文件随包附带）；
+      `mff08.exe` 来源不明，查清/取得源码前不重打包该文件（`build.ps1` 自动剔除，
+      已验证；GUI 缺失时提示并关闭 MFF08 对话框）
+- [x] 保留 GPL-3.0 LICENSE + 本依赖文档（`build.ps1 -Pack` 自动附带，已验证）
+- [ ] `docs\` 与 README 版本号、AssemblyInfo 版本一致（待版本号决策后确认）

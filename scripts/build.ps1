@@ -143,6 +143,14 @@ if ((Test-Path $nfcBinSrc) -and -not (Test-Path (Join-Path $outDir "nfc-bin"))) 
     Write-Warning "[build] 未找到 nfc-bin（运行需要），请先运行 .\scripts\fetch-deps.ps1"
 }
 
+# 合规：mff08.exe 来源不明（作者自编译、源码未公开，见 docs/DEPENDENCIES.md 第一节/第五节），
+# 按既定策略我们的构建产物一律剔除，用户需该功能时请使用原作者 Release 包。
+$outMff08 = Join-Path $outDir "nfc-bin\mff08.exe"
+if (Test-Path $outMff08) {
+    Remove-Item $outMff08 -Force
+    Write-Host "[build] 合规剔除 nfc-bin\mff08.exe（来源不明，见 docs/DEPENDENCIES.md）" -ForegroundColor Yellow
+}
+
 # 5) 汇总
 $exe = Join-Path $outDir "M1ToolPlus.exe"
 if (Test-Path $exe) {
@@ -157,7 +165,11 @@ if ($Pack) {
     if (Test-Path $pkgDir) { Remove-Item $pkgDir -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $pkgDir | Out-Null
     Copy-Item (Join-Path $outDir "*") $pkgDir -Recurse -Force
-    # winhex 等专有软件不打包（合规），见 docs/DEPENDENCIES.md
+    # winhex 等专有软件不打包（合规）：nfc-bin 取自官方包，只带 nfc-bin 子目录，不含根目录的 winhex.exe
+    # 合规：随包附带 GPL-3.0 许可证与依赖来源说明（docs/DEPENDENCIES.md 第五节要求）
+    Copy-Item (Join-Path $repoRoot "LICENSE") $pkgDir -Force
+    Copy-Item (Join-Path $repoRoot "README.md") $pkgDir -Force
+    Copy-Item (Join-Path $repoRoot "docs\DEPENDENCIES.md") (Join-Path $pkgDir "DEPENDENCIES.md") -Force
     $zip = Join-Path $repoRoot "artifacts\M1ToolPlus-local-build.zip"
     if (Test-Path $zip) { Remove-Item $zip -Force }
     Compress-Archive -Path (Join-Path $pkgDir "*") -DestinationPath $zip

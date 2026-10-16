@@ -127,6 +127,8 @@ namespace M1ToolPlus
             if (!File.Exists("nfc-bin/mff08.exe"))
             {
                 MessageBox.Show(Resources.无法找到MFF08程序文件_操作终止, Resources.错误, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.DialogResult = DialogResult.Cancel;
+                this.Close();
             }
         }
     }

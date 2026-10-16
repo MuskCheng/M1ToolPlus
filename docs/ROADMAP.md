@@ -49,10 +49,12 @@
 |---|---|
 | 主程序为 `M1ToolPlus.exe` + `M1ToolPlus.exe.config` | ✅ |
 | en/ru/zh 三套卫星程序集齐全 | ✅ |
-| winhex.exe 未打包（专有软件） | ✅ |
-| **mff08.exe 仍在包内** | ❌ 与既定策略冲突（来源不明），**待决策**：剔除 + GUI 加"文件缺失"友好提示，或保留并在发布说明中标注来源不明 |
+| winhex.exe 未打包（专有软件） | ✅ `build.ps1` 只取 `nfc-bin\` 子目录 |
+| **`mff08.exe` 来源不明** | ✅ 已按策略剔除：`build.ps1` 自动删除输出目录中的 `nfc-bin\mff08.exe`；GUI 缺失时弹提示并自动关闭 MFF08 对话框（`FormMFF08_Load`） |
+| 随包附带 GPL-3.0 LICENSE + README + DEPENDENCIES.md | ✅ `build.ps1 -Pack` 自动附带（原缺失，已补） |
 | nfc-bin 内 `*.bak`（libnfc.dll.bak、libnfc(532).dll 等） | 必须保留：Form1 的设备切换（ACR122U/PN532  dll 三交换）依赖这些备份 |
 | nfc-bin\data\logs_proxmark3\trace*.txt | 官方包自带的日志残留，无害，可选清理 |
+| zip 内路径分隔符 | ⚠️ PowerShell 5.1 `Compress-Archive` 写入的是反斜杠路径，Windows 解压正常，Linux/macOS 的 `unzip` 可能出错（本项目仅支持 Windows，暂不处理） |
 
 ### B. 真机回归（本开发环境无硬件，必须待真机）
 
