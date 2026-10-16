@@ -1501,5 +1501,31 @@ namespace M1ToolPlus.Properties {
                 return ResourceManager.GetString("错误", resourceCulture);
             }
         }
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на 已切换为 ACR122U 兼容（慢速）模式.
+        /// </summary>
+        public static string ACR122U兼容模式_已切换 {
+            get {
+                return ResourceManager.GetString("ACR122U兼容模式_已切换", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на 已切回默认驱动.
+        /// </summary>
+        public static string ACR122U兼容模式_已切回 {
+            get {
+                return ResourceManager.GetString("ACR122U兼容模式_已切回", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на 当前默认驱动已包含 ACR122U(PCSC) 支持；连接异常时可尝试切换为兼容（慢速）模式.
+        /// </summary>
+        public static string 默认驱动已含ACR122U支持 {
+            get {
+                return ResourceManager.GetString("默认驱动已含ACR122U支持", resourceCulture);
+            }
+        }
     }
 }

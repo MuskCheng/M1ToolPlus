@@ -198,6 +198,20 @@ namespace M1ToolPlus
             //StreamReader stderr = process.StandardError;
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
+            // Issue #39 修复：nfc-scan-device 在无设备 / 不兼容读卡器上可能长时间阻塞
+            // （Win10 上有用户报告达 100s 以上），无超时等待会让界面永久停在运行中状态。
+            // 这里设 60 秒上限，超时则终止子进程；先 WaitForExit(超时) 再无参 WaitForExit()，
+            // 确保异步输出事件已全部处理完（否则可能丢失最后几行设备信息）。
+            if (!process.WaitForExit(60000))
+            {
+                try { process.Kill(); } catch (Exception) { }
+                process.WaitForExit(3000);
+                lprocess = false;
+                running = false;
+                b.ReportProgress(100, Resources._程序已被强制停止);
+                b.ReportProgress(103, myReader);
+                return;
+            }
             process.WaitForExit();
             lprocess = false;
             running = false;
@@ -1155,21 +1169,61 @@ namespace M1ToolPlus
             if (lprocess) { MessageBox.Show(Resources.有任务运行中_不可执行, Resources.设备忙, MessageBoxButtons.OK, MessageBoxIcon.Warning); return; } Form1.ActiveForm.Text = Resources.MifareOne_Tool_运行中;
             if (MessageBox.Show(Resources.同时打开ACR122U支持可能会引起操作速度下降_请确认是否, Resources.提示信息, MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) == DialogResult.Cancel)
             { Text = "M1ToolPlus"; return; }
+            // Issue #9/#31 修复：原代码检查 libnfc(PN532Only).dll / libnfc(ACR122U).dll，
+            // 这两个文件名在发布包中并不存在（包内实际是 libnfc(532).dll / libnfc(ACR122Uslow).dll），
+            // 导致该开关永远不生效。这里改为按包内实际文件名做可逆切换。
+            const string curDll = "nfc-bin/libnfc.dll";
+            const string compatDll = "nfc-bin/libnfc(ACR122Uslow).dll";
+            const string pnOnlyDll = "nfc-bin/libnfc(532).dll";
+            const string backupDll = "nfc-bin/libnfc.dll.acr122u.bak";
             lprocess = true;
-            if (File.Exists("nfc-bin/libnfc(PN532Only).dll"))
+            try
             {
-                logAppend(Resources.ACR122U支持已经打开过);
+                if (!File.Exists(curDll))
+                {
+                    logAppend(Resources._缓存文件异常);
+                }
+                else if (SameFileContent(curDll, compatDll))
+                {
+                    // 当前已是兼容（慢速）模式 → 切回默认驱动
+                    if (File.Exists(backupDll)) { File.Copy(backupDll, curDll, true); File.Delete(backupDll); }
+                    else if (File.Exists(pnOnlyDll)) { File.Copy(pnOnlyDll, curDll, true); }
+                    else { logAppend(Resources._缓存文件异常); return; }
+                    logAppend(Resources.ACR122U兼容模式_已切回);
+                }
+                else
+                {
+                    // 进入兼容（慢速）模式：先备份当前驱动，保证可切回
+                    if (!File.Exists(compatDll)) { logAppend(Resources._缓存文件异常); return; }
+                    File.Copy(curDll, backupDll, true);
+                    File.Copy(compatDll, curDll, true);
+                    logAppend(Resources.ACR122U兼容模式_已切换);
+                    logAppend(Resources.默认驱动已含ACR122U支持);
+                }
             }
-            if (File.Exists("nfc-bin/libnfc(ACR122U).dll"))
-            {
-                logAppend(Resources.正在打开ACR122U支持);
-                File.Move("nfc-bin/libnfc.dll", "nfc-bin/libnfc(PN532Only).dll");
-                File.Move("nfc-bin/libnfc(ACR122U).dll", "nfc-bin/libnfc.dll");
-                logAppend(Resources.已打开);
-            }
+            catch (Exception ex) { logAppend(Resources._运行出错 + " " + ex.Message); }
             lprocess = false; running = false;
             Text = Resources.MifareOne_Tool_运行完毕;
             logAppend(Resources._运行完毕);
+        }
+
+        // 比较两个文件内容是否一致（先比长度，再比字节），用于判断当前生效的 libnfc 驱动变体
+        private bool SameFileContent(string pathA, string pathB)
+        {
+            try
+            {
+                FileInfo fa = new FileInfo(pathA);
+                FileInfo fb = new FileInfo(pathB);
+                if (!fa.Exists || !fb.Exists || fa.Length != fb.Length) { return false; }
+                byte[] a = File.ReadAllBytes(pathA);
+                byte[] b = File.ReadAllBytes(pathB);
+                for (int i = 0; i < a.Length; i++)
+                {
+                    if (a[i] != b[i]) { return false; }
+                }
+                return true;
+            }
+            catch (Exception) { return false; }
         }
 
         private void timer1_Tick(object sender, EventArgs e)

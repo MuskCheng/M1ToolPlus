@@ -562,4 +562,14 @@
   <data name="错误" xml:space="preserve">
     <value>错误</value>
   </data>
+
+  <data name="ACR122U兼容模式_已切换" xml:space="preserve">
+    <value>已切换为 ACR122U 兼容（慢速）模式</value>
+  </data>
+  <data name="ACR122U兼容模式_已切回" xml:space="preserve">
+    <value>已切回默认驱动</value>
+  </data>
+  <data name="默认驱动已含ACR122U支持" xml:space="preserve">
+    <value>当前默认驱动已包含 ACR122U(PCSC) 支持；连接异常时可尝试切换为兼容（慢速）模式</value>
+  </data>
 </root>

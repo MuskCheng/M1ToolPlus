@@ -566,4 +566,14 @@ Unable to recover after locking! Unable to change 0 blocks again! Please confirm
   <data name="已恢复上次使用的设备" xml:space="preserve">
     <value>Restored last used device: </value>
   </data>
+
+  <data name="ACR122U兼容模式_已切换" xml:space="preserve">
+    <value>Switched to ACR122U compatibility (slow) mode</value>
+  </data>
+  <data name="ACR122U兼容模式_已切回" xml:space="preserve">
+    <value>Switched back to the default driver</value>
+  </data>
+  <data name="默认驱动已含ACR122U支持" xml:space="preserve">
+    <value>The default driver already includes ACR122U (PCSC) support; try compatibility (slow) mode if the connection is unstable</value>
+  </data>
 </root>
