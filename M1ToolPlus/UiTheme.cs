@@ -672,8 +672,19 @@ namespace M1ToolPlus
         // ---------------- 选项卡 ----------------
         private static void StyleTabs(TabControl t)
         {
+            // 标签按钮本体由 OwnerDraw 上色；但**标签条本身的余白**（左右两侧、
+            // 按钮上方/下方的空白）由系统按原生（浅色）主题绘制：
+            // · 设 BackColor —— 无效，余白不走控件背景色；
+            // · 挂 Paint 事件 —— 收不到这块的原生绘制区；
+            // · 设 Appearance=FlatButtons —— 余白仍是浅色（三种都实测失败）。
+            // 唯一可行的是用主题色小面板（子控件）盖住余白，
+            // 并在 TabControl 尺寸变化时跟随重排。深浅两主题通用。
             t.DrawMode = TabDrawMode.OwnerDrawFixed;
             t.Padding = new Point(18, 6);
+            t.Appearance = TabAppearance.FlatButtons;
+            StripNativeTabTheme(t);
+            LayoutBandStrips(t);
+            t.Resize += delegate(object sender, EventArgs e) { LayoutBandStrips((TabControl)sender); };
             t.DrawItem += delegate(object sender, DrawItemEventArgs e)
             {
                 TabControl tab = (TabControl)sender;
@@ -693,6 +704,211 @@ namespace M1ToolPlus
             };
         }
 
+        /// <summary>
+        /// 去掉 TabControl 的原生主题（SetWindowTheme 空主题串）。
+        /// 原生主题下标签头余白/按钮间隙/选中框描边都是从系统浅色主题绘制，
+        /// WinForms 无法覆盖；去掉主题后这些区域改按 WinForms 自绘路径渲染，
+        /// 浅灰白才有机会统一成主题深色。须等句柄创建后调用。
+        /// </summary>
+        private static void StripNativeTabTheme(TabControl t)
+        {
+            if (t == null || t.IsDisposed) { return; }
+            try
+            {
+                if (!t.IsHandleCreated)
+                {
+                    t.HandleCreated += delegate(object s, EventArgs e) { StripNativeTabTheme((TabControl)s); };
+                    return;
+                }
+                SetWindowTheme(t.Handle, "", "");
+            }
+            catch (Exception) { }
+        }
+
+        [DllImport("uxtheme.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
+        private static extern int SetWindowTheme(IntPtr hWnd, string subAppName, string subIdList);
+
+        /// <summary>
+        /// 把标签头左右余白用面板盖住（面板挂在 TabControl 的父容器里并压在它上层，
+        /// 因为 TabControl 自身的原生绘制会盖过它的子控件）。
+        /// 套主题发生在 StyleChildren 的集合遍历里，此刻直接往 t.Parent.Controls
+        /// 加控件会触发「集合已修改」异常——因此统一 BeginInvoke 延迟到消息循环。
+        /// </summary>
+        private static void LayoutBandStrips(TabControl t)
+        {
+            try
+            {
+                if (t == null || t.IsDisposed || t.TabPages.Count == 0 || t.Parent == null) { return; }
+                if (!t.IsHandleCreated)
+                {
+                    t.HandleCreated += delegate(object s, EventArgs e) { LayoutBandStrips((TabControl)s); };
+                    return;
+                }
+                t.BeginInvoke(new MethodInvoker(delegate { ApplyBandStrips(t); }));
+            }
+            catch (Exception) { }
+        }
+
+        private static void ApplyBandStrips(TabControl t)
+        {
+            try
+            {
+                if (t.IsDisposed || t.Disposing || t.Parent == null) { return; }
+                int bandH = Math.Max(1, t.DisplayRectangle.Y);
+                Control host = t.Parent;
+                UiTheme.TabBandPanel p = null;
+                foreach (Control c in host.Controls)
+                {
+                    if (c.Tag is TabControl && c is UiTheme.TabBandPanel) { p = (UiTheme.TabBandPanel)c; break; }
+                }
+                if (p == null)
+                {
+                    p = new UiTheme.TabBandPanel { Tab = t, Tag = t, TabStop = false };
+                    p.MouseClick += delegate(object s, MouseEventArgs e) { HitSelect(t, e.Location); };
+                    p.MouseMove += delegate(object s, MouseEventArgs e) { HoverBand(p, e.Location); };
+                    p.MouseLeave += delegate(object s, EventArgs e) { HoverBand(p, new Point(-999, -999)); };
+                    // 切换标签时必须重绘自绘面板：原生重绘发生在面板下面，
+                    // 覆盖其上的本面板不同步的话，选中高亮会滞留在旧页签上。
+                    t.SelectedIndexChanged += delegate(object s, EventArgs e)
+                    {
+                        try
+                        {
+                            TabControl tc = (TabControl)s;
+                            foreach (Control pp in tc.Parent.Controls)
+                            {
+                                if (pp is UiTheme.TabBandPanel) { pp.Invalidate(); }
+                            }
+                        }
+                        catch (Exception) { }
+                    };
+                    host.Controls.Add(p);
+                    host.Controls.SetChildIndex(p, 0);   // 压到最上层，盖住原生标签头
+                }
+                p.ThemeColors(new UiTheme.TabBandColors
+                {
+                    Band = _dark ? DSurface : LBack,
+                    BtnBg = _dark ? DSurface : LSurface,
+                    BtnFg = _dark ? DTextDim : LTextDim,
+                    SelBg = _dark ? _accent : Color.FromArgb(0xE9, 0xF2, 0xFD),
+                    SelFg = _dark ? DText : Color.FromArgb(0x0B, 0x57, 0xA4),
+                    SelLine = _dark ? _accent : Color.FromArgb(0x0B, 0x57, 0xA4),
+                    HoverBg = _dark ? DCardHover : LCardHover,
+                    Sep = _dark ? DBorder : LBorder
+                });
+                p.Bounds = new Rectangle(t.Left, t.Top, t.Width, bandH);
+                p.Invalidate();
+            }
+            catch (Exception) { }
+        }
+
+        private static void HitSelect(TabControl t, Point pt)
+        {
+            try
+            {
+                for (int i = 0; i < t.TabCount; i++)
+                {
+                    if (t.GetTabRect(i).Contains(pt)) { t.SelectedIndex = i; return; }
+                }
+            }
+            catch (Exception) { }
+        }
+
+        private static void HoverBand(UiTheme.TabBandPanel p, Point pt)
+        {
+            try
+            {
+                int idx = -1;
+                TabControl t = p.Tab;
+                if (t != null && !t.IsDisposed)
+                {
+                    for (int i = 0; i < t.TabCount; i++)
+                    {
+                        if (t.GetTabRect(i).Contains(pt)) { idx = i; break; }
+                    }
+                }
+                if (p.HoverIndex != idx)
+                {
+                    p.HoverIndex = idx;
+                    // 手型光标只在按钮上出现，避免整条横带看起来都“可点”——那是误导。
+                    p.Cursor = idx >= 0 ? Cursors.Hand : Cursors.Default;
+                    p.Invalidate();
+                }
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 整条标签头的自绘面板：盖住原生浅色标签条（余白/按钮间隙/上下沿线），并按
+        /// GetTabRect 复绘标签按钮。为什么不继续用零散补丁条：原生绘制在按钮四周
+        /// （间隙、选中框描边、按钮上下沿）都会冒出浅色，逐块补不如整体重绘可控。
+        /// 坐标基准 = TabControl 客户区（面板恰好覆盖其标签头全高），所以
+        /// GetTabRect 的坐标可直接绘制。点击/悬停命中沿用同一套矩形。
+        /// </summary>
+        internal sealed class TabBandPanel : Panel
+        {
+            internal TabControl Tab;
+            internal TabBandColors C;
+            internal int HoverIndex = -1;
+
+            public TabBandPanel()
+            {
+                SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                         ControlStyles.OptimizedDoubleBuffer, true);
+                TabStop = false;
+                BackColor = Color.Transparent;  // 由 ThemeColors 随即覆盖
+            }
+
+            internal void ThemeColors(TabBandColors c) { C = c; }
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                TabControl t = Tab;
+                if (t == null || t.IsDisposed || C == null) { return; }
+                try
+                {
+                    using (SolidBrush band = new SolidBrush(C.Band)) { e.Graphics.FillRectangle(band, ClientRectangle); }
+                    for (int i = 0; i < t.TabPages.Count; i++)
+                    {
+                        if (i >= t.TabPages.Count) { break; }
+                        Rectangle r = t.GetTabRect(i);
+                        bool sel = (i == t.SelectedIndex);
+                        bool hover = (i == HoverIndex);
+                        Color bg = sel ? C.SelBg : (hover && !sel ? C.HoverBg : C.BtnBg);
+                        Color fg = sel ? C.SelFg : C.BtnFg;
+
+                        Rectangle fill = new Rectangle(r.Left, r.Top, r.Width, r.Height - 1);
+                        using (SolidBrush b1 = new SolidBrush(bg)) { e.Graphics.FillRectangle(b1, fill); }
+                        using (Pen pen = new Pen(sel ? C.SelLine : C.Band))
+                        {
+                            e.Graphics.DrawLine(pen, r.Left, r.Bottom - 1, r.Right - 1, r.Bottom - 1);
+                        }
+                        // 未选中按钮与底带同色，补一条右侧竖分隔线避免「一团」糊在一起
+                        if (!sel && i < t.TabPages.Count - 1)
+                        {
+                            using (Pen pen2 = new Pen(C.Sep))
+                            {
+                                e.Graphics.DrawLine(pen2, r.Right - 1, r.Top + 1, r.Right - 1, r.Bottom - 2);
+                            }
+                        }
+                        TextRenderer.DrawText(e.Graphics, t.TabPages[i].Text, t.Font, fill, fg,
+                            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                    }
+                }
+                catch (Exception) { }
+            }
+        }
+
+        internal sealed class TabBandColors
+        {
+            internal Color Band;
+            internal Color BtnBg;
+            internal Color BtnFg;
+            internal Color SelBg;
+            internal Color SelFg;
+            internal Color SelLine;
+            internal Color HoverBg;
+            internal Color Sep;
+        }
         // ---------------- 状态栏 / 工具栏 ----------------
         private static void StyleStatusStrip(StatusStrip ss)
         {
