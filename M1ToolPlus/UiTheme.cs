@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -49,6 +50,7 @@ namespace M1ToolPlus
         private static Color _accent = DefaultAccent;
         private static Font _font;
         private static Font _terminalFont;
+        private static Hashtable _fontCache;
         private static Form _host;
 
         /// <summary>是否处于深色模式。</summary>
@@ -306,6 +308,13 @@ namespace M1ToolPlus
 
         private static void StyleControl(Control c)
         {
+            // 统一字体（必须在最前面）：
+            // Form1.resx 里有 81 个控件带**显式字体**，且清一色是 "Microsoft Sans Serif"——
+            // 该字体只有西文字形，中文全靠 FontLink 回退到宋体，小字号下笔画粘连、
+            // 正是「难以辨识」的另一半根因。这些控件不继承窗体字体，
+            // 所以只设 form.Font 覆盖不到，必须逐个控件显式赋值。
+            ApplyFont(c);
+
             if (c is Button) StyleButton((Button)c);
             else if (c is GroupBox) StyleGroupBox((GroupBox)c);
             else if (c is Label) StyleLabel((Label)c);
@@ -323,8 +332,71 @@ namespace M1ToolPlus
             else if (c is Panel || c is FlowLayoutPanel || c is TableLayoutPanel)
             {
                 if (c is GroupBox) { /* handled */ }
-                else if (c.BackColor == SystemColors.Control || c.BackColor == Color.Transparent) { c.BackColor = Color.Transparent; }
+                else
+                {
+                    // 运行时实测：这些容器在 resx 里带**显式的 Color.White（FFFFFFFF）**，
+                    // 既不是 SystemColors.Control 也不是 Transparent——旧的 `|| Transparent`
+                    // 守卫因此从不命中，深色主题下就留下一块块白底（设置页尤其明显）。
+                    //
+                    // 判据改成「按亮度归类」：浅底（白/浅灰）在深色主题下必须翻成深色；
+                    // 深色主题下的深底则保持原样，浅色主题反向处理。
+                    // 这样无论 resx 写的是 White 还是 Transparent，都能被统一到主题配色。
+                    double bgLuma = Luma(c.BackColor);
+                    bool lightBg = bgLuma > 150;
+                    if (_dark && lightBg) { c.BackColor = DBack; }
+                    else if (!_dark && !lightBg && !c.BackColor.IsEmpty) { c.BackColor = LBack; }
+                }
             }
+        }
+
+        /// <summary>
+        /// 给控件套用界面字体，**保留原有的字形样式**（Bold/Italic/Strikeout）。
+        ///
+        /// 为什么要保留：resx 里有些控件（如分组框标题、说明性标签）刻意设了 Bold，
+        /// 一刀切成 Regular 会丢掉标题与正文的层次。
+        ///
+        /// 字体对象按「样式」缓存共享：WinForms 不会因为多个控件共用同一个 Font
+        /// 实例而去销毁它，这里也不 Dispose，随进程结束由 GC 回收。
+        /// </summary>
+        private static void ApplyFont(Control c)
+        {
+            if (c == null) { return; }
+            try
+            {
+                // 终端输出区用等宽字体，其余控件用界面字体
+                bool mono = (c is RichTextBox);
+                Font want = mono ? TerminalFont : UiFont;
+
+                Font cur = c.Font;
+                if (cur != null && cur.FontFamily.Name == want.FontFamily.Name
+                    && Math.Abs(cur.Size - want.Size) < 0.01F && cur.Style == want.Style)
+                {
+                    return;   // 已经是对的，别重复赋值（赋值会触发一次重排）
+                }
+
+                FontStyle style = cur != null ? cur.Style : FontStyle.Regular;
+                if (mono) { style = FontStyle.Regular; }   // 等宽字体不做粗体，十六进制更好认
+
+                c.Font = GetFont(want.FontFamily, want.Size, style);
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>按「字体 + 字号 + 样式」缓存 Font 实例，避免给每个控件都 new 一个。</summary>
+        private static Font GetFont(FontFamily family, float size, FontStyle style)
+        {
+            string key = family.Name + "|" + size.ToString("R") + "|" + style.ToString();
+            if (_fontCache == null) { _fontCache = new Hashtable(); }
+
+            Font cached = _fontCache[key] as Font;
+            if (cached != null) { return cached; }
+
+            Font created;
+            try { created = new Font(family, size, style, GraphicsUnit.Point); }
+            catch (Exception) { created = UiFont; }
+
+            _fontCache[key] = created;
+            return created;
         }
 
         // ---------------- 按钮 ----------------
@@ -352,18 +424,21 @@ namespace M1ToolPlus
             b.ForeColor = fg;
             b.Cursor = Cursors.Hand;
 
-            // 绝对定位布局下按钮宽度写死，中文文案常被裁掉；仅在流式容器内按文本加宽。
-            if (b.Parent is FlowLayoutPanel) { FitButtonWidth(b); }
-            if (b.Parent is FlowLayoutPanel) { FitHeight(b); }
+            // 字号变大后按钮高度写死的 25px 会挤字，按字体实测高度留白
+            if (b.Parent is FlowLayoutPanel) { FitButtonWidth(b); FitHeight(b); }
 
             b.MouseEnter += delegate { b.BackColor = hover; };
             b.MouseLeave += delegate { b.BackColor = bg; };
         }
 
         /// <summary>
-        /// 按钮文字溢出修复：按实际文本测量宽度（含内边距与边框），
-        /// 不足则加宽。仅在流式容器内进行——FlowLayoutPanel 会自动重排，
-        /// 若在 TableLayoutPanel 固定列里加宽反而会挤压其它控件。
+        /// 按钮文字溢出修复：按实际文本测量宽度（含内边距与边框），不足则加宽。
+        ///
+        /// 为什么不再动 AutoSize：resx 里绝大多数按钮是 AutoSize=True，
+        /// 直接置 AutoSize=False 实测会让流式容器内的整片按钮消失（AutoSize=False +
+        /// Dock=Fill 在 FlowLayoutPanel 里的交互会把尺寸算成 0）。
+        /// 事实上换了雅黑 9pt 之后 AutoSize 会按新字体自动重算宽度，裁切已消失，
+        /// 这里只是给流式容器内的按钮做一次兜底。
         /// </summary>
         private static void FitButtonWidth(Button b)
         {
@@ -403,7 +478,9 @@ namespace M1ToolPlus
             catch (Exception) { return 0; }
         }
 
-        /// <summary>深色下把按钮高度留出一点余量，避免文字贴边显得拥挤。</summary>
+        /// <summary>
+        /// 深色下把按钮高度留出一点余量，避免文字贴边显得拥挤。
+        /// </summary>
         private static void FitHeight(Button b)
         {
             try
@@ -432,8 +509,29 @@ namespace M1ToolPlus
         private static void StyleGroupBox(GroupBox g)
         {
             g.ForeColor = _dark ? DText : Color.FromArgb(0x37, 0x47, 0x4F);
-            g.BackColor = Color.Transparent;
+            // GroupBox 内部同样要实色底：若用 Transparent，里面的复选框/单选框等
+            // 浅色文字控件会回退到默认白底，深色主题下就会「白底 + 白字」看不见。
+            g.BackColor = _dark ? DBack : LBack;
             g.Padding = new Padding(6, 4, 6, 6);
+
+            // 分组框只是视觉容器，不需要参与 Tab 键焦点序列。
+            // 默认 TabStop=True 时启动时它会拿到焦点，WinForms 随即画一个虚线焦点框，
+            // 在深色主题下是一条刺眼的亮色虚线，还正好压在标题文字上（看着像字被划掉）。
+            // 分组框内容里的按钮/输入框照样能被 Tab 到，所以关掉它的 TabStop 没有副作用。
+            if (g.TabStop) { g.TabStop = false; }
+
+            // AutoSize 改成「只涨不缩」：resx 里分组框是 AutoSize=True + GrowAndShrink，
+            // 我们按标题实测宽度手工放宽的 Width 会被它下一轮布局拉回去。
+            // GrowAndShrink -> GrowOnly 后，手工设的更大尺寸能被保留，
+            // 而高度的自动撑开（依赖内部流式容器算高度）也照常工作。
+            //
+            // 注意：绝不能直接置 AutoSize=False——实测那样会让分组框整体塌成一条，
+            // 内部 FlowLayoutPanel 随之换行，整组按钮消失。
+            if (g.AutoSize && g.AutoSizeMode == AutoSizeMode.GrowAndShrink)
+            {
+                g.AutoSizeMode = AutoSizeMode.GrowOnly;
+            }
+
             FitGroupWidth(g);
         }
         // 注：GroupBox 的标题由系统绘制（顶边留缺口），一旦自绘就会与系统标题重影。
@@ -442,9 +540,11 @@ namespace M1ToolPlus
 
         /// <summary>
         /// 分组框标题溢出修复：标题过长时 WinForms 会折成两行（显示成竖排）。
-        /// · 流式容器：直接放宽自身，容器会自动重排；
-        /// · 表格容器：先放宽所在列，再让整张表（含各级父容器）跟着长宽，
-        ///   否则分组框被列宽卡住，加宽自身会溢出到相邻列上。
+        ///
+        /// **绝对不能关掉 GroupBox.AutoSize**：resx 里所有 GroupBox 都是 AutoSize=True，
+        /// 其高度正是靠 AutoSize 撑出来的；关掉后分组框会塌成一条，
+        /// 里面的流式容器随之换行，按钮整片消失（实测踩过）。
+        /// 所以这里只保留「父容器是流式面板时按实测宽度放宽」这一条安全路径。
         /// </summary>
         private static void FitGroupWidth(GroupBox g)
         {
@@ -456,6 +556,12 @@ namespace M1ToolPlus
 
                 if (g.Parent is FlowLayoutPanel)
                 {
+                    // 不能只设 Width：AutoSize 引擎会按「内容首选宽度」把手设值拉回去。
+                    // 首选宽度以内部控件为准、**不含标题**，于是「窄内容 + 长标题」的
+                    // 分组框（如 C/FUID卡操作）标题总被边框裁掉（实测线条直接压住文字）。
+                    // MinimumSize 是 AutoSize 布局尊重的下限约束，不会被拉回，
+                    // 也和引擎不存在抢占回环——这里用 Height=0 表示高度不设下限。
+                    if (need > g.MinimumSize.Width) { g.MinimumSize = new Size(need, 0); }
                     g.Width = need;
                     return;
                 }
@@ -617,10 +723,30 @@ namespace M1ToolPlus
             tb.ForeColor = _dark ? DText : LText;
         }
 
+        // 输入框底色刻意比面板更深一档，让下拉框/输入框在深色下有「凹陷」层次感；
+        // 若用与面板相同的 DCard，边框几乎不可见，用户会看不清哪里能输入。
+        private static readonly Color DInput = Color.FromArgb(0x1C, 0x1C, 0x1C);
+
         private static void StyleInput(ComboBox cb)
         {
-            cb.BackColor = _dark ? DCard : Color.White;
+            cb.BackColor = _dark ? DInput : Color.White;
             cb.ForeColor = _dark ? DText : LText;
+            // ComboBox 没有 FlatAppearance 边框颜色可设。FlatStyle.Flat 的默认灰边框
+            // 在深色下几乎不可见，用户看不出哪里能输入。挂一次 Paint 事件补画深色边框。
+            cb.FlatStyle = FlatStyle.Flat;
+            if (_dark)
+            {
+                Color border = DBorder;
+                cb.Paint += delegate(object sender, PaintEventArgs e)
+                {
+                    ComboBox box = sender as ComboBox;
+                    if (box == null) { return; }
+                    using (Pen pen = new Pen(border))
+                    {
+                        e.Graphics.DrawRectangle(pen, 0, 0, box.Width - 1, box.Height - 1);
+                    }
+                };
+            }
         }
 
         private static void StyleInput(NumericUpDown nud)
@@ -633,14 +759,25 @@ namespace M1ToolPlus
         /// 复选框 / 单选框适配。
         ///
         /// 坑：设 BackColor=Transparent 时，WinForms 会取**父容器**的背景色绘制。
-        /// 本项目里这些控件的父容器（TableLayoutPanel / FlowLayoutPanel）仍是浅色，
-        /// 于是深色主题下会出现「浅色文字 + 白底」——几乎看不清。
+        /// 本项目里这些控件的父容器（TableLayoutPanel / FlowLayoutPanel）在 resx 里
+        /// 带**显式的 Color.White**，于是深色主题下就是「浅色文字 + 白底」——看不清。
         /// 解决办法：显式给一个与主题一致的实色背景，不依赖父容器继承。
         /// </summary>
         private static void StyleCheckBox(CheckBox cb)
         {
             cb.ForeColor = _dark ? DText : LText;
-            cb.BackColor = _dark ? DSurface : LSurface;
+
+            // 复选框/单选框只是设置项，不需要参与 Tab 键焦点序列。
+            // 否则启动时它们会拿到焦点，WinForms 在深色主题下画一个刺眼的
+            // 虚线/亮色焦点框围住整块文字（与分组框同款问题）。
+            if (cb.TabStop) { cb.TabStop = false; }
+
+            // 底色按亮度归类，与 StyleControl 的容器分支同一套判据。
+            // 注意不能无条件写死颜色：RadioButton 也走这里，它们大多直接放在
+            // TabPage 上（底色已经正确），一刀切会破坏已正确的控件。
+            bool lightBg = Luma(cb.BackColor) > 150;
+            if (_dark && lightBg) { cb.BackColor = DBack; }
+            else if (!_dark && !lightBg && !cb.BackColor.IsEmpty) { cb.BackColor = LBack; }
         }
 
         /// <summary>

@@ -12,6 +12,8 @@ public class Win {
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
 }
 "@
+# 输出目录必须存在，否则 GDI+ Save 抛"A generic error occurred in GDI+."
+if (-not (Test-Path $OutDir)) { New-Item -ItemType Directory -Path $OutDir -Force | Out-Null }
 for ($i = 0; $i -lt $TabCount; $i++) {
     $p = Start-Process -FilePath (Resolve-Path $ExePath) -ArgumentList "--tab", "$i" -PassThru
     Start-Sleep -Seconds 5
