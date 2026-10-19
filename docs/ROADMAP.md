@@ -1,7 +1,7 @@
 # 后续开发路线图（交接备忘）
 
 > 面向接续开发的交接文档：记录项目现状、已完成工作、待办事项与开发环境要点。
-> 最后更新：2026-10-16（项目更名为 M1ToolPlus 时）。
+> 最后更新：2026-10-19（深色主题/字体/标签头专项修复后）。
 > 注意：本仓库原位于 `D:\repositories\MifareOneTool`，已更名为 **`D:\repositories\M1ToolPlus`**（纯文件夹改名，git 历史与远程配置不受影响）。
 > **进行中的工作**：问题驱动审计（对照原作者 16 个 open Issue）与六步修复计划见 [docs/FIXPLAN.md](FIXPLAN.md)。
 
@@ -160,3 +160,56 @@
 - `dotnet` 命令存在但**未安装任何 SDK**（报 `No .NET SDKs were found`）→ 阶段④开始前需安装 8.x。
 - `.gitignore` 与 `.github` 模板里的中文注释本身是**正常 UTF-8**；用 PowerShell 5.1 的 `Get-Content`（默认按 GBK）读取会显示乱码——排查时加 `-Encoding UTF8`，不要误判为文件损坏。
 - 单实例互斥锁用 `Application.ProductName`（现为 M1ToolPlus），与改名一致，无需处理。
+
+## 八、深色主题 / 字体 / 标签头专项修复教训（2026-10-19，提交 d8079be…85d3054）
+
+### 字体
+
+- **resx 里 81 个控件带显式 `Microsoft Sans Serif`**：窗体字体的继承在这些控件上失效，只改 `Form.Font` 没用 → `UiTheme.ApplyFont` 逐控件套微软雅黑 9pt。
+- 字号定 9pt 不是 9.5pt：工具页按钮列宽固定 84~97px，再大「从UID卡读回」「写(UF)UID卡」等长文案会溢出（已实测）。
+- 终端区用 Consolas 等宽（日志对齐需要），终端颜色/字号设置项照常生效。
+
+### 布局 / AutoSize
+
+- 分组框宽度自适应：手设 `Width` 会被 AutoSize 引擎按**内容首选宽度**拉回，而首选宽度**不含标题**——「C/FUID卡操作」这类标题会被裁。
+  方案：`MinimumSize` 下限约束与 AutoSize 引擎共存（`FitGroupWidth`，对表格用 TLP 绝对列宽增量、对流式父容器用 MinimumSize）。
+- **红线：不要把 GroupBox/Button 的 AutoSize 关掉**——分组框塌缩、按钮消失。
+- `TextRenderer.MeasureText` 用 4 参重载 `(text, font, new Size(10000,10000), flags)`；勿传 null dc 或 `int.MaxValue`（会抛/溢出）。
+
+### 配色归类
+
+- **深色下「哪个控件是残留浅底」按亮度判**：`Luma(c.BackColor) > 150` 归为浅底翻深。
+  **不要**用 `== SystemColors.Control` / `Color.Transparent` 判据——resx 里有显式 `Color.White`，旧判据从不命中，这就是「设置页成片白底」旧问题的根因。
+- **⚠️ `Color.Transparent` 只对有透明支持的父容器有效**：透明底在 Panel/分组框/表格/复选框这层（无透明继承）会**回退默认窗口色 = 白**，实测踩坑。这些容器一律给实色底（DSurface/DCard 系）。
+- ComboBox 深色：`DInput`(#1C1C1C) + `FlatStyle.Flat` + `Paint` 自画 DBorder 边框（ComboBox 没有 FlatAppearance 可设，边框只能自画）。
+- 复选框/分组框焦点虚线框：`TabStop = false` 消掉深色下的焦点圈。
+
+### 标签头（本轮新踩的大坑）
+
+- 现象：深色主题下标签条右侧、按钮间隙、选中按钮描边、按钮上下沿线全是**原生浅色白带**（用户截图实锤）。
+- **三种常规手段全部无效**（逐次实测确认）：
+  1. 设 `TabControl.BackColor` —— 余白不走控件背景色；
+  2. 挂 `Paint` 事件 —— 收不到原生绘制的那块区域；
+  3. `Appearance = FlatButtons` —— 余白/间隙/描边仍是浅色。
+- **唯一可行**：整条标签头用自绘面板 `TabBandPanel`（UiTheme.cs）盖住，实现要点：
+  - 面板挂**窗体**（TabControl 的 Parent）上，`SetChildIndex(p, 0)` 压到最上层——盖在 TabControl 的子控件层没用，母窗原生绘制会盖回去；
+  - 坐标基准 = TabControl 客户区（面板恰好覆盖标签头全高 `DisplayRectangle.Y`），`GetTabRect(i)` 的坐标可直接用于绘制；
+  - 按 GetTabRect 复绘按钮（配色与原 DrawItem 一致），`MouseClick` 按命中矩形设 `SelectedIndex`，`MouseMove` 悬停高亮 + 按钮区手型光标，未选中按钮画右侧 `Sep` 分隔线；
+  - **`t.SelectedIndexChanged += → p.Invalidate()` 必须有**：面板盖着原生重绘，不自刷的话切换页签后选中高亮滞留在旧页签上；
+  - `SetWindowTheme(handle, "", "")` 去原生主题（uxtheme P/Invoke），否则场所绘制指标与 GetTabRect 有几像素偏差；
+  - 面板挂载必须 `BeginInvoke` 延迟：套主题发生在 `StyleChildren` 的 `foreach (parent.Controls)` 遍历中，此刻直接往 Controls 集合加控件抛「集合已修改」；句柄未建再挂 `HandleCreated` 重入。
+- 复验已知边界：窗口最左侧 0~7px 的浅色边条是 **DWM 非客户区边框**，应用侧无法控制，不算 app 的锅（深色边框需 `DwmSetWindowAttribute` 系列另行处理，非本轮目标）。
+
+### 调试方法（均实测有效）
+
+- `M1TOOL_DEBUG_SIZE=1` 曾驱动 `File.AppendAllText` 落盘运行时尺寸/颜色埋点；**已从代码移除**，需要时按同样模式临时加回去，事后清理。
+- **空 `catch (Exception) {}` 会吞真异常**：本轮 `LayoutBandStrips` 失效半天就因异常被吞——加「环境变量门控的文件落盘日志」再跑一次就能定位；排查 UI 不生效问题先怀疑被吞。
+- **`scripts\build.ps1` 必须顺序执行，勿并发**：两个 build 同时跑会抢 `M1ToolPlus\bin` 下临时文件。
+- 截图用 `PrintWindow`（32 位 DWM 兼容）；`CopyFromScreen` 会截到前台浏览器。
+- 像素采样脚本：`$env:TEMP\opencode\crop.ps1`（截图放大，参数：图片 x y w 高 缩放 输出）与 `px.ps1`（单点采样）；先 `GetPixel` 横/纵扫找 `#F0F0F0` 残留的精确范围，别靠肉眼判断。
+- `screenshot-tabs.ps1 -MaxWidth 1500` 逐页签出图；`$env:M1TOOL_THEME='light'` 强制浅色复验。
+
+### 排查「用户看到的与最新构建不符」
+
+- 本轮用户截图显示「设置页白底 + 灰字」在最新构建**不可复现**（是旧 exe 在跑），而「标签头白带」在最新构建**真实存在**——先按用户实际窗口尺寸（默认 900 宽、`--tab 2` 复现设置页）跑当前构建再定性，区分 stale 二进制与真回归，别照着旧图盲修。
+- 用户机 Win11 26300、125% DPI、系统深色。`截图为 PrintWindow 物理像素`，坐标采样时注意 DPI。
