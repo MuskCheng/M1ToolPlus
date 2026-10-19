@@ -209,7 +209,25 @@
 - 像素采样脚本：`$env:TEMP\opencode\crop.ps1`（截图放大，参数：图片 x y w 高 缩放 输出）与 `px.ps1`（单点采样）；先 `GetPixel` 横/纵扫找 `#F0F0F0` 残留的精确范围，别靠肉眼判断。
 - `screenshot-tabs.ps1 -MaxWidth 1500` 逐页签出图；`$env:M1TOOL_THEME='light'` 强制浅色复验。
 
-### 排查「用户看到的与最新构建不符」
+### 窗口尺寸 / DPI（用户实测暴露，2026-10-19）
+
+- **现象**：用户屏（高系统缩放，逻辑工作区小于设计尺寸）下，初始窗口上下溢出屏幕、拖不动。
+- **根因**：`ApplyAdaptiveLayout` 把 `MinimumSize` 写死 `(900,640)`；在逻辑工作区 < 640 高的屏幕上，
+  窗口比屏幕大、又缩不下去（拖拽全被 MinimumSize 顶回）；`CenterScreen` 只居中不查边界，上下两端被裁。
+  `.NET` 的 `WM_WINDOWPOSCHANGING` 会强制执行 MinimumSize——**连 SetWindowPos 都缩不下去**（实测）。
+- **修法（UiTheme.cs）**：`MinimumSize` 取「功能下限」与「工作区-16」两者较小（下限兜底 420x360）；
+  启动末尾 `ClampToWorkArea` 先缩到放得下、再把窗口挪回可视区；功能区撑宽（`MeasureRequiredWidth`）
+  也受工作区宽度约束。
+- **调试要点**：
+  - 应用是 **DPI-unaware**（.NET 4.0 + 未声明 dpiAware）：`GetWindowRect`/`SetCursorPos` 在 PowerShell
+    测试进程里的坐标要先 `SetProcessDPIAware()`，否则 125% 下命中带差一位（光标「看似在边框」实为客户区）；
+  - 合成输入拖非客户区边框（`mouse_event` 式 border drag）在本环境反复失败，但
+    `WM_NCHITTEST` 返回 `HTRIGHT` 证实命中带存在、`WS_THICKFRAME` 在位——判定为自动化环境局限，
+    真实用户鼠标不受影响；客户端点击（tab 切换）合成输入正常；
+  - `PrintWindow` 出图尺寸与窗口物理/虚拟坐标的换算跟着**测试进程**的 DPI 感知走，别混用两套坐标空间；
+  - 主题探测卫生检查：注册表 `AppsUseLightTheme` 与 app 渲染亮度抽样比对（曾有一张浅色截图属
+    运行期间系统被切主题，非 Bug——先核对注册表再定性）。
+
 
 - 本轮用户截图显示「设置页白底 + 灰字」在最新构建**不可复现**（是旧 exe 在跑），而「标签头白带」在最新构建**真实存在**——先按用户实际窗口尺寸（默认 900 宽、`--tab 2` 复现设置页）跑当前构建再定性，区分 stale 二进制与真回归，别照着旧图盲修。
 - 用户机 Win11 26300、125% DPI、系统深色。`截图为 PrintWindow 物理像素`，坐标采样时注意 DPI。

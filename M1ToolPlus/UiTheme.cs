@@ -183,13 +183,19 @@ namespace M1ToolPlus
         {
             try
             {
-                // 1) 允许缩放，并给出足够容纳功能区的最小尺寸
+                // 1) 允许缩放。最小尺寸不能写死：原下限 (900,640) 是功能区的「舒适」
+                //    下限，但在高缩放比例屏幕（如 1080p@200% 的逻辑高度只有 ~540）
+                //    上比整个工作区还大——窗口装不进屏幕、又缩不下去，表现为
+                //    「初始窗口超出桌面、拖拽调整无效」。两者取小 + 极小下限兜底。
                 if (form.FormBorderStyle == FormBorderStyle.FixedSingle)
                 {
                     form.FormBorderStyle = FormBorderStyle.Sizable;
                 }
                 form.MaximizeBox = true;
-                form.MinimumSize = new Size(900, 640);
+                Rectangle waFit = Screen.FromControl(form).WorkingArea;
+                form.MinimumSize = new Size(
+                    Math.Min(900, Math.Max(420, waFit.Width - 16)),
+                    Math.Min(640, Math.Max(360, waFit.Height - 16)));
                 if (form.StartPosition == FormStartPosition.WindowsDefaultLocation)
                 {
                     form.StartPosition = FormStartPosition.CenterScreen;
@@ -212,12 +218,46 @@ namespace M1ToolPlus
 
                     // 4) 功能区实测所需宽度：窗口初始宽度不足时自动扩展，
                     //    避免按钮加宽后把右侧控件（提示文字、停止按钮）挤出可视区。
+                    //    撑宽同样受工作区约束——不检查的话，把窗口直接撑出屏幕。
                     int needed = MeasureRequiredWidth(tabs);
                     if (needed > tabs.Width)
                     {
-                        form.ClientSize = new Size(needed + 12, form.ClientSize.Height);
+                        int want = needed + 12;
+                        Rectangle waGrow = Screen.FromControl(form).WorkingArea;
+                        if (want > waGrow.Width - 16) { want = waGrow.Width - 16; }
+                        form.ClientSize = new Size(want, form.ClientSize.Height);
                     }
                 }
+
+                // 5) 初始位置钳制：CenterScreen 只居中、不查边界，窗口一旦比工作区
+                //    大就会两侧溢出（标题栏沉出屏幕顶、状态栏压进任务栏）。
+                ClampToWorkArea(form);
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 把窗口钳制到所在显示器工作区内。初始定位（CenterScreen）只居中、
+        /// 不检查边界：窗口比工作区大时会两侧溢出——标题栏沉出屏幕顶、
+        /// 状态栏压进任务栏。按「先缩到放得下、再挪回可视区」处理。
+        /// 前提：MinimumSize 已先按工作区放宽，否则缩小赋值会被 MinimumSize 忽略。
+        /// 仅在 Normal 状态执行（最大化的窗口由系统管）。
+        /// </summary>
+        private static void ClampToWorkArea(Form form)
+        {
+            try
+            {
+                if (form.WindowState != FormWindowState.Normal) { return; }
+                Rectangle wa = Screen.FromControl(form).WorkingArea;
+                if (form.Height > wa.Height) { form.Height = wa.Height; }
+                if (form.Width > wa.Width) { form.Width = wa.Width; }
+                int left = form.Left;
+                int top = form.Top;
+                if (form.Right > wa.Right) { left = wa.Right - form.Width; }
+                if (form.Bottom > wa.Bottom) { top = wa.Bottom - form.Height; }
+                if (left < wa.Left) { left = wa.Left; }
+                if (top < wa.Top) { top = wa.Top; }
+                if (left != form.Left || top != form.Top) { form.Location = new Point(left, top); }
             }
             catch (Exception) { }
         }
