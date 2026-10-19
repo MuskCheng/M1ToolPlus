@@ -231,3 +231,28 @@
 
 - 本轮用户截图显示「设置页白底 + 灰字」在最新构建**不可复现**（是旧 exe 在跑），而「标签头白带」在最新构建**真实存在**——先按用户实际窗口尺寸（默认 900 宽、`--tab 2` 复现设置页）跑当前构建再定性，区分 stale 二进制与真回归，别照着旧图盲修。
 - 用户机 Win11 26300、125% DPI、系统深色。`截图为 PrintWindow 物理像素`，坐标采样时注意 DPI。
+
+### 边框拖拽失效（真根因，2026-10-19 第二轮）
+
+- **现象**：改成 Sizable 后窗口仍然「按住边框拖不动」；用户多次反馈未解决。
+- **真正的根因**：本程序是 **x86 + DPI-unaware**，在 125% 缩放屏上被系统做 GDI 位图缩放：
+  窗口边框被撑成 16px（`GetWindowRect` 与 `GetClientRect` 差 16），但系统的非客户区命中测试仍按
+  未缩放的边框算，于是**最外侧 8px 被判为 `HTBORDER`(18)（不可缩放的普通边框）**，
+  真正可缩放的 `HTRIGHT` 区域被挤到内侧 10~16px——而那一段已属客户区、被终端框等子控件抢走。
+  结果：用户抓窗口最外沿 = 抓到 `HTBORDER` = 什么都不会发生。
+  同机对照：64 位标准 WinForms 窗体/记事本同位置返回 `HTRIGHT`；`FormBorderStyle` 运行时改写、
+  `MinimumSize`、`ClientSize`、Dock、hook 与否都**不是**原因（逐一排除）。
+- **修法（Form1.Resize.cs）**：窗体接管 `WM_NCHITTEST`——收到 `HTBORDER` 时按命中点相对四条边的
+  位置翻译成 `HTRIGHT/HTLEFT/HTTOP/HTBOTTOM` 及四角；客户区最外圈再补 8px 热区。
+- **教训**：
+  - 判定「边框能不能拖」要看**真实鼠标路径**的 `WM_NCHITTEST` 结果，而不是把 `SendMessage(主窗体,…)`
+    的返回值当结论——后者绕过了「系统把消息发给光标下最深子窗口」这一层；
+  - `HTBORDER`(18) 与 `HTRIGHT`(11) 别看错：早前把十六进制 `0x12` 当成 `HTRIGHT`，其实是十进制 18 = `HTBORDER`；
+  - 合成拖拽要用**真实光标移动**（`SetCursorPos` + `mouse_event`），只 post `WM_MOUSEMOVE` 无效
+    （模态缩放循环读真实光标位置）；拖拽前先点标题栏激活窗口，否则第一次点击被激活动作吃掉；
+  - 测试期间桌面上的其它窗口（Windows 终端 `CASCADIA_HOSTING_WINDOW_CLASS`、浏览器、资源管理器）
+    会盖住抓点，导致「拖不动」的假象——用 `WindowFromPoint` 核对抓点归属，必要时临时置顶测试窗口；
+  - **`build.ps1` 原来会吞掉编译错误**：MSBuild 报错时 obj 里残留上一次的 exe，脚本只判断「文件存在」
+    就报「编译成功」，导致连续多轮拿旧程序做测试。已改为检出 `error CS/MSB` 即失败。
+  - `UiTheme` 的 `NativeWindowHook` 原先是临时对象（无字段持有），可能被 GC 回收后 `ReleaseHandle`
+    还原窗口过程、主题变更监听失效——已改为静态字段保活。

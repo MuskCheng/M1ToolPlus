@@ -86,6 +86,13 @@ if (-not $fullBuildOk) {
         /p:Configuration=$Configuration /p:Platform=$platform `
         /v:minimal /nologo 2>&1
     $mainExe = Join-Path $objDir "M1ToolPlus.exe"
+    # 编译错误必须显式失败：MSBuild 出错时 obj 里可能残留上一次的 exe，
+    # 若只判断「文件存在」，脚本会拿旧程序冒充本次构建结果（曾因此误判多轮）。
+    $compileErrors = @($buildLog | Where-Object { $_ -match "error\s+(CS|MSB)\d+" -and $_ -notmatch "MSB3086" })
+    if ($compileErrors.Count -gt 0) {
+        $compileErrors | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+        throw "[build] 编译失败（见上方错误）"
+    }
     if (-not (Test-Path $mainExe)) {
         $buildLog | ForEach-Object { Write-Host $_ }
         throw "[build] 编译失败：未产出主程序（非 al.exe 问题，见上方 MSBuild 输出）"

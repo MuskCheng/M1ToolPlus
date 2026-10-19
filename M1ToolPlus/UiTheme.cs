@@ -52,6 +52,7 @@ namespace M1ToolPlus
         private static Font _terminalFont;
         private static Hashtable _fontCache;
         private static Form _host;
+        private static NativeWindowHook _themeHook;
 
         /// <summary>是否处于深色模式。</summary>
         internal static bool IsDark { get { return _dark; } }
@@ -319,7 +320,9 @@ namespace M1ToolPlus
         {
             if (form.Tag is string) { return; }   // 防止重复挂钩
             form.Tag = "ui-theme";
-            new NativeWindowHook(form, delegate { OnSystemThemeChanged(); });
+            // 必须持有引用：NativeWindow 一旦被 GC 回收，finalizer 会 ReleaseHandle，
+            // 把窗口过程还原、主题变更监听随之失效。存到静态字段里保活。
+            _themeHook = new NativeWindowHook(form, delegate { OnSystemThemeChanged(); });
         }
 
         private static void OnSystemThemeChanged()
