@@ -336,6 +336,9 @@ namespace M1ToolPlus
 
         private static void Prepare(Control c)
         {
+            // 终端区（RichTextBox）保持 BorderStyle.None：它靠圆角 Region 自绘外观，
+            // 系统 FixedSingle 边框会在深色底上画出一条白边（右/下各 1px）。
+            if (c is RichTextBox) { return; }
             if (c is TextBoxBase) { ((TextBoxBase)c).BorderStyle = BorderStyle.FixedSingle; }
             else if (c is ComboBox) { ((ComboBox)c).FlatStyle = FlatStyle.Flat; }
         }
@@ -1001,8 +1004,57 @@ namespace M1ToolPlus
                 });
                 p.Bounds = new Rectangle(t.Left, t.Top, t.Width, bandH);
                 p.Invalidate();
+
+                // 外框覆盖层：盖掉 TabControl 自己画的那圈系统浅色边框
+                UiTheme.TabFramePanel f = EnsureFramePanel(t, host);
+                if (f != null && host.Controls.Count > 1)
+                {
+                    // z 序（0 = 最前）：标签条 > 外框 > TabControl
+                    host.Controls.SetChildIndex(f, 1);
+                    host.Controls.SetChildIndex(p, 0);
+                }
             }
             catch (Exception) { }
+        }
+
+        /// <summary>
+        /// TabControl 去掉原生主题后，页面左/右/下会被画上一圈约 4px 的系统边框
+        /// （颜色 = SystemColors.Control #F0F0F0）。深色主题里它与 1px 卡片描边
+        /// 并排，就是一条粗细不均的白线。这里用与 TabControl 同尺寸的面板覆盖，
+        /// Region 挖掉页面区域、只留那圈边框：填页面底色并在底边画 1px 分隔线。
+        /// 挖空后页面区域的鼠标事件照常穿透，不影响操作。
+        /// </summary>
+        private static UiTheme.TabFramePanel EnsureFramePanel(TabControl t, Control host)
+        {
+            try
+            {
+                UiTheme.TabFramePanel f = null;
+                foreach (Control c in host.Controls)
+                {
+                    if (c.Tag is TabControl && c is UiTheme.TabFramePanel) { f = (UiTheme.TabFramePanel)c; break; }
+                }
+                if (f == null)
+                {
+                    f = new UiTheme.TabFramePanel { Tag = t, TabStop = false };
+                    host.Controls.Add(f);
+                }
+                f.ThemeColors(_dark ? DBack : LSurface, _dark ? DBorder : LBorder);
+                f.Bounds = new Rectangle(t.Left, t.Top, t.Width, t.Height);
+
+                Rectangle page = t.DisplayRectangle;
+                bool hasRing = page.Left > 0 || page.Top > 0 || page.Right < f.Width || page.Bottom < f.Height;
+                if (hasRing && page.Width > 2 && page.Height > 2 && f.Width > 0 && f.Height > 0)
+                {
+                    Region ring = new Region(new Rectangle(0, 0, f.Width, f.Height));
+                    ring.Exclude(page);
+                    Region old = f.Region;
+                    f.Region = ring;   // 控件持有的是引用，新 Region 绝不能 Dispose
+                    if (old != null) { old.Dispose(); }
+                }
+                f.Invalidate();
+                return f;
+            }
+            catch (Exception) { return null; }
         }
 
         private static void HitSelect(TabControl t, Point pt)
@@ -1107,6 +1159,46 @@ namespace M1ToolPlus
             }
         }
 
+        /// <summary>
+        /// 标签内容区外框覆盖层：与 TabControl 同尺寸，Region 挖掉页面区域，
+        /// 只覆盖系统画在页面四周的那圈浅色边框；填充页面底色，并在底边
+        /// 画 1px 分隔线，让内容区与下方终端之间是一条干净、等粗的细线。
+        /// 页面区域被挖空，点击/输入事件照常落到页面里的控件上。
+        /// </summary>
+        internal sealed class TabFramePanel : Panel
+        {
+            internal Color Fill = Color.Black;
+            internal Color Line = Color.Gray;
+
+            public TabFramePanel()
+            {
+                SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                         ControlStyles.OptimizedDoubleBuffer, true);
+                TabStop = false;
+                BackColor = Color.Transparent;
+            }
+
+            internal void ThemeColors(Color fill, Color line) { Fill = fill; Line = line; }
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                try
+                {
+                    e.Graphics.Clear(Fill);
+                    // 底边即内容区与终端的交界：统一 1px 主题色分隔线
+                    int y = ClientSize.Height - 1;
+                    if (y > 0)
+                    {
+                        using (Pen pen = new Pen(Line))
+                        {
+                            e.Graphics.DrawLine(pen, 0, y, ClientSize.Width, y);
+                        }
+                    }
+                }
+                catch (Exception) { }
+            }
+        }
+
         internal sealed class TabBandColors
         {
             internal Color Band;
@@ -1126,9 +1218,34 @@ namespace M1ToolPlus
             // 系统渲染器（System）会无视 BackColor，浅色系统主题下画出一条灰白亮带；
             // 换成 Professional + 自定义配色表才吃我们的颜色。
             ss.RenderMode = ToolStripRenderMode.Professional;
-            ss.Renderer = new ToolStripProfessionalRenderer(new StatusPalette(_dark));
+            ss.Renderer = new StatusRenderer(_dark);
             ss.Padding = new Padding(8, 2, 8, 2);
             StyleToolStripImages(ss);
+        }
+
+        /// <summary>
+        /// 状态栏渲染器：基类的边框绘制会画出一条系统白线（ProfessionalColorTable
+        /// 里没有对应的覆盖点，ToolStripBorder 对它无效），这里整个接管边框，
+        /// 改成 1px 主题色分隔线，与卡片描边、终端上沿保持同一粗细与色值。
+        /// </summary>
+        private sealed class StatusRenderer : ToolStripProfessionalRenderer
+        {
+            private readonly bool _dark;
+            internal StatusRenderer(bool dark) : base(new StatusPalette(dark)) { _dark = dark; }
+
+            protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
+            {
+                try
+                {
+                    ToolStrip ts = e.ToolStrip;
+                    if (ts == null || ts.Width <= 0) { return; }
+                    using (Pen pen = new Pen(_dark ? DBorder : LBorder))
+                    {
+                        e.Graphics.DrawLine(pen, 0, 0, ts.Width, 0);
+                    }
+                }
+                catch (Exception) { }
+            }
         }
 
         /// <summary>状态栏配色表：把系统默认的蓝灰分隔线/边框换成主题色。</summary>
@@ -1138,6 +1255,11 @@ namespace M1ToolPlus
             internal StatusPalette(bool dark) { _dark = dark; }
 
             public override Color ToolStripDropDownBackground { get { return _dark ? DBack : LSurface; } }
+            // 状态栏顶边那一圈 1px 边框由渲染器按此色绘制；
+            // 不覆盖时 Professional 默认给纯白，深色下就是一条刺眼白线。
+            public override Color ToolStripBorder { get { return _dark ? DBorder : LBorder; } }
+            public override Color StatusStripGradientBegin { get { return _dark ? DBack : LSurface; } }
+            public override Color StatusStripGradientEnd { get { return _dark ? DBack : LSurface; } }
             public override Color MenuBorder { get { return _dark ? DBorder : LBorder; } }
             public override Color MenuItemBorder { get { return _dark ? DBorder : LBorder; } }
             public override Color MenuItemSelected { get { return _dark ? DCardHover : LCardHover; } }

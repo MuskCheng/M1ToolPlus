@@ -326,3 +326,18 @@
   标签条中心 client 坐标约为 x=72/215/352、y=17（zh 界面）。
 - `scripts/regression-auto.ps1`：PASS 3 / WARN 1 / FAIL 0（WARN 为既有的「缺 nfc-bin 时提示」人工确认项）。
 - 待真机回归通过后再升版本号到 1.8.0 并发版；UI 改动本身不升版本。
+
+### 浅色系统边框清理（白线条）
+
+用户反馈「白色、粗细不均的分割线」，逐像素扫描定位到三处，全部由系统绘制、与主题色无关：
+
+| 位置 | 现象 | 根因 | 修法 |
+| --- | --- | --- | --- |
+| 页签内容区四周 | 左/右/下各 **4px** `#F0F0F0` | `TabControl` 去掉原生主题后，WinForms 用 `SystemColors.Control` 自画页面外框 | `TabFramePanel`：与 TabControl 同尺寸、`Region` 挖掉页面区域的面板，填页面底色盖住外框；挖空后页面内控件点击不受影响 |
+| 终端区右侧/下沿 | 右 2px、下 1px 白边 | `Prepare()` 把所有 `TextBoxBase`（含 `RichTextBox`）强制改成 `BorderStyle.FixedSingle` | `Prepare()` 跳过 `RichTextBox`，终端保持设计器的 `BorderStyle.None`（靠圆角 Region 塑形） |
+| 状态栏上沿 | **1px 纯白** `#FFFFFF` | `StatusStrip` 的边框由渲染器单独绘制，`ProfessionalColorTable` **没有**对应覆盖点（`ToolStripBorder` 对它无效） | `StatusRenderer : ToolStripProfessionalRenderer` 重写 `OnRenderToolStripBorder`，改画 1px `DBorder/LBorder` |
+
+- 统一后的分隔层级：卡片描边 1px `DBorder` → 内容区与终端之间 1px `DBorder` → 状态栏上沿 1px `DBorder`，
+  粗细/色值完全一致；页签内容区左右不再有内缩白框，视觉上与窗口边缘齐平。
+- 验证方式：对截图做**逐行/逐列亮像素统计**（亮度 >190 的像素占比），客户端区域内应无任何长亮线；
+  注意 `PrintWindow` 截图的标题栏恒为白色（DWM 假象）、窗口外框是系统强调色，二者不算。
