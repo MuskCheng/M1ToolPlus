@@ -158,6 +158,20 @@ if (Test-Path $outMff08) {
     Write-Host "[build] 合规剔除 nfc-bin\mff08.exe（来源不明，见 docs/DEPENDENCIES.md）" -ForegroundColor Yellow
 }
 
+# 清理上游包里的 *.bak 历史残留（libgcc_s_dw2-1 / libnfc / libwinpthread-1 / pcre3，
+# 合计约 1 MB）：程序零引用，Windows 也不会加载 .bak，纯属官方包遗留。
+# 注意排除 libnfc.dll.acr122u.bak —— 那是「启用 ACR122U 支持」运行期自己生成的还原备份，不能删。
+$outNfcBin = Join-Path $outDir "nfc-bin"
+if (Test-Path $outNfcBin) {
+    $staleBaks = @(Get-ChildItem $outNfcBin -File -Filter "*.bak" |
+                   Where-Object { $_.Name -ne "libnfc.dll.acr122u.bak" })
+    if ($staleBaks.Count -gt 0) {
+        $staleKb = ($staleBaks | Measure-Object Length -Sum).Sum / 1KB
+        $staleBaks | Remove-Item -Force
+        Write-Host ("[build] 清理 nfc-bin 内上游 .bak 残留 {0} 个（{1:N0} KB）" -f $staleBaks.Count, $staleKb) -ForegroundColor DarkGray
+    }
+}
+
 # 5) 汇总
 $exe = Join-Path $outDir "M1ToolPlus.exe"
 if (Test-Path $exe) {

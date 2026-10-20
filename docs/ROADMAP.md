@@ -44,17 +44,17 @@
    合规检查项已由脚本自动落实并实测通过（详见下方 A'）。
 4. 版本号策略：AssemblyInfo 仍为 1.7.0.0（延续原版）。**2026-10-16 决策：首发 Release 延后到真机回归之后**，届时再定版本号（建议 1.8.0）。
 
-### A' 发布包合规核对（2026-10-16 实测：`artifacts\M1ToolPlus-local-build.zip`，55 条目 / 3.0 MB）
+### A' 发布包合规核对（2026-10-20 实测：`artifacts\M1ToolPlus-local-build.zip`，50 个文件 / 解压 8.05 MB / zip 2.64 MB）
 
 | 检查项 | 结果 |
 |---|---|
 | 主程序为 `M1ToolPlus.exe` + `M1ToolPlus.exe.config` | ✅ |
 | en/ru/zh 三套卫星程序集齐全 | ✅ |
-| winhex.exe 未打包（专有软件） | ✅ `build.ps1` 只取 `nfc-bin\` 子目录 |
+| winhex.exe 未打包（专有软件） | ✅ `build.ps1` 只取 `nfc-bin\` 子目录；本地回收缓存里的 winhex.exe 也已删除 |
 | **`mff08.exe` 来源不明** | ✅ 已按策略剔除：`build.ps1` 自动删除输出目录中的 `nfc-bin\mff08.exe`；GUI 缺失时弹提示并自动关闭 MFF08 对话框（`FormMFF08_Load`） |
 | 随包附带 GPL-3.0 LICENSE + README + DEPENDENCIES.md | ✅ `build.ps1 -Pack` 自动附带（原缺失，已补） |
-| nfc-bin 内 `*.bak`（libnfc.dll.bak、libnfc(532).dll 等） | 必须保留：Form1 的设备切换（ACR122U/PN532  dll 三交换）依赖这些备份 |
-| nfc-bin\data\logs_proxmark3\trace*.txt | 官方包自带的日志残留，无害，可选清理 |
+| nfc-bin 内上游 `*.bak`（libgcc_s_dw2-1/libnfc/libwinpthread-1/pcre3，约 1.0 MB） | ✅ 已清理：程序零引用、Windows 也不会加载。ACR122U 切换只依赖 `libnfc.dll` / `libnfc(ACR122Uslow).dll` / `libnfc(532).dll` + **运行期生成**的 `libnfc.dll.acr122u.bak`（见 `Form1.cs` 的 `buttonEnAcr122u_Click`），`build.ps1` 每次构建自动清理并保留运行期备份 |
+| nfc-bin\data\logs_proxmark3\trace*.txt | 官方包自带的日志残留（约 10 KB），无害，可选清理 |
 | zip 内路径分隔符 | ⚠️ PowerShell 5.1 `Compress-Archive` 写入的是反斜杠路径，Windows 解压正常，Linux/macOS 的 `unzip` 可能出错（本项目仅支持 Windows，暂不处理） |
 
 ### B. 真机回归（本开发环境无硬件，必须待真机）

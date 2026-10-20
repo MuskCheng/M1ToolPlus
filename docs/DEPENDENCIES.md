@@ -60,4 +60,7 @@ GUI 通过子进程调用这些工具完成全部 NFC 操作。二进制来自�
       `mff08.exe` 来源不明，查清/取得源码前不重打包该文件（`build.ps1` 自动剔除，
       已验证；GUI 缺失时提示并关闭 MFF08 对话框）
 - [x] 保留 GPL-3.0 LICENSE + 本依赖文档（`build.ps1 -Pack` 自动附带，已验证）
+- [x] 不含上游包里的 `*.bak` 历史残留（`libgcc_s_dw2-1.dll.bak` / `libnfc.dll.bak` /
+      `libwinpthread-1.dll.bak` / `pcre3.dll.bak`，合计约 1.0 MB）：程序零引用、Windows 也不会加载，
+      `build.ps1` 每次构建自动清理（保留运行期生成的 `libnfc.dll.acr122u.bak`，那是 ACR122U 切换的还原备份）
 - [ ] `docs\` 与 README 版本号、AssemblyInfo 版本一致（待版本号决策后确认）
