@@ -89,6 +89,9 @@
   用 `[Reflection.Assembly]::ReflectionOnlyLoadFrom` + `ResourceReader` 检查资源名与取值（应为 `M1ToolPlus.Form1.resources` 等）。
 - **冒烟测试**：启动 `bin\Release\M1ToolPlus.exe`，主窗口标题应为 `M1ToolPlus`。
 - **git 身份**：本地提交使用 `-c user.name="CXF" -c user.email="cxf@local"`（沿用惯例，可按需更换）。
+- **推送网络**：本机 github.com 常被解析到 `20.205.243.166`（该 IP 的 443 不通，报 `Connection was reset`）。
+  可用可达 IP 覆盖解析（SNI/证书仍按 github.com 校验）：
+  `git -c http.curloptResolve=github.com:443:140.82.112.3 push origin dev`（备用 IP：140.82.113.3、20.27.177.113）。
 - **语言资源**：切换按“下拉索引”映射（0=zh-cn 1=ru-RU 2=en-US）；新增语言三步：加 `.xx.resx` 并注册 csproj、combo 加一项、switch 加分支。
 - 依赖再获取：`.\scripts\fetch-deps.ps1`（默认从原作者 releases v1.7.0 的 M1T-Release.zip 回收 nfc-bin）。
 - **浅克隆教训（重要）**：本仓库最初从原作者克隆时使用了 `--depth`（浅克隆），推送到空仓库时报 `remote unpack failed: did not receive expected object`，且该对象在本地也不存在（`git cat-file` 失败）；已用 `git fetch --unshallow upstream` 修复（现 109 个提交、非浅克隆）。今后重建克隆**不要加 `--depth`**。
