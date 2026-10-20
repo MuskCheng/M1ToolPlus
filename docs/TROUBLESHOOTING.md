@@ -80,6 +80,24 @@ CUID 卡不能像 UID 卡那样用后门随便写，必须用**卡内已有的�
 设置页第一个下拉框选择：中文 / Русский / English，选择后自动重启生效。
 本版本起内置英语界面。
 
+**2026-10-20 修复：切换后界面仍是中文（1.7.0.0 及更早）**
+
+- 现象：下拉框选 Русский / English，程序确实自动重启，但界面依旧全中文；
+  此时 `%LOCALAPPDATA%\XciCode\M1ToolPlus.exe_Url_*\1.7.0.0\user.config` 里的
+  `Language` 已正确写入 `ru-RU` / `en-US`——说明切换、保存、重启都没问题。
+- 根因（两个都在**构建侧**，与切换逻辑无关）：
+  1. `build.ps1` 手工生成的卫星程序集叫 `en\M1ToolPlus.en.dll`；
+     CLR 只按 `<程序集名>.resources.dll` 探测，这个文件永远不会被加载。
+  2. 改名成 `M1ToolPlus.resources.dll` 后**仍然无效**：本机
+     （Windows 11 + .NET Framework 4.8.10008）的 `ResourceManager`
+     只按**旧式资源名** `<基名>.<文化>.resources` 在卫星里查找；
+     卫星里只嵌现代名 `M1ToolPlus.Form1.resources` 时同样找不到。
+- 修复：卫星输出为 `<文化>\M1ToolPlus.resources.dll`，并且每个资源
+  **同时**嵌入现代名与旧式名（见 `scripts/build.ps1` 第 3 步）。
+- 自检：`M1ToolPlus.exe --ui-info` 会把 `SettingLanguage` /
+  `CurrentUICulture` / `TabPage1Text` / `ButtonListDevText` 写进
+  `%TEMP%\m1tool-ui-info.txt`；语言生效时前三行应与所选语言一致。
+
 ## 构建相关
 
 ### 报 MSB3086 / 缺少 al.exe

@@ -118,7 +118,10 @@ if (-not $fullBuildOk) {
         if (-not $resFiles) { Write-Warning "[$cult] 无卫星资源，跳过"; continue }
 
         $satSrc = Join-Path $objDir "sat_$cult.cs"
-        $satDll = Join-Path $objDir "M1ToolPlus.$cult.dll"
+        # 卫星程序集必须命名为 <主程序集名>.resources.dll（程序集名 M1ToolPlus.resources），
+        # CLR 的 ResourceManager 只按这个约定去 <culture>\ 目录探测；叫 M1ToolPlus.en.dll
+        # 之类的名字不会被加载，结果是切换语言后界面永远回退到中性资源（简体中文）。
+        $satDll = Join-Path $objDir "M1ToolPlus.resources.dll"
         @"
 [assembly: System.Reflection.AssemblyCulture("$cult")]
 [assembly: System.Reflection.AssemblyVersion("$ver")]
@@ -129,6 +132,11 @@ if (-not $fullBuildOk) {
             # M1ToolPlus.Form1.ru.resources -> 逻辑名 M1ToolPlus.Form1.resources
             $logical = $r.Name -replace "\.$cult\.resources$", ".resources"
             $cscArgs += "/resource:`"$($r.FullName)`",$logical"
+            # 同时嵌入旧式名 <逻辑名>.<culture>.resources：
+            # 实测 Windows 11 + .NET Framework 4.8.10008 的 ResourceManager 只认这种命名，
+            # 只放现代名时卫星永远不会被采用（界面永远回退到中性资源=简体中文）。
+            # 两种命名并存对标准运行时无副作用（它优先用现代名）。
+            $cscArgs += "/resource:`"$($r.FullName)`",$($r.Name)"
         }
         $cscArgs += "`"$satSrc`""
         & $csc @cscArgs
@@ -136,8 +144,11 @@ if (-not $fullBuildOk) {
 
         $cultDir = Join-Path $outDir $cult
         New-Item -ItemType Directory -Force -Path $cultDir | Out-Null
-        Copy-Item $satDll (Join-Path $cultDir "M1ToolPlus.$cult.dll") -Force
-        Write-Host "[build] 卫星程序集已生成: $cult\M1ToolPlus.$cult.dll" -ForegroundColor Green
+        Copy-Item $satDll (Join-Path $cultDir "M1ToolPlus.resources.dll") -Force
+        # 清掉历史错误命名的残留，避免新旧文件共存造成误判
+        $legacyDll = Join-Path $cultDir "M1ToolPlus.$cult.dll"
+        if (Test-Path $legacyDll) { Remove-Item $legacyDll -Force }
+        Write-Host "[build] 卫星程序集已生成: $cult\M1ToolPlus.resources.dll" -ForegroundColor Green
     }
 }
 

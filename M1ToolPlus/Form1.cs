@@ -323,7 +323,13 @@ namespace M1ToolPlus
                 sb.AppendLine("Font=" + Font.Name + " " + Font.SizeInPoints.ToString("0.##") + "pt unit=" + Font.Unit + " height=" + Font.Height);
                 sb.AppendLine("WorkingArea=" + Screen.FromControl(this).WorkingArea);
                 sb.AppendLine("ScreenBounds=" + Screen.FromControl(this).Bounds);
-                string[] names = new string[] { "tabControl1", "richTextBox1", "statusStrip1", "groupBox1", "buttonScanCard" };
+                // 语言诊断：切换语言不生效时先看这三行（设置值 / 线程文化 / 实际渲染文字）
+                sb.AppendLine("SettingLanguage=" + (Properties.Settings.Default.Language ?? "(null)"));
+                sb.AppendLine("CurrentUICulture=" + System.Threading.Thread.CurrentThread.CurrentUICulture.Name);
+                sb.AppendLine("CurrentCulture=" + System.Threading.Thread.CurrentThread.CurrentCulture.Name);
+                sb.AppendLine("TabPage1Text=" + tabControl1.TabPages[0].Text);
+                sb.AppendLine("ButtonListDevText=" + buttonListDev.Text);
+                string[] names = new string[] { "tabControl1", "richTextBox1", "statusStrip1", "groupBox1", "buttonScanCard", "comboBox1" };
                 foreach (string n in names)
                 {
                     Control[] found = Controls.Find(n, true);
@@ -331,6 +337,7 @@ namespace M1ToolPlus
                     {
                         Control c = found[0];
                         sb.AppendLine(n + "=" + c.Bounds + " font=" + c.Font.Name + " " + c.Font.SizeInPoints.ToString("0.##") + "pt h=" + c.Font.Height);
+                        sb.AppendLine(n + ".Screen=" + c.PointToScreen(Point.Empty));
                     }
                 }
                 string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "m1tool-ui-info.txt");

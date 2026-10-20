@@ -58,9 +58,13 @@
 
 ## 4. 语言切换回归
 
+- [ ] 设置页语言下拉框选 Русский / English，程序自动重启后**主界面立即变为对应语言**
+      （页签标题、按钮、状态栏、对话框都要看）
 - [ ] 三语切换后主界面、错误提示、各对话框均有对应文案（重点：新增的「已恢复上次使用的设备」zh/ru/en）
-- [ ] 英语文案较长，切换后按钮/标签不截断
-- [ ] 切换语言后设置能持久化（重启仍生效）
+- [ ] 英语/俄语文案较长，切换后按钮/标签不截断（窗口会按文案自动加宽，见 `UiTheme.ApplyAdaptiveLayout`）
+- [ ] 切换语言后设置能持久化（重启仍生效；`%LOCALAPPDATA%\XciCode\...\user.config` 中 `Language` = `ru-RU`/`en-US`/`zh-cn`）
+- [ ] 自检：`M1ToolPlus.exe --ui-info` → `%TEMP%\m1tool-ui-info.txt` 里
+      `SettingLanguage`、`CurrentUICulture`、`TabPage1Text` 三行语言一致
 
 ## 5. 问题记录模板
 

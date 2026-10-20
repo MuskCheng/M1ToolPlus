@@ -372,3 +372,47 @@
   - `GetWindowRect` 连续两次启动位置不同（(96,96)/(224,181)/(64,64)）是 **Windows 级联默认定位**（Form1 未设 `StartPosition`），
     不是本程序逻辑，与本次改动无关；
   - 拖拽测试别用单次 `mouse_event(MOVE, dx)` 大跳变（会被系统尺寸循环放大成 +109），要**逐级小步**移动才与真实拖拽等价。
+
+## 十、语言切换失效（2026-10-20，用户实测暴露）
+
+### 现象
+设置页下拉框切 Русский / English → 程序自动重启 → 界面仍全中文。
+
+### 排查路径（可复用）
+1. 先看用户配置：`%LOCALAPPDATA%\XciCode\M1ToolPlus.exe_Url_*\1.7.0.0\user.config`。
+   本次 `Language` 已写入 `ru-RU` → 切换、保存、重启逻辑本身没问题，问题在**资源加载**。
+2. `--ui-info` 加打印 `SettingLanguage / CurrentUICulture / TabPage1Text`。
+   `bin\Release` 启动时 `Language` 为空（那是另一份 user.config），而 `artifacts\package`
+   启动时读到 `ru-RU` → 用户测的是打包目录里的 exe，用同一路径复现。
+3. 反射探针（x86 程序集必须用 32 位 PowerShell 加载）：
+   - `Assembly.GetSatelliteAssembly(ru)` 能加载 `ru\M1ToolPlus.resources.dll` ✓
+   - `new ResourceManager("M1ToolPlus.Form1", asm).GetString("buttonListDev.Text", ru)`
+     却返回中文 ✗
+   - 用 csc 手搓「main + satellite」最小复现同样失败 → 与项目代码无关，是**卫星命名**问题。
+
+### 两个根因
+| # | 根因 | 证据 |
+|---|---|---|
+| 1 | 卫星文件名是 `M1ToolPlus.<culture>.dll`，CLR 只探测 `<程序集名>.resources.dll` | 改名为 `M1ToolPlus.resources.dll` 后 `GetSatelliteAssembly` 可加载 |
+| 2 | 本机（Windows 11 + .NET Framework 4.8.10008）的 `ResourceManager` 只按**旧式资源名** `<基名>.<文化>.resources` 在卫星里查找；只嵌现代名 `M1ToolPlus.Form1.resources` 时找不到 | 最小复现：卫星只放现代名 → 返回中性值；只放旧式名 → 返回 RUSSIAN；两个都放 → 正常 |
+
+> 上游原包**根本没有** `zh/en/ru` 目录 → 语言切换在上游就从未生效过，不是改名引入的回归。
+
+### 修复
+`scripts/build.ps1` 的 csc 卫星步骤：
+- 输出/复制为 `<culture>\M1ToolPlus.resources.dll`（程序集名 `M1ToolPlus.resources`）；
+- 每个 `.resources` **同时**用现代名与旧式名嵌入（`/resource:file,logicalName` 两次）；
+- 构建时清掉旧命名的 `M1ToolPlus.<culture>.dll` 残留。
+
+### 验证
+- `artifacts\package\M1ToolPlus.exe --ui-info --tab 2`（`Language=ru-RU`）→
+  `TabPage1Text=Режим копирования карты`、`ButtonListDevText=Определить` ✓
+- 改 `en-US` → `TabPage1Text=Copy card mode`、`ButtonListDevText=Testing Equipment` ✓
+- 俄语三页签截图：文案完整无裁切；窗口按文案自动加宽（1320×839）✓
+- `--ui-info` 保留 `SettingLanguage / CurrentUICulture / CurrentCulture / TabPage1Text / ButtonListDevText` 诊断行
+
+### 教训
+- 手搓卫星程序集（绕过缺失的 al.exe）必须同时满足两点：**文件/程序集名 `<主程序集>.resources`** +
+  **资源名新旧两种都嵌**；否则运行时**静默**回退到中性资源，不抛任何异常。
+- 语言类问题先查「设置是否真的写进当前 exe 的 user.config」，再查卫星加载；
+  同一程序不同路径（bin\Release vs artifacts\package）用的是**不同的 user.config**。
