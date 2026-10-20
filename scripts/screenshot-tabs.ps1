@@ -9,9 +9,14 @@ public class Win {
   [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint nFlags);
   [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
 }
 "@
+# 截图脚本自身也要声明 DPI 感知：M1ToolPlus 现在是 DPI 感知进程，
+# 若脚本不感知，GetWindowRect 返回的是被系统换算过的虚拟坐标，
+# 抓图尺寸/裁剪范围都会对不上（120/144 DPI 下尤其明显）。
+try { [Win]::SetProcessDPIAware() | Out-Null } catch { }
 # 输出目录必须存在，否则 GDI+ Save 抛"A generic error occurred in GDI+."
 if (-not (Test-Path $OutDir)) { New-Item -ItemType Directory -Path $OutDir -Force | Out-Null }
 for ($i = 0; $i -lt $TabCount; $i++) {

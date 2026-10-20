@@ -295,6 +295,46 @@ namespace M1ToolPlus
             {
                 if (Properties.Settings.Default.DefIsAdv) { SelectTab(1); }
                 ApplyInitialTab();
+                DumpUiInfoIfRequested();
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 诊断用：M1ToolPlus.exe --ui-info 启动时把窗体/DPI/关键控件尺寸写入
+        /// %TEMP%\m1tool-ui-info.txt，用于核对 1:1 缩放与布局实际值。
+        /// </summary>
+        private void DumpUiInfoIfRequested()
+        {
+            try
+            {
+                bool want = false;
+                foreach (string a in Environment.GetCommandLineArgs()) { if (a == "--ui-info") { want = true; break; } }
+                if (!want) { return; }
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                sb.AppendLine("ClientSize=" + ClientSize.Width + "x" + ClientSize.Height);
+                sb.AppendLine("WindowSize=" + Size.Width + "x" + Size.Height);
+                sb.AppendLine("Bounds=" + Bounds);
+                sb.AppendLine("ClientOrigin=" + PointToScreen(Point.Empty));
+                sb.AppendLine("AutoScaleMode=" + AutoScaleMode);
+                sb.AppendLine("AutoScaleDimensions=" + AutoScaleDimensions);
+                sb.AppendLine("CurrentAutoScaleDimensions=" + CurrentAutoScaleDimensions);
+                sb.AppendLine("DeviceDpi=" + (int)CreateGraphics().DpiX);
+                sb.AppendLine("Font=" + Font.Name + " " + Font.SizeInPoints.ToString("0.##") + "pt unit=" + Font.Unit + " height=" + Font.Height);
+                sb.AppendLine("WorkingArea=" + Screen.FromControl(this).WorkingArea);
+                sb.AppendLine("ScreenBounds=" + Screen.FromControl(this).Bounds);
+                string[] names = new string[] { "tabControl1", "richTextBox1", "statusStrip1", "groupBox1", "buttonScanCard" };
+                foreach (string n in names)
+                {
+                    Control[] found = Controls.Find(n, true);
+                    if (found != null && found.Length > 0)
+                    {
+                        Control c = found[0];
+                        sb.AppendLine(n + "=" + c.Bounds + " font=" + c.Font.Name + " " + c.Font.SizeInPoints.ToString("0.##") + "pt h=" + c.Font.Height);
+                    }
+                }
+                string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "m1tool-ui-info.txt");
+                System.IO.File.WriteAllText(path, sb.ToString(), System.Text.Encoding.UTF8);
             }
             catch (Exception) { }
         }
@@ -1690,7 +1730,10 @@ namespace M1ToolPlus
 
         private void numericCLIFontSize_ValueChanged(object sender, EventArgs e)
         {
-            richTextBox1.Font = new Font(richTextBox1.Font.FontFamily, (float)numericCLIFontSize.Value);
+            // 设置项沿用「磅」的用户语义（默认 9.0），但按**像素**建字体：
+            // 换算成 96 DPI 下的像素高度，任何系统缩放下终端字号都不再变大变小（1:1）。
+            float px = (float)numericCLIFontSize.Value * 96F / 72F;
+            richTextBox1.Font = new Font(richTextBox1.Font.FontFamily, px, FontStyle.Regular, GraphicsUnit.Pixel);
             Properties.Settings.Default.MainCLIFontSize = (float)numericCLIFontSize.Value;
         }
 

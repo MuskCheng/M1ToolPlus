@@ -58,11 +58,17 @@ namespace M1ToolPlus
         internal static bool IsDark { get { return _dark; } }
 
         /// <summary>
-        /// 界面字号（pt）。原作 8.25pt 在屏幕上偏小、久看吃力，提到 9pt。
+        /// 界面字号（**像素**）。等价于 96 DPI 下的 9pt 微软雅黑（em 12px、行高 16px）。
+        /// 原作 8.25pt 在屏幕上偏小、久看吃力，提到这个尺寸。
         /// 不再往大调：按钮列宽是 84~97px 的固定值（绝对定位布局的既成事实），
         /// 字号再大「从UID卡读回」「写(UF)UID卡」等文案就会溢出。
+        ///
+        /// 为什么用像素而不是磅：进程已声明 DPI 感知（Program.Main 里的 SetProcessDPIAware），
+        /// 若字号仍用 Point，125%/150% 缩放下文字会跟着放大 25%/50%，而绝对定位的
+        /// 控件坐标不缩放——结果是文字被裁、间距失衡。像素字号在任何 DPI 下
+        /// 都渲染出同样的物理像素高度，界面才能真正 1:1。
         /// </summary>
-        private const float UiFontSize = 9F;
+        private const float UiFontPx = 12F;
 
         /// <summary>
         /// 按钮左右内边距（像素）。列宽是 84~97px 的固定值，
@@ -90,15 +96,15 @@ namespace M1ToolPlus
                     {
                         try
                         {
-                            using (Font probe = new Font(candidates[i], UiFontSize)) { }
-                            _font = new Font(candidates[i], UiFontSize, FontStyle.Regular, GraphicsUnit.Point);
+                            using (Font probe = new Font(candidates[i], UiFontPx, FontStyle.Regular, GraphicsUnit.Pixel)) { }
+                            _font = new Font(candidates[i], UiFontPx, FontStyle.Regular, GraphicsUnit.Pixel);
                             break;
                         }
                         catch (Exception) { }
                     }
                     if (_font == null)
                     {
-                        try { _font = new Font(SystemFonts.MessageBoxFont.FontFamily, UiFontSize); }
+                        try { _font = new Font(SystemFonts.MessageBoxFont.FontFamily, UiFontPx, FontStyle.Regular, GraphicsUnit.Pixel); }
                         catch (Exception) { _font = SystemFonts.MessageBoxFont; }
                     }
                 }
@@ -121,8 +127,8 @@ namespace M1ToolPlus
                     {
                         try
                         {
-                            using (Font probe = new Font(candidates[i], UiFontSize)) { }
-                            _terminalFont = new Font(candidates[i], UiFontSize, FontStyle.Regular, GraphicsUnit.Point);
+                            using (Font probe = new Font(candidates[i], UiFontPx, FontStyle.Regular, GraphicsUnit.Pixel)) { }
+                            _terminalFont = new Font(candidates[i], UiFontPx, FontStyle.Regular, GraphicsUnit.Pixel);
                             break;
                         }
                         catch (Exception) { }
@@ -423,9 +429,11 @@ namespace M1ToolPlus
                 // 终端输出区用等宽字体，其余控件用界面字体
                 bool mono = (c is RichTextBox);
                 Font want = mono ? TerminalFont : UiFont;
+                float px = UiFontPx;                     // 字号是像素值，不是磅值
 
                 Font cur = c.Font;
-                if (cur != null && cur.FontFamily.Name == want.FontFamily.Name
+                if (cur != null && cur.Unit == GraphicsUnit.Pixel
+                    && cur.FontFamily.Name == want.FontFamily.Name
                     && Math.Abs(cur.Size - want.Size) < 0.01F && cur.Style == want.Style)
                 {
                     return;   // 已经是对的，别重复赋值（赋值会触发一次重排）
@@ -434,22 +442,24 @@ namespace M1ToolPlus
                 FontStyle style = cur != null ? cur.Style : FontStyle.Regular;
                 if (mono) { style = FontStyle.Regular; }   // 等宽字体不做粗体，十六进制更好认
 
-                c.Font = GetFont(want.FontFamily, want.Size, style);
+                // cur.Unit 判断不可省：设计器里若已有同族同号字体，但那是**磅**值字体，
+                // 在 125%/150% 缩放下会被放大——必须换成像素字体，否则 1:1 破功。
+                c.Font = GetFont(want.FontFamily, px, style);
             }
             catch (Exception) { }
         }
 
-        /// <summary>按「字体 + 字号 + 样式」缓存 Font 实例，避免给每个控件都 new 一个。</summary>
-        private static Font GetFont(FontFamily family, float size, FontStyle style)
+        /// <summary>按「字体 + 字号(像素) + 样式」缓存 Font 实例，避免给每个控件都 new 一个。</summary>
+        private static Font GetFont(FontFamily family, float pixelSize, FontStyle style)
         {
-            string key = family.Name + "|" + size.ToString("R") + "|" + style.ToString();
+            string key = family.Name + "|" + pixelSize.ToString("R") + "|" + style.ToString();
             if (_fontCache == null) { _fontCache = new Hashtable(); }
 
             Font cached = _fontCache[key] as Font;
             if (cached != null) { return cached; }
 
             Font created;
-            try { created = new Font(family, size, style, GraphicsUnit.Point); }
+            try { created = new Font(family, pixelSize, style, GraphicsUnit.Pixel); }
             catch (Exception) { created = UiFont; }
 
             _fontCache[key] = created;

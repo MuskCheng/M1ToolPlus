@@ -341,3 +341,34 @@
   粗细/色值完全一致；页签内容区左右不再有内缩白框，视觉上与窗口边缘齐平。
 - 验证方式：对截图做**逐行/逐列亮像素统计**（亮度 >190 的像素占比），客户端区域内应无任何长亮线；
   注意 `PrintWindow` 截图的标题栏恒为白色（DWM 假象）、窗口外框是系统强调色，二者不算。
+  （2026-10-20 补充：真实截屏取色主窗口标题栏 = `#272727`、对话框 = `#2B2B2B`，**深色标题栏是生效的**，
+  白只是 PrintWindow 渲染 DWM 边框的假象——不要据 PrintWindow 图判断标题栏颜色。）
+
+### 高 DPI 1:1 渲染（2026-10-20，用户要求「初始 UI 1:1 显示」）
+
+- **现象**：用户机 1080p @125%，初始窗口几乎占满屏幕且整块发虚。实测：进程 unaware 时被系统做 GDI 位图拉伸，
+  窗口物理尺寸 = 900×816 × 1.25 ≈ **1125×1020**，文字边缘全是插值灰边。
+- **根因（两层）**：
+  1. 进程未声明 DPI 感知（.NET 4.0 无清单、无 API 调用）→ Windows 按 96 DPI 渲染后整体拉伸 1.25×；
+  2. 字号用 **Point（磅）** 单位 → 即便声明感知，125% 下文字会放大 25%，而绝对定位坐标不变 → 裁字、间距失衡。
+- **修法**：
+  - `Program.Main` 第一行 `SetProcessDPIAware()`（系统级 DPI 感知，V1；per-monitor V2 需 .NET 4.7+ 处理 `WM_DPICHANGED`，不适用）；
+  - `UiTheme` 字号改**像素**：`UiFontPx = 12F`（= 96 DPI 下的 9pt 雅黑，行高恒 16px），
+    `UiFont/TerminalFont/GetFont/ApplyFont` 全部 `GraphicsUnit.Pixel`；
+  - `ApplyFont` 增加 `cur.Unit == GraphicsUnit.Pixel` 判断：设计器里若已有同族同号字体，那是**磅**值字体，
+    在 125% 下会被放大，必须强制替换成像素字体；
+  - 终端字号设置沿用「磅」的用户语义（默认 9.0），创建时换算 `value * 96/72` 像素。
+- **结果**：125% 屏上窗口 = **900×839 物理像素**（此前 1125×1020），界面按 96 DPI 像素尺寸渲染、清晰锐利；
+  `Font.Height` 恒为 16px；GDI 测量残差约 9%（120 DPI 网格拟合），仅影响自适应按钮的几像素宽度。
+- **验证**（本机就是 125%，可直接测）：
+  - `M1ToolPlus.exe --ui-info` → `%TEMP%\m1tool-ui-info.txt` 输出 `DeviceDpi/ClientSize/AutoScaleDimensions/关键控件 Bounds`；
+  - 截图像素对比（同区域放大 4 倍）：新构建文字锐利、旧构建有插值灰边；
+  - 真实鼠标：三页签点击切换正确；四边 + 四角缩放光标（含**最外沿 1px**）全部正确（`GetCursorInfo` 判形状）；
+    逐级拖拽右边框 +10×6 → 宽度 900→960 精确跟手。
+- **教训**：
+  - `Font.Size` 的**单位随 `Font.Unit` 变化**（Pixel 字体返回像素值、Point 字体返回磅值），比较字体时必须同时看 `Unit`；
+  - 进程改成 DPI 感知后，**截图/点击脚本也必须 `SetProcessDPIAware`**，否则 `GetWindowRect`/`SetCursorPos` 是虚拟坐标，
+    抓图尺寸与点击位置全错（`scripts/screenshot-tabs.ps1` 已补）；
+  - `GetWindowRect` 连续两次启动位置不同（(96,96)/(224,181)/(64,64)）是 **Windows 级联默认定位**（Form1 未设 `StartPosition`），
+    不是本程序逻辑，与本次改动无关；
+  - 拖拽测试别用单次 `mouse_event(MOVE, dx)` 大跳变（会被系统尺寸循环放大成 +109），要**逐级小步**移动才与真实拖拽等价。
