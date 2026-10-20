@@ -162,6 +162,16 @@ if (Test-Path $outMff08) {
 $exe = Join-Path $outDir "M1ToolPlus.exe"
 if (Test-Path $exe) {
     $fi = Get-Item $exe
+    # 产物必须比所有「手写」源文件新：增量构建偶尔会因为时间戳/并行写入而跳过重编，
+    # 结果是拿旧 exe 继续测试（曾连续多轮验证的是旧程序）。这里做硬校验。
+    # 排除构建过程自己生成的 sat_*.cs（卫星程序集源文件，生成时间必然晚于 exe）
+    # 以及 obj/bin 中间目录。
+    $newest = Get-ChildItem $projDir -Include *.cs, *.resx, *.csproj -Recurse -File |
+              Where-Object { $_.Name -notlike 'sat_*.cs' -and $_.FullName -notmatch '\\(obj|bin)\\' } |
+              Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($newest -and $fi.LastWriteTime -lt $newest.LastWriteTime) {
+        throw "[build] 产物($($fi.LastWriteTime.ToString('HH:mm:ss'))) 早于源文件 $($newest.Name)($($newest.LastWriteTime.ToString('HH:mm:ss')))，本次未真正重编"
+    }
     Write-Host "[build] 成功: $($fi.FullName) ($([math]::Round($fi.Length/1KB,1)) KB) v$ver" -ForegroundColor Green
 } else {
     throw "[build] 未产出 M1ToolPlus.exe"

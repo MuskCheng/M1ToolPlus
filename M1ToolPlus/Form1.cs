@@ -237,10 +237,8 @@ namespace M1ToolPlus
             checkBoxHardLowCost.Checked = Properties.Settings.Default.HardLowCost;
             checkBoxNewScan.Checked = Properties.Settings.Default.NewScan;
             checkBoxCuidKeyOver.Checked = Properties.Settings.Default.CuidKeyOver;
-            if (Properties.Settings.Default.DefIsAdv)
-            {
-                tabControl1.SelectedIndex = 1;
-            }
+            // 初始页签不在这里切：句柄创建阶段切换会被过期的 TCN_SELCHANGE 覆盖，
+            // 统一延后到 Shown（见 ApplyInitialTabAfterShown）。
             //Issue #26: 恢复上次使用的设备，避免重复全量扫描
             //（勾选 NewScan 后每次全扫, Win10 下 libnfc 串口轮询可超 100 秒）
             //仅恢复显示与当前配置, 不重写 libnfc.conf（保护用户手写的 allow_autoscan=false 等）
@@ -280,7 +278,25 @@ namespace M1ToolPlus
             }
             // 统一界面外观（集中式主题，不改动布局参数）
             UiTheme.Apply(this);
-            ApplyInitialTab();
+            // 初始页签的切换要等消息循环把**句柄创建时排下的那条 TCN_SELCHANGE**
+            // 处理完之后再做（那条通知报告的是旧索引 0）。
+            // 详见 SelectTab 的说明。
+            this.Shown += delegate
+            {
+                try { BeginInvoke(new MethodInvoker(ApplyInitialTabAfterShown)); }
+                catch (Exception) { ApplyInitialTabAfterShown(); }
+            };
+        }
+
+        /// <summary>窗体显示后确定初始页签。</summary>
+        private void ApplyInitialTabAfterShown()
+        {
+            try
+            {
+                if (Properties.Settings.Default.DefIsAdv) { SelectTab(1); }
+                ApplyInitialTab();
+            }
+            catch (Exception) { }
         }
 
         /// <summary>
@@ -299,10 +315,28 @@ namespace M1ToolPlus
                         int idx;
                         if (int.TryParse(args[i + 1], out idx) && idx >= 0 && idx < tabControl1.TabPages.Count)
                         {
-                            tabControl1.SelectedIndex = idx;
+                            SelectTab(idx);
                         }
                     }
                 }
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 切换到指定页签（带下标校验）。
+        ///
+        /// 注意调用时机：**不能在 Load 里**直接切。句柄创建时原生控件会排一条
+        /// TCN_SELCHANGE（报告旧索引 0），消息循环启动后处理它时会把 WinForms 的
+        /// 内部索引写回 0，页签可见性随之按 0 还原——表现就是「标签条高亮第 1 页、
+        /// 页面内容却是第 0 页」。这里统一由 Shown + BeginInvoke 延后执行。
+        /// </summary>
+        private void SelectTab(int idx)
+        {
+            try
+            {
+                if (idx < 0 || idx >= tabControl1.TabPages.Count) { return; }
+                tabControl1.SelectedIndex = idx;
             }
             catch (Exception) { }
         }

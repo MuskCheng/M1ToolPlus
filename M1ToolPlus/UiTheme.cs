@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Drawing;
 using System.Runtime.InteropServices;
@@ -21,7 +21,7 @@ namespace M1ToolPlus
     /// 注：Mica 需要窗口透明合成，与 WinForms 的不透明渲染存在冲突，因此只对顶层窗体尝试，
     ///     失败即静默回退，不影响任何功能。
     /// </summary>
-    internal static class UiTheme
+    internal static partial class UiTheme
     {
         // ================= 配色（深色） =================
         internal static readonly Color DBack = Color.FromArgb(0x20, 0x20, 0x20);       // 窗口底色
@@ -362,10 +362,10 @@ namespace M1ToolPlus
             else if (c is GroupBox) StyleGroupBox((GroupBox)c);
             else if (c is Label) StyleLabel((Label)c);
             else if (c is TabControl) StyleTabs((TabControl)c);
-            else if (c is TabPage) c.BackColor = _dark ? DSurface : LBack;
+            else if (c is TabPage) c.BackColor = _dark ? DBack : LSurface;
             else if (c is StatusStrip) StyleStatusStrip((StatusStrip)c);
             else if (c is ToolStrip) StyleToolStrip((ToolStrip)c);
-            else if (c is PictureBox) ((PictureBox)c).SizeMode = PictureBoxSizeMode.Zoom;
+            else if (c is PictureBox) StylePicture((PictureBox)c);
             else if (c is RichTextBox) StyleTerminal((RichTextBox)c);
             else if (c is TextBoxBase) StyleInput((TextBoxBase)c);
             else if (c is ComboBox) StyleInput((ComboBox)c);
@@ -381,15 +381,26 @@ namespace M1ToolPlus
                     // 既不是 SystemColors.Control 也不是 Transparent——旧的 `|| Transparent`
                     // 守卫因此从不命中，深色主题下就留下一块块白底（设置页尤其明显）。
                     //
-                    // 判据改成「按亮度归类」：浅底（白/浅灰）在深色主题下必须翻成深色；
-                    // 深色主题下的深底则保持原样，浅色主题反向处理。
-                    // 这样无论 resx 写的是 White 还是 Transparent，都能被统一到主题配色。
-                    double bgLuma = Luma(c.BackColor);
-                    bool lightBg = bgLuma > 150;
-                    if (_dark && lightBg) { c.BackColor = DBack; }
-                    else if (!_dark && !lightBg && !c.BackColor.IsEmpty) { c.BackColor = LBack; }
+                    // 现在统一改为「跟随父容器底色」：父容器已被主题化（页签页=面板色、
+                    // 分组框=卡片色），子容器直接继承即可，既不会出现白底，
+                    // 也不会出现「卡片里嵌着一块深色方块」的高低错位。
+                    c.BackColor = ParentBackOf(c);
                 }
             }
+        }
+
+        /// <summary>取父容器底色；父容器不存在/透明时回退到窗口底色。</summary>
+        private static Color ParentBackOf(Control c)
+        {
+            try
+            {
+                if (c != null && c.Parent != null && !c.Parent.BackColor.IsEmpty)
+                {
+                    return c.Parent.BackColor;
+                }
+            }
+            catch (Exception) { }
+            return _dark ? DBack : LBack;
         }
 
         /// <summary>
@@ -459,19 +470,21 @@ namespace M1ToolPlus
                 : ContrastOn(accent);
 
             b.FlatStyle = FlatStyle.Flat;
-            b.FlatAppearance.BorderSize = _dark ? 1 : 0;
-            b.FlatAppearance.BorderColor = _dark ? (danger || neutral ? DBorder : accent) : accent;
+            // 边框改由自绘描边：FlatAppearance 画的是直角矩形，圆角处会露断头线
+            b.FlatAppearance.BorderSize = 0;
             b.FlatAppearance.MouseOverBackColor = hover;
             b.FlatAppearance.MouseDownBackColor = _dark ? DCardHover : Lighten(accent, 0.24F);
             b.BackColor = bg;
             b.ForeColor = fg;
             b.Cursor = Cursors.Hand;
 
+            // 圆角：Region 裁剪 + 自绘填充/描边（见 UiTheme.Round.cs）
+            RegisterButtonKind(b, danger ? (neutral ? "muted" : "danger") : (neutral ? "muted" : "primary"), bg);
+            HookRoundButton(b);
+            ApplyRoundRegion(b, RadiusButton);
+
             // 字号变大后按钮高度写死的 25px 会挤字，按字体实测高度留白
             if (b.Parent is FlowLayoutPanel) { FitButtonWidth(b); FitHeight(b); }
-
-            b.MouseEnter += delegate { b.BackColor = hover; };
-            b.MouseLeave += delegate { b.BackColor = bg; };
         }
 
         /// <summary>
@@ -554,8 +567,12 @@ namespace M1ToolPlus
             g.ForeColor = _dark ? DText : Color.FromArgb(0x37, 0x47, 0x4F);
             // GroupBox 内部同样要实色底：若用 Transparent，里面的复选框/单选框等
             // 浅色文字控件会回退到默认白底，深色主题下就会「白底 + 白字」看不见。
-            g.BackColor = _dark ? DBack : LBack;
+            // 卡片色比所在页签面略亮一档，形成「浮起的圆角卡片」层次。
+            g.BackColor = _dark ? DCard : Color.White;
             g.Padding = new Padding(6, 4, 6, 6);
+
+            // 圆角卡片：自绘圆角底 + 圆角描边 + 标题（盖掉系统画的直角边框与标题）
+            HookRoundGroupBox(g);
 
             // 分组框只是视觉容器，不需要参与 Tab 键焦点序列。
             // 默认 TabStop=True 时启动时它会拿到焦点，WinForms 随即画一个虚线焦点框，
@@ -656,16 +673,42 @@ namespace M1ToolPlus
         {
             if (l == null) { return; }
 
+            // 链接标签（终端文字颜色/大小、语言选择等）默认是深蓝色系统色，
+            // 在深色底上几乎读不清，这里按主题给一组对比度足够的链接色。
+            LinkLabel ll = l as LinkLabel;
+            if (ll != null)
+            {
+                ll.LinkColor = _dark ? Color.FromArgb(0x6C, 0xB6, 0xFF) : Color.FromArgb(0x0D, 0x47, 0xA1);
+                ll.ActiveLinkColor = _dark ? Color.FromArgb(0x9A, 0xD0, 0xFF) : Color.FromArgb(0x1A, 0x6F, 0xD6);
+                ll.VisitedLinkColor = ll.LinkColor;
+                ll.DisabledLinkColor = _dark ? Color.FromArgb(0x6A, 0x6A, 0x6A) : Color.FromArgb(0xA0, 0xA0, 0xA0);
+            }
+
             // SAK 支持说明是原作者刻意用蓝色强调的重要提示（原本靠父容器继承），
             // 分组框配色会覆盖继承色，这里显式补回。
             if (l.Name == "label13") { l.ForeColor = _dark ? Color.FromArgb(0x8A, 0xC0, 0xFF) : Color.FromArgb(0x0D, 0x47, 0xA1); }
+            // 设计器里用 HotTrack（深蓝）强调的提示标签（如「请放原卡/新卡」），
+            // 深色底上对比度极低，换成同色系的浅蓝。
+            else if (l.ForeColor == SystemColors.HotTrack) { l.ForeColor = _dark ? Color.FromArgb(0x6C, 0xB6, 0xFF) : SystemColors.HotTrack; }
             else if (l.ForeColor == SystemColors.ControlText) { l.ForeColor = _dark ? DText : LText; }
+            // 其它自定义的深色文字（红/绿/蓝等）在深色底上同样偏暗：向白色混合提亮，保留色相。
+            else if (_dark && Luma(l.ForeColor) < 120) { l.ForeColor = BlendColors(l.ForeColor, Color.White, 0.45F); }
 
-            if (l.AutoSize || string.IsNullOrEmpty(l.Text)) { return; }
+            if (string.IsNullOrEmpty(l.Text)) { return; }
 
             try
             {
                 bool hasBreak = l.Text.IndexOf('\n') >= 0;
+
+                // Dock=Left/Right 的多行标签：高度被表格行高钳死（行高只按单行算），
+                // 第二行文字底部会被裁掉。取消 Dock 交回 AutoSize，行高会按实际文本撑开。
+                if (hasBreak && l.AutoSize && (l.Dock == DockStyle.Left || l.Dock == DockStyle.Right))
+                {
+                    l.Dock = DockStyle.None;
+                }
+
+                if (l.AutoSize) { return; }
+
                 if (hasBreak)
                 {
                     // 文案自带换行：只需保证高度足够
@@ -690,6 +733,124 @@ namespace M1ToolPlus
                 if (needW - l.Width <= 200) { l.AutoSize = true; }
             }
             catch (Exception) { }
+        }
+
+        // ---------------- 图标（PictureBox） ----------------
+
+        private static readonly Hashtable _picOriginal = new Hashtable();   // PictureBox -> 原始图像
+        private static readonly Hashtable _picInverted = new Hashtable();   // PictureBox -> 反色图像（由我们生成，需释放）
+
+        /// <summary>
+        /// 深色主题下把「黑色图标」反色成浅色。
+        ///
+        /// 原项目的图标资源（箭头、对勾、状态栏小图标）都是**黑色 PNG + 透明底**，
+        /// 在深色背景上等于隐形。这里按图像亮度判定：偏暗的单色图标才反色，
+        /// 彩色/浅色图片（截图、照片）保持原样，避免把正常图片弄花。
+        /// </summary>
+        private static void StylePicture(PictureBox p)
+        {
+            if (p == null) { return; }
+            try
+            {
+                p.SizeMode = PictureBoxSizeMode.Zoom;
+                Image img = ThemedImage(p, p.Image);
+                if (img != null && !ReferenceEquals(p.Image, img)) { p.Image = img; }
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>工具栏/状态栏里的图标同样需要反色（ToolStripItem 的 Image）。</summary>
+        private static void StyleToolStripImages(ToolStrip ts)
+        {
+            if (ts == null) { return; }
+            try
+            {
+                foreach (ToolStripItem it in ts.Items)
+                {
+                    if (it == null || it.Image == null) { continue; }
+                    Image img = ThemedImage(it, it.Image);
+                    if (img != null && !ReferenceEquals(it.Image, img)) { it.Image = img; }
+                }
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 按主题返回该图像应显示的版本：深色主题下「整体偏暗」的单色图标返回反色副本，
+        /// 其余情况返回原图。原件与反色件都缓存，避免反复重建/反复反色。
+        /// </summary>
+        private static Image ThemedImage(object key, Image current)
+        {
+            if (key == null || current == null) { return current; }
+            try
+            {
+                Image orig;
+                if (_picOriginal.ContainsKey(key)) { orig = (Image)_picOriginal[key]; }
+                else
+                {
+                    // 首次见到的可能已是反色图（主题刷新时会重新走一遍），
+                    // 但此时一定有缓存，故这里只可能是原图。
+                    orig = current;
+                    _picOriginal[key] = orig;
+                }
+
+                if (!_dark || !IsMostlyDarkImage(orig)) { return orig; }
+
+                if (!_picInverted.ContainsKey(key)) { _picInverted[key] = InvertImage(orig); }
+                return (Image)_picInverted[key];
+            }
+            catch (Exception) { return current; }
+        }
+
+        /// <summary>采样判断图像是否「整体偏暗」（只统计不透明像素）。</summary>
+        private static bool IsMostlyDarkImage(Image img)
+        {
+            try
+            {
+                Bitmap bmp = img as Bitmap;
+                if (bmp == null) { return false; }
+                int stepX = Math.Max(1, bmp.Width / 24);
+                int stepY = Math.Max(1, bmp.Height / 24);
+                long sum = 0;
+                int n = 0;
+                for (int y = 0; y < bmp.Height; y += stepY)
+                {
+                    for (int x = 0; x < bmp.Width; x += stepX)
+                    {
+                        Color c = bmp.GetPixel(x, y);
+                        if (c.A < 40) { continue; }
+                        sum += (c.R * 299 + c.G * 587 + c.B * 114) / 1000;
+                        n++;
+                        if (n >= 600) { break; }
+                    }
+                    if (n >= 600) { break; }
+                }
+                if (n == 0) { return false; }
+                return (sum / n) < 110;
+            }
+            catch (Exception) { return false; }
+        }
+
+        /// <summary>生成反色副本（保留 alpha）。</summary>
+        private static Image InvertImage(Image src)
+        {
+            Bitmap bmp = new Bitmap(src.Width, src.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            using (System.Drawing.Imaging.ImageAttributes ia = new System.Drawing.Imaging.ImageAttributes())
+            {
+                System.Drawing.Imaging.ColorMatrix cm = new System.Drawing.Imaging.ColorMatrix(new float[][]
+                {
+                    new float[] { -1,  0,  0, 0, 0 },
+                    new float[] {  0, -1,  0, 0, 0 },
+                    new float[] {  0,  0, -1, 0, 0 },
+                    new float[] {  0,  0,  0, 1, 0 },
+                    new float[] {  1,  1,  1, 0, 1 }
+                });
+                ia.SetColorMatrix(cm);
+                g.DrawImage(src, new Rectangle(0, 0, src.Width, src.Height),
+                    0, 0, src.Width, src.Height, GraphicsUnit.Pixel, ia);
+            }
+            return bmp;
         }
 
         /// <summary>把标签所在容器的固定像素列放宽到能容下文本。</summary>
@@ -919,22 +1080,27 @@ namespace M1ToolPlus
                         Color bg = sel ? C.SelBg : (hover && !sel ? C.HoverBg : C.BtnBg);
                         Color fg = sel ? C.SelFg : C.BtnFg;
 
-                        Rectangle fill = new Rectangle(r.Left, r.Top, r.Width, r.Height - 1);
-                        using (SolidBrush b1 = new SolidBrush(bg)) { e.Graphics.FillRectangle(b1, fill); }
-                        using (Pen pen = new Pen(sel ? C.SelLine : C.Band))
+                        // 圆角药丸：内缩一圈，上下左右都留白，选中项像一枚独立的标签
+                        Rectangle pill = new Rectangle(r.Left + 3, r.Top + 3, Math.Max(4, r.Width - 6), Math.Max(4, r.Height - 6));
+                        if (sel)
                         {
-                            e.Graphics.DrawLine(pen, r.Left, r.Bottom - 1, r.Right - 1, r.Bottom - 1);
-                        }
-                        // 未选中按钮与底带同色，补一条右侧竖分隔线避免「一团」糊在一起
-                        if (!sel && i < t.TabPages.Count - 1)
-                        {
-                            using (Pen pen2 = new Pen(C.Sep))
+                            FillRound(e.Graphics, pill, RadiusBand, bg);
+                            using (Pen pen = new Pen(C.SelLine))
                             {
-                                e.Graphics.DrawLine(pen2, r.Right - 1, r.Top + 1, r.Right - 1, r.Bottom - 2);
+                                e.Graphics.DrawPath(pen, RoundPath(new Rectangle(pill.Left, pill.Top, pill.Width - 1, pill.Height - 1), RadiusBand));
                             }
                         }
-                        TextRenderer.DrawText(e.Graphics, t.TabPages[i].Text, t.Font, fill, fg,
-                            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                        else if (hover)
+                        {
+                            FillRound(e.Graphics, pill, RadiusBand, bg);
+                        }
+                        else
+                        {
+                            using (SolidBrush b1 = new SolidBrush(bg)) { e.Graphics.FillRectangle(b1, pill); }
+                        }
+
+                        TextRenderer.DrawText(e.Graphics, t.TabPages[i].Text, t.Font, pill, fg,
+                            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
                     }
                 }
                 catch (Exception) { }
@@ -955,10 +1121,33 @@ namespace M1ToolPlus
         // ---------------- 状态栏 / 工具栏 ----------------
         private static void StyleStatusStrip(StatusStrip ss)
         {
-            ss.BackColor = _dark ? DSurface : LSurface;
+            ss.BackColor = _dark ? DBack : LSurface;
             ss.ForeColor = _dark ? DTextDim : LTextDim;
-            ss.RenderMode = ToolStripRenderMode.System;
+            // 系统渲染器（System）会无视 BackColor，浅色系统主题下画出一条灰白亮带；
+            // 换成 Professional + 自定义配色表才吃我们的颜色。
+            ss.RenderMode = ToolStripRenderMode.Professional;
+            ss.Renderer = new ToolStripProfessionalRenderer(new StatusPalette(_dark));
             ss.Padding = new Padding(8, 2, 8, 2);
+            StyleToolStripImages(ss);
+        }
+
+        /// <summary>状态栏配色表：把系统默认的蓝灰分隔线/边框换成主题色。</summary>
+        private sealed class StatusPalette : ProfessionalColorTable
+        {
+            private readonly bool _dark;
+            internal StatusPalette(bool dark) { _dark = dark; }
+
+            public override Color ToolStripDropDownBackground { get { return _dark ? DBack : LSurface; } }
+            public override Color MenuBorder { get { return _dark ? DBorder : LBorder; } }
+            public override Color MenuItemBorder { get { return _dark ? DBorder : LBorder; } }
+            public override Color MenuItemSelected { get { return _dark ? DCardHover : LCardHover; } }
+            public override Color MenuItemSelectedGradientBegin { get { return _dark ? DCardHover : LCardHover; } }
+            public override Color MenuItemSelectedGradientEnd { get { return _dark ? DCardHover : LCardHover; } }
+            public override Color SeparatorDark { get { return _dark ? DBorder : LBorder; } }
+            public override Color SeparatorLight { get { return _dark ? DBorder : LBorder; } }
+            public override Color ImageMarginGradientBegin { get { return _dark ? DBack : LSurface; } }
+            public override Color ImageMarginGradientMiddle { get { return _dark ? DBack : LSurface; } }
+            public override Color ImageMarginGradientEnd { get { return _dark ? DBack : LSurface; } }
         }
 
         private static void StyleToolStrip(ToolStrip ts)
@@ -967,6 +1156,7 @@ namespace M1ToolPlus
             ts.ForeColor = _dark ? DText : LText;
             ts.ImageScalingSize = new Size(16, 16);
             ts.Padding = new Padding(4, 2, 4, 2);
+            StyleToolStripImages(ts);
         }
 
         // ---------------- 输入控件 ----------------
@@ -976,10 +1166,16 @@ namespace M1ToolPlus
             {
                 // 只读框保留可辨识的浅灰底，深色下用更暗的卡片色
                 tb.BackColor = _dark ? Color.FromArgb(0x2A, 0x2A, 0x2A) : Color.FromArgb(0xF0, 0xF0, 0xF0);
-                return;
             }
-            tb.BackColor = _dark ? DCard : Color.White;
+            else
+            {
+                tb.BackColor = _dark ? DInput : Color.White;
+            }
             tb.ForeColor = _dark ? DText : LText;
+
+            // 圆角：Region 裁剪（原生直角边框会被裁掉圆角处的线头）
+            HookRoundInput(tb);
+            ApplyRoundRegion(tb, RadiusInput);
         }
 
         // 输入框底色刻意比面板更深一档，让下拉框/输入框在深色下有「凹陷」层次感；
@@ -991,27 +1187,32 @@ namespace M1ToolPlus
             cb.BackColor = _dark ? DInput : Color.White;
             cb.ForeColor = _dark ? DText : LText;
             // ComboBox 没有 FlatAppearance 边框颜色可设。FlatStyle.Flat 的默认灰边框
-            // 在深色下几乎不可见，用户看不出哪里能输入。挂一次 Paint 事件补画深色边框。
+            // 在深色下几乎不可见，用户看不出哪里能输入。挂一次 Paint 事件补画边框。
             cb.FlatStyle = FlatStyle.Flat;
-            if (_dark)
-            {
-                Color border = DBorder;
-                cb.Paint += delegate(object sender, PaintEventArgs e)
-                {
-                    ComboBox box = sender as ComboBox;
-                    if (box == null) { return; }
-                    using (Pen pen = new Pen(border))
-                    {
-                        e.Graphics.DrawRectangle(pen, 0, 0, box.Width - 1, box.Height - 1);
-                    }
-                };
-            }
+
+            // 原生下拉箭头按钮用的是系统浅色主题，深色界面里是一块白块。
+            // 尝试用 uxtheme 的深色主题变体（Win10 1809+；不支持的系统会静默回退）。
+            ApplyNativeDarkTheme(cb, _dark);
+
+            // 圆角：裁剪 + 自绘圆角描边（两种主题都需要）
+            HookRoundCombo(cb);
+            // 内缩 1px：原生 ComboBox 会画一圈系统浅色边框，深色下是刺眼的白边
+            HookRoundInput(cb, 1);
+            ApplyRoundRegion(cb, RadiusInput, 1);
+            // 原生下拉箭头是浅色块，盖掉自绘
+            CoverComboArrow(cb);
         }
 
         private static void StyleInput(NumericUpDown nud)
         {
-            nud.BackColor = _dark ? DCard : Color.White;
+            nud.BackColor = _dark ? DInput : Color.White;
             nud.ForeColor = _dark ? DText : LText;
+            // 原生边框同样是系统浅色，直接关掉，靠圆角裁剪 + 底色分层
+            try { nud.BorderStyle = BorderStyle.None; } catch (Exception) { }
+            HookRoundInput(nud);
+            ApplyRoundRegion(nud, RadiusInput);
+            // 原生上下箭头是白色块，深色下盖掉自绘（浅色主题同样盖，避免系统灰块破坏圆角观感）
+            CoverSpinner(nud);
         }
 
         /// <summary>
@@ -1031,12 +1232,11 @@ namespace M1ToolPlus
             // 虚线/亮色焦点框围住整块文字（与分组框同款问题）。
             if (cb.TabStop) { cb.TabStop = false; }
 
-            // 底色按亮度归类，与 StyleControl 的容器分支同一套判据。
+            // 底色跟随父容器：父容器已被主题化（分组框=卡片色、页签页=面板色），
+            // 直接继承即可，不会出现「卡片里嵌着一块深色方块」的高低错位。
             // 注意不能无条件写死颜色：RadioButton 也走这里，它们大多直接放在
             // TabPage 上（底色已经正确），一刀切会破坏已正确的控件。
-            bool lightBg = Luma(cb.BackColor) > 150;
-            if (_dark && lightBg) { cb.BackColor = DBack; }
-            else if (!_dark && !lightBg && !cb.BackColor.IsEmpty) { cb.BackColor = LBack; }
+            cb.BackColor = ParentBackOf(cb);
         }
 
         /// <summary>
@@ -1057,9 +1257,27 @@ namespace M1ToolPlus
             {
                 rt.ForeColor = Color.FromArgb(0x21, 0x21, 0x21);
             }
+
+            // 终端区圆角：巨大的黑方块改成圆角面板，观感更整
+            HookRoundInput(rt);
+            ApplyRoundRegion(rt, RadiusCard);
         }
 
         private static double Luma(Color c) { return 0.299 * c.R + 0.587 * c.G + 0.114 * c.B; }
+
+        /// <summary>按比例把颜色 a 向颜色 b 混合（保留 alpha），用于深色主题下提亮过暗的文字色。</summary>
+        private static Color BlendColors(Color a, Color b, float t)
+        {
+            try
+            {
+                if (t < 0F) { t = 0F; } else if (t > 1F) { t = 1F; }
+                return Color.FromArgb(a.A,
+                    (int)(a.R + (b.R - a.R) * t),
+                    (int)(a.G + (b.G - a.G) * t),
+                    (int)(a.B + (b.B - a.B) * t));
+            }
+            catch (Exception) { return a; }
+        }
 
         // ================= 系统主题探测 =================
 

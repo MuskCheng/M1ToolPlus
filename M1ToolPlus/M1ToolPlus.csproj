@@ -108,6 +108,7 @@
     <Compile Include="Program.cs" />
 <Compile Include="ToolProcess.cs" />
 <Compile Include="UiTheme.cs" />
+<Compile Include="UiTheme.Round.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>

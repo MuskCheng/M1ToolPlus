@@ -1,4 +1,4 @@
-# 后续开发路线图（交接备忘）
+﻿# 后续开发路线图（交接备忘）
 
 > 面向接续开发的交接文档：记录项目现状、已完成工作、待办事项与开发环境要点。
 > 最后更新：2026-10-19（深色主题/字体/标签头专项修复后）。
@@ -256,3 +256,70 @@
     就报「编译成功」，导致连续多轮拿旧程序做测试。已改为检出 `error CS/MSB` 即失败。
   - `UiTheme` 的 `NativeWindowHook` 原先是临时对象（无字段持有），可能被 GC 回收后 `ReleaseHandle`
     还原窗口过程、主题变更监听失效——已改为静态字段保活。
+
+## 九、圆角美化改版（2026-10-20，UiTheme.Round.cs）
+
+用户要求「UI 美化、多用圆角矩形」。约束：**不改 Designer 布局、不动 `Form1.Resize.cs` 的边框拖拽**，
+只做运行时重绘。新增 `M1ToolPlus/UiTheme.Round.cs`（`UiTheme` 的 partial），风格向 Win11 Fluent 靠拢。
+
+### 做法
+
+| 对象 | 手法 |
+| --- | --- |
+| 按钮 | `FlatStyle.Flat` + `BorderSize=0` + 圆角 `Region` + `Paint` 自绘填充/描边/文字/焦点环（半径 6px） |
+| 分组框 | 不设 Region（见坑 2），只填四角小方块盖掉系统直角的残线 + 自绘 8px 圆角卡片、边框、标题 |
+| 输入框/终端 | `Region` 圆角裁剪（4px / 8px）+ 统一深色底 `DInput` |
+| 下拉框 | 1px 内缩 `Region`（裁掉系统浅色边框）+ 子面板盖住右端原生浅色箭头按钮，自绘三角 |
+| 数字框 | `BorderStyle=None` + 子面板盖住原生白色上下箭头，自绘 ▲▼ 并转发 `UpButton/DownButton()` |
+| 标签页 | 药丸标签（10px）+ 深色状态栏（`Professional` + 自定义 `StatusPalette`） |
+
+层次：窗体 `DBack` → 页签页 `DBack` → 卡片 `DCard` → 输入框 `DInput`。容器/复选框一律继承父容器底色。
+
+### 三个致命的坑（本轮耗时最多）
+
+1. **`Control.Region` 保存的是同一个 `Region` 对象引用，不复制。**
+   `Region nr = new Region(path); c.Region = nr; nr.Dispose();` 会让控件持有一个**已释放**的 Region，
+   之后控件创建句柄时 `Control.OnHandleCreated → Region.GetHrgn` 抛
+   `ArgumentException: Parameter is not valid.`。
+   该异常发生在 **`WmCreate`** 里，会：
+   - 打断整页的创建/绘制 → 表现为「整页卡片只剩第一张」；
+   - 切页时弹 WinForms 未处理异常对话框（441×174、标题是程序名），**模态循环卡住 `SelectedIndex` setter**，
+     于是「标签条高亮切了、页面内容没切」。
+   正解：新 Region 交给控件持有，**只 Dispose 被替换掉的旧 Region**。
+2. **空 Region 同样会在 `WmCreate` 抛异常。** 控件尺寸还是 0×0 时构造的 Region 是空区域，
+   `GetHrgn` 一样报 "Parameter is not valid"。必须 `宽高 >= 3` 才设 Region，尺寸不足时清空并等
+   `Resize`/`HandleCreated` 再设。另外 `GraphicsPath.AddArc` 的宽高不能为负 →
+   圆角半径必须 `min(radius, min(w,h)/2)`，零/负尺寸直接返回空路径且调用方跳过绘制。
+3. **分组框不能设 Region，也不能整块铺父底色。**
+   带 `AutoSize` 的分组框一旦裁剪，布局会塌陷、内容全部消失；整块铺父底色则会擦掉
+   **先绘制**的兄弟分组框（同页多卡片时只剩最后一张）。只能填四角 `RadiusCard×RadiusCard` 的小方块。
+
+### 页签错位（标签条高亮与内容不一致）
+
+- 真因不是主题代码，而是**在 `Load` 里切页**：句柄创建阶段原生 TabControl 会排下一条
+  `TCN_SELCHANGE`（报告旧索引 0），消息循环启动后处理它会把 WinForms 内部索引写回 0；
+  此后 `SelectedIndex` setter 与 getter（原生值）比较，同值赋值被当成无变化忽略。
+- 修法：初始页签一律延后到 `Shown` + `BeginInvoke`（消息队列排空后）再设，
+  `SelectTab()` 只做下标校验后赋值，不再需要「切到相邻页再切回」的强制刷新。
+- 早期尝试的「`SelectedIndexChanged` 里同步 `TabPage.Visible` + 250ms guard 定时器」会与
+  TabControl 内部逻辑打架，出现**两页同时可见**，已弃用（基线对照实验证明 HEAD 点击切页本来就正常）。
+
+### 深色主题细节
+
+- **黑色 PNG 图标在深色底上等于隐形**（箭头、对勾、状态栏图标）。按图像平均亮度判定「整体偏暗」才反色
+  （保留彩色/浅色图片），原件与反色件都缓存；`PictureBox` 与 `ToolStripItem.Image` 都处理。
+- `SystemColors.HotTrack`（深蓝）和设计器里的深色自定义文字在深色底上对比度不足：
+  HotTrack 映射为浅蓝 `#6CB6FF`，其余深色文字向白色混合 45%（保留色相）。
+- `ComboBox` 即使设了 `BackColor`，原生箭头按钮仍是系统浅色；`SetWindowTheme(h,"DarkMode_CFD",null)`
+  只对边框/底有效，箭头仍需自绘遮盖。
+- 多行且 `Dock=Left` 的标签会被表格行高钳死（行高按单行算），第二行被裁：取消 Dock 交回 `AutoSize`。
+- 标题栏深色由 `DwmSetWindowAttribute(20)` 实现（Win11 生效）；**`PrintWindow` 截图里标题栏是白的**，
+  那是抓图渲染的假象，要用屏幕截图（`CopyFromScreen`）核对。
+
+### 验证与回归
+
+- `scripts/screenshot-tabs.ps1` 用 `--tab N` 启动截图；`--tab` 在修复后工作正常（此前错位是上面的异常导致）。
+- 点击路径另用真实鼠标事件（`ClientToScreen` + `SetCursorPos` + `mouse_event`）验证过，
+  标签条中心 client 坐标约为 x=72/215/352、y=17（zh 界面）。
+- `scripts/regression-auto.ps1`：PASS 3 / WARN 1 / FAIL 0（WARN 为既有的「缺 nfc-bin 时提示」人工确认项）。
+- 待真机回归通过后再升版本号到 1.8.0 并发版；UI 改动本身不升版本。
