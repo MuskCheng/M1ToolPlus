@@ -25,6 +25,35 @@ namespace M1ToolPlus
             System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(Properties.Settings.Default.Language);
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(Properties.Settings.Default.Language);
             InitializeComponent();
+            ApplyLanguageSelection();
+        }
+
+        /// <summary>构造期回显语言下拉框时置位，避免触发 SelectedIndexChanged 里的「保存 + 重启」。</summary>
+        private bool suppressLanguageChanged;
+
+        /// <summary>
+        /// 把「语言和地区」下拉框回显成当前设置的语言。
+        /// 只设 SelectedIndex，不写设置；设置项的权威值始终是 Settings.Language。
+        /// 注意：语言资源里的下拉项文案本身是本地化的（简体中文 / Русский / English），
+        /// 所以回显后看到的就是当前界面语言的名字。
+        /// </summary>
+        private void ApplyLanguageSelection()
+        {
+            try
+            {
+                int index = 0; // 0 = 简体中文（默认/空设置均视为中文）
+                string lang = Properties.Settings.Default.Language;
+                if (!string.IsNullOrEmpty(lang))
+                {
+                    string two = CultureInfo.GetCultureInfo(lang).TwoLetterISOLanguageName;
+                    if (two == "ru") { index = 1; }
+                    else if (two == "en") { index = 2; }
+                }
+                suppressLanguageChanged = true;
+                try { comboBox1.SelectedIndex = index; }
+                finally { suppressLanguageChanged = false; }
+            }
+            catch (Exception) { suppressLanguageChanged = false; }
         }
 
         private Process process = new Process();
@@ -329,6 +358,7 @@ namespace M1ToolPlus
                 sb.AppendLine("CurrentCulture=" + System.Threading.Thread.CurrentThread.CurrentCulture.Name);
                 sb.AppendLine("TabPage1Text=" + tabControl1.TabPages[0].Text);
                 sb.AppendLine("ButtonListDevText=" + buttonListDev.Text);
+                sb.AppendLine("LanguageCombo=" + comboBox1.SelectedIndex + ":" + comboBox1.Text);
                 string[] names = new string[] { "tabControl1", "richTextBox1", "statusStrip1", "groupBox1", "buttonScanCard", "comboBox1" };
                 foreach (string n in names)
                 {
@@ -1802,6 +1832,9 @@ namespace M1ToolPlus
 
         private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
+            // 构造期回显（ApplyLanguageSelection）也会走到这里，必须屏蔽，
+            // 否则一启动就「保存设置 + 重启」，形成死循环。
+            if (suppressLanguageChanged) { return; }
             // 按索引切换语言（0=中文 1=俄语 2=英语），
             // 不再用文案比对匹配——各语言资源的下拉文案不同，索引式对新增语言更稳
             string culture;

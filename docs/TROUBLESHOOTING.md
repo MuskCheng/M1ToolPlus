@@ -77,8 +77,14 @@ CUID 卡不能像 UID 卡那样用后门随便写，必须用**卡内已有的�
 
 ### 切换语言 #41 #38
 
-设置页第一个下拉框选择：中文 / Русский / English，选择后自动重启生效。
+设置页第一个下拉框选择：简体中文 / Русский / English，选择后自动重启生效。
 本版本起内置英语界面。
+
+下拉框会用**当前界面语言**回显所选项（`0=简体中文`、`1=Русский`、`2=English`），
+首次运行或配置里没有 `Language` 时按简体中文处理并选中第 0 项。
+注意：从旧版本升级时，若配置里仍是空的 `Language`，旧版会把它显示成「标准」；
+本版本起该选项统一叫「简体中文」（英语界面为 `Chinese`、俄语界面为 `Китайский`），
+与 `zh-cn` 的语义一致，避免被误认为「跟随系统」。
 
 **2026-10-20 修复：切换后界面仍是中文（1.7.0.0 及更早）**
 
@@ -95,8 +101,34 @@ CUID 卡不能像 UID 卡那样用后门随便写，必须用**卡内已有的�
 - 修复：卫星输出为 `<文化>\M1ToolPlus.resources.dll`，并且每个资源
   **同时**嵌入现代名与旧式名（见 `scripts/build.ps1` 第 3 步）。
 - 自检：`M1ToolPlus.exe --ui-info` 会把 `SettingLanguage` /
-  `CurrentUICulture` / `TabPage1Text` / `ButtonListDevText` 写进
-  `%TEMP%\m1tool-ui-info.txt`；语言生效时前三行应与所选语言一致。
+  `CurrentUICulture` / `TabPage1Text` / `ButtonListDevText` / `LanguageCombo`
+  写进 `%TEMP%\m1tool-ui-info.txt`；语言生效时前几行应与所选语言一致，
+  `LanguageCombo` 应形如 `0:简体中文` / `1:Русский` / `2:English`。
+
+**2026-10-21 修复：下拉框空白 / 不回显当前语言**
+
+- 现象：设置页语言下拉框是空的，用户无法判断当前是哪种语言。
+- 根因：下拉框只在 `SelectedIndexChanged` 里写配置并重启，**构造时从未设置
+  `SelectedIndex`**，所以界面上始终没有选中项。
+- 修复：构造期调用 `ApplyLanguageSelection()` 按
+  `CultureInfo.TwoLetterISOLanguageName` 选中对应项，并用
+  `suppressLanguageChanged` 屏蔽这次赋值触发的事件——否则会在启动时
+  立刻 `Settings.Save()` + `Application.Restart()`，形成重启死循环
+  （实测 `--ui-info` 每次启动进程数恒为 1，无循环）。
+
+**2026-10-21 修复：俄语窗口比中文更大、卡片被拉宽**
+
+- 现象：切到俄语后主窗口变成 1348×693（中文为 900×839），
+  复制模式的三张卡片被拉到两倍宽，卡片之间的箭头错位。
+- 根因：`Form1.ru.resx` 是原项目用俄语设计器保存的，里面残留了整套
+  **旧版俄语布局**：`$this.ClientSize = 1098, 456` 加上 122 个 `Size`、
+  36 个 `Location`。这些值会在 `ApplyResources` 时覆盖新布局。
+- 修复：清空 `Form1.ru.resx` 里的全部几何条目，只保留文案，使其与
+  `Form1.zh.resx` / `Form1.en.resx` 一致；布局统一由设计器基准值 +
+  运行期 `UiTheme.ApplyAdaptiveLayout` / 流式布局计算。
+- 附带修正：`build.ps1` 的新鲜度检查不再把语言专用 resx
+  （`Form1.ru.resx` 等）算作主程序输入——它们只影响卫星程序集，
+  以前只改俄语文案会误报「产物早于源文件」并中止构建。
 
 ## 构建相关
 

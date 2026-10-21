@@ -191,8 +191,10 @@ if (Test-Path $exe) {
     # 结果是拿旧 exe 继续测试（曾连续多轮验证的是旧程序）。这里做硬校验。
     # 排除构建过程自己生成的 sat_*.cs（卫星程序集源文件，生成时间必然晚于 exe）
     # 以及 obj/bin 中间目录。
+    # 再排除语言专用 resx（Form1.ru.resx 等）：它们只进卫星程序集，不参与主程序编译，
+    # 每次构建都会由下面的 csc 步骤重新生成卫星，不需要因此重编 exe。
     $newest = Get-ChildItem $projDir -Include *.cs, *.resx, *.csproj -Recurse -File |
-              Where-Object { $_.Name -notlike 'sat_*.cs' -and $_.FullName -notmatch '\\(obj|bin)\\' } |
+              Where-Object { $_.Name -notlike 'sat_*.cs' -and $_.FullName -notmatch '\\(obj|bin)\\' -and $_.Name -notmatch '\.[a-z]{2}(-[A-Za-z]{2,4})?\.resx$' } |
               Sort-Object LastWriteTime -Descending | Select-Object -First 1
     if ($newest -and $fi.LastWriteTime -lt $newest.LastWriteTime) {
         throw "[build] 产物($($fi.LastWriteTime.ToString('HH:mm:ss'))) 早于源文件 $($newest.Name)($($newest.LastWriteTime.ToString('HH:mm:ss')))，本次未真正重编"

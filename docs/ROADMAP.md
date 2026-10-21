@@ -1,4 +1,4 @@
-﻿# 后续开发路线图（交接备忘）
+# 后续开发路线图（交接备忘）
 
 > 面向接续开发的交接文档：记录项目现状、已完成工作、待办事项与开发环境要点。
 > 最后更新：2026-10-19（深色主题/字体/标签头专项修复后）。
@@ -416,3 +416,42 @@
   **资源名新旧两种都嵌**；否则运行时**静默**回退到中性资源，不抛任何异常。
 - 语言类问题先查「设置是否真的写进当前 exe 的 user.config」，再查卫星加载；
   同一程序不同路径（bin\Release vs artifacts\package）用的是**不同的 user.config**。
+
+## 十一、语言下拉框空白与俄语布局（2026-10-21，用户实测暴露）
+
+### 现象
+1. 设置页语言下拉框是**空的**，看不出当前是哪种语言；
+2. 切俄语后主窗口 1348×693（中文 900×839），复制模式卡片被拉到两倍宽、箭头错位。
+
+### 根因
+1. 下拉框只在 `SelectedIndexChanged` 里保存 + 重启，构造时**从未设置 `SelectedIndex`**，
+   所以永远没有选中项。
+2. `Form1.ru.resx` 是原项目用俄语设计器保存的，带了一整套**旧版俄语布局**：
+   `$this.ClientSize = 1098, 456` + 122 个 `Size` + 36 个 `Location`。
+   `ApplyResources` 时这些值覆盖新布局，窗口尺寸/卡片宽度全被带偏。
+   `Form1.zh.resx` / `Form1.en.resx` 都是纯文案，没有这个问题。
+
+### 修复
+- `Form1.ApplyLanguageSelection()`：按 `CultureInfo.TwoLetterISOLanguageName`
+  选中 0/1/2，用 `suppressLanguageChanged` 屏蔽赋值触发的
+  `SelectedIndexChanged`（否则构造期就 `Settings.Save()` + `Application.Restart()`，
+  变成重启死循环）。
+- 下拉首项文案由「标准」改为「简体中文」（en=`Chinese`、ru=`Китайский`），
+  与 `zh-cn` 语义一致，避免误认为「跟随系统」。
+- 清空 `Form1.ru.resx` 的全部几何条目（`ClientSize/Size/Location`），只留文案；
+  布局统一由设计器基准值 + 运行期自适应计算。
+- `build.ps1` 新鲜度检查排除语言专用 resx（只影响卫星，不影响 exe），
+  否则只改俄语文案会误报「产物早于源文件」并中止构建。
+
+### 验证
+- `--ui-info` 新增 `LanguageCombo`：`zh-cn → 0:简体中文`、`ru-RU → 1:Русский`、
+  `en-US → 2:English`，每次启动进程数恒为 1（无重启循环）✓
+- 俄语窗口恢复为 1348×839（宽度仍是按文案自适应加宽，高度与中文一致）；
+  复制模式卡片宽度、箭头位置与中文一致 ✓
+- 三语设置页截图：下拉框均回显当前语言 ✓
+
+### 教训
+- WinForms 本地化 resx 里的 `$this.ClientSize` / 控件 `Location` / `Size`
+  是**设计器快照**，不是文案；改版布局后必须清理，否则只有对应语言会错位。
+- 「显示当前值」的控件要显式初始化，且初始化时必须屏蔽
+  `SelectedIndexChanged`，否则会把「回显」当成「用户切换」。
