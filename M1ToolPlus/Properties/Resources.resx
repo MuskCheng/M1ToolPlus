@@ -342,7 +342,7 @@
     <value>开始执行检测卡片加密……</value>
   </data>
   <data name="开始执行检测设备" xml:space="preserve">
-    <value>开始执行检测设备……</value>
+    <value>开始执行检测设备……（扫描可能需要数十秒，请稍候）</value>
   </data>
   <data name="开始执行读取卡片" xml:space="preserve">
     <value>开始执行读取卡片……</value>

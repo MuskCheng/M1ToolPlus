@@ -342,7 +342,7 @@ Please confirm if you want to continue? </value>
     <value>Start performing check card encryption……</value>
   </data>
   <data name="开始执行检测设备" xml:space="preserve">
-    <value>Starting device test……</value>
+    <value>Starting device test... (this may take up to a minute, please wait)</value>
   </data>
   <data name="开始执行读取卡片" xml:space="preserve">
     <value>reading the card……</value>

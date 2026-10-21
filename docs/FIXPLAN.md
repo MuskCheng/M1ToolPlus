@@ -110,6 +110,10 @@
 
 因此改用不依赖框架版本的方案解决终端乱码：新增 `ToolProcess.PumpOutput()`，用 `StreamReader(stream, Encoding.UTF8)` 显式解码子进程输出（见步 6）。框架升级本身留待阶段④连同 .NET 8 迁移一起处理。
 
+> **2026-10-21 更正**：实测 nfc-bin 工具输出的是 **GBK(936)** 字节，而不是 UTF-8
+> （「使用libnfc」= `CA B9 D3 C3`；`CA B9` 还是合法 UTF-8 序列，按 UTF-8 解码会得到 `ʹ` 而不报错）。
+> `ToolProcess` 已改为固定 936 解码，详见 `docs/ROADMAP.md` 第十二节。
+
 ### 步 5 实施要点（已完成）
 
 - `Form1.cs` 两处硬编码 `"M1ToolPlus - 运行中"` → `Resources.MifareOne_Tool_运行中`（三语言已有）

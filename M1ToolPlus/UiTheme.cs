@@ -208,15 +208,30 @@ namespace M1ToolPlus
                     form.StartPosition = FormStartPosition.CenterScreen;
                 }
 
-                // 2) 顶层三区改为 Dock：状态栏贴底、功能区贴顶、终端区填满剩余
+                // 2) 顶层三区改为 Dock：状态栏贴底、功能区贴顶、终端区放在功能区下方
+                StatusStrip status = null;
+                RichTextBox terminal = null;
+                TabControl tabs = FindTabControl(form);
                 foreach (Control c in form.Controls)
                 {
-                    if (c is StatusStrip) { c.Dock = DockStyle.Bottom; }
+                    if (c is StatusStrip) { status = (StatusStrip)c; c.Dock = DockStyle.Bottom; }
                     else if (c is TabControl) { c.Dock = DockStyle.Top; }
-                    else if (c is RichTextBox) { c.Dock = DockStyle.Fill; }
+                    else if (c is RichTextBox) { terminal = (RichTextBox)c; }
+                }
+                // 终端区不能 Dock.Fill 铺满整窗：TabControl 在 z 序上层，
+                // Fill 会把 RichTextBox 拉成 (0,0,整窗)，日志从顶部开始写，
+                // 前几百像素被页签盖住——用户看到的就是一片空白（Issue：检测连接无输出）。
+                // 这里显式放到功能区下方、状态栏上方，并四边锚定跟随窗口缩放。
+                if (terminal != null && terminal.Parent == form)
+                {
+                    form.PerformLayout();
+                    int termTop = (tabs != null) ? tabs.Bottom : 0;
+                    int termBottom = (status != null) ? status.Top : form.ClientSize.Height;
+                    terminal.Dock = DockStyle.None;
+                    terminal.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+                    terminal.Bounds = new Rectangle(0, termTop, form.ClientSize.Width, Math.Max(0, termBottom - termTop));
                 }
 
-                TabControl tabs = FindTabControl(form);
                 if (tabs != null)
                 {
                     // 3) 宽度变化时重排功能区（TabControl 内的绝对定位控件默认不会重排）

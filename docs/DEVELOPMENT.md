@@ -40,7 +40,7 @@ GUI 程序启动后主窗口标题为 `M1ToolPlus`，即为冒烟测试通过。
 Program.cs          入口 + 单实例 Mutex
 Form1.cs            主窗口，几乎全部业务逻辑（1490 行，待拆分）
 Form1.Designer.cs   主窗口布局（1687 行，绝对定位，勿改布局）
-ToolProcess.cs      子进程启动 + UTF-8 输出解码封装
+ToolProcess.cs      子进程启动 + GBK(936) 输出解码封装
 UiTheme.cs          运行时 UI 主题（跟随系统深浅色，改配色只改这里）
 ClassMifareS50.cs   S50/S70 卡数据模型 + MCT 格式转换
 FormHTool.cs        S50HTool（卡数据分析/修复/转 MCT）
