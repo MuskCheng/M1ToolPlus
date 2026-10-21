@@ -308,6 +308,9 @@ namespace M1ToolPlus
             }
             // 统一界面外观（集中式主题，不改动布局参数）
             UiTheme.Apply(this);
+            // 终端字体/字号：微软雅黑 + 设置页「文字大小」，Ctrl+滚轮也统一走这里
+            richTextBox1.ZoomStep += delegate(int step) { StepTerminalFont(step); };
+            ApplyTerminalFontSettings();
             // 初始页签的切换要等消息循环把**句柄创建时排下的那条 TCN_SELCHANGE**
             // 处理完之后再做（那条通知报告的是旧索引 0）。
             // 详见 SelectTab 的说明。
@@ -363,6 +366,11 @@ namespace M1ToolPlus
                 // 终端诊断：文本确实写进去了但被页签盖住时，TextLength > 0 而界面上看不到
                 sb.AppendLine("TerminalTextLength=" + richTextBox1.TextLength);
                 sb.AppendLine("TerminalFirstLine=" + (richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : "(empty)"));
+                // 字号诊断：设置页显示值 / 实际字体名 / 像素高度 / 缩放因子必须互相一致
+                sb.AppendLine("TerminalFontSize=" + numericCLIFontSize.Value + "pt");
+                sb.AppendLine("TerminalFontFamily=" + richTextBox1.Font.FontFamily.Name);
+                sb.AppendLine("TerminalFontPx=" + richTextBox1.Font.SizeInPoints.ToString("0.##") + "pt h=" + richTextBox1.Font.Height);
+                sb.AppendLine("TerminalZoom=" + richTextBox1.ZoomFactor.ToString("0.##"));
                 string[] names = new string[] { "tabControl1", "richTextBox1", "statusStrip1", "groupBox1", "buttonScanCard", "comboBox1" };
                 foreach (string n in names)
                 {
@@ -1770,13 +1778,63 @@ namespace M1ToolPlus
             }
         }
 
+        /// <summary>终端默认字号（磅）：比界面基准 9pt 大一号。</summary>
+        private const float DefaultTerminalFontPt = 10F;
+
+        /// <summary>已应用的终端字号（磅），用于避免同一次字号被重复建字体。</summary>
+        private float _terminalFontPt = -1F;
+
+        /// <summary>
+        /// 启动时按设置应用终端字体。
+        /// 旧版本的 MainCLIFontSize 只在设置页改值时使用、启动时从未生效，
+        /// 因此这里做一次性迁移：老配置统一提升到新的默认字号。
+        /// </summary>
+        private void ApplyTerminalFontSettings()
+        {
+            if (Properties.Settings.Default.TerminalFontVersion < 1)
+            {
+                Properties.Settings.Default.MainCLIFontSize = DefaultTerminalFontPt;
+                Properties.Settings.Default.TerminalFontVersion = 1;
+            }
+            float pt = Properties.Settings.Default.MainCLIFontSize;
+            if (pt < (float)numericCLIFontSize.Minimum || pt > (float)numericCLIFontSize.Maximum)
+            {
+                pt = DefaultTerminalFontPt;
+            }
+            // 同步到设置页：值没变时不会触发 ValueChanged，所以下面再显式应用一次
+            numericCLIFontSize.Value = (decimal)pt;
+            ApplyTerminalFont(pt);
+        }
+
+        /// <summary>Ctrl+滚轮：以「磅」为单位步进，并夹在设置页允许的范围内。</summary>
+        private void StepTerminalFont(int step)
+        {
+            decimal v = numericCLIFontSize.Value + step;
+            if (v < numericCLIFontSize.Minimum) { v = numericCLIFontSize.Minimum; }
+            if (v > numericCLIFontSize.Maximum) { v = numericCLIFontSize.Maximum; }
+            if (v != numericCLIFontSize.Value) { numericCLIFontSize.Value = v; }
+        }
+
+        /// <summary>
+        /// 应用终端字体：固定微软雅黑（Consolas 无中文字形，中文靠回退渲染、
+        /// 中英混排时高度不一致），字号按像素建字体，保证任何系统缩放下 1:1。
+        /// </summary>
+        private void ApplyTerminalFont(float pt)
+        {
+            if (Math.Abs(_terminalFontPt - pt) < 0.001F) { return; }
+            _terminalFontPt = pt;
+            float px = pt * 96F / 72F;
+            richTextBox1.Font = new Font(UiTheme.UiFont.FontFamily, px, FontStyle.Regular, GraphicsUnit.Pixel);
+            // 缩放统一走字号：ZoomFactor 叠加在字号上会让「文字大小」与实际显示对不上
+            richTextBox1.ZoomFactor = 1F;
+        }
+
         private void numericCLIFontSize_ValueChanged(object sender, EventArgs e)
         {
-            // 设置项沿用「磅」的用户语义（默认 9.0），但按**像素**建字体：
-            // 换算成 96 DPI 下的像素高度，任何系统缩放下终端字号都不再变大变小（1:1）。
-            float px = (float)numericCLIFontSize.Value * 96F / 72F;
-            richTextBox1.Font = new Font(richTextBox1.Font.FontFamily, px, FontStyle.Regular, GraphicsUnit.Pixel);
-            Properties.Settings.Default.MainCLIFontSize = (float)numericCLIFontSize.Value;
+            // 设置项沿用「磅」的用户语义（默认 10.0），但按**像素**建字体（见 ApplyTerminalFont）
+            float pt = (float)numericCLIFontSize.Value;
+            ApplyTerminalFont(pt);
+            Properties.Settings.Default.MainCLIFontSize = pt;
         }
 
         private void checkBoxDefIsAdv_CheckedChanged(object sender, EventArgs e)

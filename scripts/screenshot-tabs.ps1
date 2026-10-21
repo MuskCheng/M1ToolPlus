@@ -29,7 +29,8 @@ for ($i = 0; $i -lt $TabCount; $i++) {
         continue
     }
     [Win]::SetForegroundWindow($p.MainWindowHandle) | Out-Null
-    Start-Sleep -Milliseconds 700
+    # 留足重绘时间：主题在 Load 阶段才应用，抓早了会拍到旧帧/半帧（文字重影）
+    Start-Sleep -Milliseconds 1800
 
     if ($MaxWidth -gt 0) {
         # 放大到指定宽度，便于检查宽屏下的排版
@@ -46,11 +47,12 @@ public class Resize { [DllImport("user32.dll")] public static extern bool SetWin
     $r = New-Object Win+RECT
     [Win]::GetWindowRect($p.MainWindowHandle, [ref]$r) | Out-Null
     $w = $r.Right - $r.Left; $h = $r.Bottom - $r.Top
+    # 直接抓屏幕：PrintWindow 对 DWM 合成窗口经常返回上一帧或把其他窗口叠进来，
+    # 截图会“看起来正常但内容是旧的”。窗口已置前，用 CopyFromScreen 才是所见即所得。
     $bmp = New-Object System.Drawing.Bitmap $w, $h
     $g = [System.Drawing.Graphics]::FromImage($bmp)
-    $hdc = $g.GetHdc()
-    [Win]::PrintWindow($p.MainWindowHandle, $hdc, 0) | Out-Null
-    $g.ReleaseHdc($hdc); $g.Dispose()
+    $g.CopyFromScreen($r.Left, $r.Top, 0, 0, (New-Object System.Drawing.Size $w, $h))
+    $g.Dispose()
 
     $f = Join-Path $OutDir ("tab_{0}.png" -f ($i + 1))
     $bmp.Save($f, [System.Drawing.Imaging.ImageFormat]::Png)

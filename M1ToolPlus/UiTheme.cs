@@ -1392,8 +1392,13 @@ namespace M1ToolPlus
         /// </summary>
         private static void StyleTerminal(RichTextBox rt)
         {
-            // 等宽字体：让 libnfc 输出里的十六进制、扇区号对齐，便于逐行核对
-            try { rt.Font = TerminalFont; } catch (Exception) { }
+            // 等宽字体：让 libnfc 输出里的十六进制、扇区号对齐，便于逐行核对。
+            // 主窗口终端（TerminalBox）例外：字体/字号由设置页统一管理，主题重刷时
+            // 不能覆盖——否则系统切换深浅色后终端会退回 Consolas + 默认字号。
+            if (!(rt is TerminalBox))
+            {
+                try { rt.Font = TerminalFont; } catch (Exception) { }
+            }
 
             if (_dark)
             {

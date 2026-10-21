@@ -82,13 +82,25 @@ namespace M1ToolPlus.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("9")]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
         public float MainCLIFontSize {
             get {
                 return ((float)(this["MainCLIFontSize"]));
             }
             set {
                 this["MainCLIFontSize"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int TerminalFontVersion {
+            get {
+                return ((int)(this["TerminalFontVersion"]));
+            }
+            set {
+                this["TerminalFontVersion"] = value;
             }
         }
         

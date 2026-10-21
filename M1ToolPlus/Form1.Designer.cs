@@ -37,7 +37,7 @@
             this.flowLayoutPanel11 = new System.Windows.Forms.FlowLayoutPanel();
             this.buttonListDev = new System.Windows.Forms.Button();
             this.buttonCLI = new System.Windows.Forms.Button();
-            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
+            this.richTextBox1 = new TerminalBox();
             this.buttonMfRead = new System.Windows.Forms.Button();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanel7 = new System.Windows.Forms.TableLayoutPanel();
@@ -1162,7 +1162,7 @@
             0});
             this.numericCLIFontSize.Name = "numericCLIFontSize";
             this.numericCLIFontSize.Value = new decimal(new int[] {
-            9,
+            10,
             0,
             0,
             0});
@@ -1551,7 +1551,7 @@
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Button buttonScanCard;
         private System.Windows.Forms.Button buttonListDev;
-        private System.Windows.Forms.RichTextBox richTextBox1;
+        private TerminalBox richTextBox1;
         private System.Windows.Forms.Button buttonMfRead;
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.Button buttonUidWrite;

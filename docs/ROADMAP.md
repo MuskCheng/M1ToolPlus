@@ -495,3 +495,48 @@
   这类问题用 `--ui-info` 打印 Bounds 一眼就能定位，不要靠肉眼猜。
 - 手工重构输出管线时，要检查每条 `lineHandler` 分支是否仍然把行送给 UI。
 - 「没有输出」先分辨是 **没写** 还是 **看不见**：`RichTextBox.TextLength` 是最快的判据。
+
+## 十三、终端字体与字号（2026-10-21，用户实测暴露）
+
+### 现象
+1. 终端默认 Consolas，中文字形缺失，靠系统回退成雅黑，中英混排高度不一致；
+2. 设置页「终端文字大小」显示 9.0，但和实际观感对不上，改完重启也不一定生效；
+3. 在终端上 Ctrl+滚轮，字确实变大了，但「终端文字大小」的数字**不变**——两者永远对不上。
+
+### 根因
+| # | 根因 | 证据 |
+|---|---|---|
+| 1 | `UiTheme.TerminalFont` 写死 Consolas（无中文字形） | 中文回退雅黑、英文 Consolas，同一行里字重与行高不一致 |
+| 2 | `MainCLIFontSize` 只在 `numericCLIFontSize_ValueChanged` 里写入，**启动时从未读取** | 设置形同虚设，重启后终端仍是主题给的默认值；设计器初值硬编码 9.0 |
+| 3 | WinForms `RichTextBox` 自带的 Ctrl+滚轮改的是 `ZoomFactor`（显示缩放），不是 `Font` | 设置页读 Font，滚轮后数字不变；`ZoomFactor` 还会叠加在字号上，形成双重缩放 |
+
+### 修复
+- 新增 `M1ToolPlus/TerminalBox.cs`（`RichTextBox` 子类）：在 `WndProc` 拦截 `WM_MOUSEWHEEL`，
+  按消息里的 `MK_CONTROL` 位判断 Ctrl，把滚轮翻译成「字号 ±1 磅」并**吃掉消息**，
+  RichEdit 不再改 `ZoomFactor`（恒为 1）。
+- `numericCLIFontSize` 成为唯一权威值：滚轮 → 改 `Value` → `ValueChanged` → 改字体 + 存设置。
+  设置页显示多少，终端就是多少。
+- 终端字体改为 **Microsoft YaHei UI**（与界面同一字体族）；字号按 `pt × 96 / 72` 转**像素**建字体，
+  与全程序「物理像素 1:1」的约定一致。
+- 默认字号 9 → **10 磅**：`Settings.settings` 默认值、`Settings.Designer.cs`、设计器初值同步修改。
+- 新增 `TerminalFontVersion` 做一次性迁移：旧配置里的 `MainCLIFontSize` 从未真正生效过，
+  升级后统一提升到 10 磅，避免老用户看不到变化。
+- `UiTheme.StyleTerminal` 对 `TerminalBox` 跳过字体赋值：系统深浅色切换会重刷主题，
+  以前会把终端字体重置回 Consolas + 默认字号。
+
+### 验证
+- `--ui-info` 新增 `TerminalFontSize / TerminalFontFamily / TerminalFontPx / TerminalZoom`：
+  默认 `10pt`、`Microsoft YaHei UI`、`h=17`（界面 9pt → h=16，确为大一号）、`Zoom=1` ✓
+- Ctrl+滚轮（悬停在终端上即可，无需点选）：+3 格后设置页数字 13→16，落盘 `MainCLIFontSize=16`；
+  下滚 6 格回到 10 ✓
+- 设置页截图：「终端文字大小」显示 `10.0`，终端中文为雅黑、无裁切 ✓
+
+### 教训
+- `ZoomFactor` 是**显示缩放**，不改变 `Font`。任何「按字号显示/保存」的 UI 都不能让它和 Font 各说各话：
+  要么彻底禁用（本轮做法），要么把 `Font × ZoomFactor` 当作有效字号参与显示与保存。
+- RichTextBox 的 Ctrl+滚轮是 RichEdit 原生行为，`MouseWheel` 事件不可靠，
+  必须在 `WndProc` 里拦截 `WM_MOUSEWHEEL`；判断 Ctrl 要用消息 wParam 的 `MK_CONTROL` 位
+  （`ModifierKeys` 读全局键盘状态，自动化/触摸板消息可能不置位）。
+- 老项目的「设置项」可能只是写进配置、从没被读取过。改默认值时要加版本迁移，
+  否则老配置会永远压着新默认值。
+- 截图验证用 `CopyFromScreen`（窗口置前后抓屏）；`PrintWindow` 在 DWM 下会返回旧帧或叠入其他窗口。

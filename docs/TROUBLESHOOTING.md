@@ -166,6 +166,28 @@ CUID 卡不能像 UID 卡那样用后门随便写，必须用**卡内已有的�
 - 自检：`nfc-scan-device.exe` 的输出第一行应为「… 使用libnfc 1.7.1」，
   第二行「找到 N 个NFC设备:」。
 
+### 终端字体不是微软雅黑 /「文字大小」与 Ctrl+滚轮不同步
+
+- **现象**：
+  1. 终端英文是 Consolas、中文靠回退，中英混排高度不一致；
+  2. 设置页「终端文字大小」的数值和终端实际显示对不上；
+  3. 在终端上 Ctrl+滚轮字变大了，设置页的数字却**不变**。
+- **根因**：
+  1. `UiTheme.TerminalFont` 写死 Consolas（无中文字形）；
+  2. `MainCLIFontSize` 只在改数字时保存，**启动时从不读取**（死设置）；
+  3. RichTextBox 自带的 Ctrl+滚轮改的是 `ZoomFactor`（显示缩放），不是 `Font`，
+     所以字变大了而字号值不变；`ZoomFactor` 还会和字号叠加成双重缩放。
+- **修复**（1.7.0.0 之后）：
+  - 新增 `TerminalBox`：在 `WndProc` 拦截 `WM_MOUSEWHEEL`，Ctrl 按下时转成字号 ±1 磅并吃掉消息
+    （`ZoomFactor` 恒为 1）；Ctrl 判定用消息里的 `MK_CONTROL` 位。
+  - `numericCLIFontSize` 是唯一权威值：滚轮 / 手改数字都走 `ValueChanged` → 改字体 + 存设置。
+  - 终端字体改为 **Microsoft YaHei UI**，字号 pt→px（×96/72）按像素建字体，保持 1:1 渲染。
+  - 默认 10 磅；`TerminalFontVersion` 一次性把老配置的 `MainCLIFontSize` 提到 10。
+  - 主题重刷（系统深浅色切换）跳过 `TerminalBox` 的字体，避免被打回 Consolas。
+- **自检**：`M1ToolPlus.exe --ui-info` →
+  `TerminalFontSize=10pt`、`TerminalFontFamily=Microsoft YaHei UI`、
+  `TerminalFontPx=… h=17`、`TerminalZoom=1`；滚轮后 `TerminalFontSize` 变、`TerminalZoom` 不变。
+
 ## 构建相关
 
 ### 报 MSB3086 / 缺少 al.exe

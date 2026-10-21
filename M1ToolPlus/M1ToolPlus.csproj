@@ -107,6 +107,7 @@
     <Compile Include="GitHubUpdate.cs" />
     <Compile Include="Program.cs" />
 <Compile Include="ToolProcess.cs" />
+<Compile Include="TerminalBox.cs" />
 <Compile Include="UiTheme.cs" />
 <Compile Include="UiTheme.Round.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

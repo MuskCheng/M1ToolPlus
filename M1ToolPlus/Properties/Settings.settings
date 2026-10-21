@@ -18,7 +18,10 @@
       <Value Profile="(Default)">45, 45, 45</Value>
     </Setting>
     <Setting Name="MainCLIFontSize" Type="System.Single" Scope="User">
-      <Value Profile="(Default)">9</Value>
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="TerminalFontVersion" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
     </Setting>
     <Setting Name="DefIsAdv" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
