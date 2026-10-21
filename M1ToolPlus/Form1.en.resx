@@ -1739,15 +1739,6 @@ Same as ordinary card</value>
   <data name="&gt;&gt;label12.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
-  <data name="comboBox1.Items" xml:space="preserve">
-    <value>Chinese</value>
-  </data>
-  <data name="comboBox1.Items1" xml:space="preserve">
-    <value>Russian</value>
-  </data>
-  <data name="comboBox1.Items2" xml:space="preserve">
-    <value>English</value>
-  </data>
   <data name="&gt;&gt;comboBox1.Name" xml:space="preserve">
     <value>comboBox1</value>
   </data>

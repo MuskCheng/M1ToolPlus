@@ -4400,15 +4400,6 @@
   <data name="comboBox1.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 9pt</value>
   </data>
-  <data name="comboBox1.Items" xml:space="preserve">
-    <value>简体中文</value>
-  </data>
-  <data name="comboBox1.Items1" xml:space="preserve">
-    <value>俄语</value>
-  </data>
-  <data name="comboBox1.Items2" xml:space="preserve">
-    <value>English</value>
-  </data>
   <data name="comboBox1.Location" type="System.Drawing.Point, System.Drawing">
     <value>3, 18</value>
   </data>

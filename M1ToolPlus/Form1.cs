@@ -34,8 +34,8 @@ namespace M1ToolPlus
         /// <summary>
         /// 把「语言和地区」下拉框回显成当前设置的语言。
         /// 只设 SelectedIndex，不写设置；设置项的权威值始终是 Settings.Language。
-        /// 注意：语言资源里的下拉项文案本身是本地化的（简体中文 / Русский / English），
-        /// 所以回显后看到的就是当前界面语言的名字。
+        /// 下拉项文案是**各语言自己的写法**（简体中文 / Русский / English），
+        /// 不随界面语言翻译，见 Form1.Designer.cs 的 comboBox1.Items。
         /// </summary>
         private void ApplyLanguageSelection()
         {
@@ -363,6 +363,14 @@ namespace M1ToolPlus
                 sb.AppendLine("TabPage1Text=" + tabControl1.TabPages[0].Text);
                 sb.AppendLine("ButtonListDevText=" + buttonListDev.Text);
                 sb.AppendLine("LanguageCombo=" + comboBox1.SelectedIndex + ":" + comboBox1.Text);
+                // 三个选项必须始终是各自语言的写法，不能随界面语言翻译
+                string langItems = "";
+                foreach (object item in comboBox1.Items)
+                {
+                    if (langItems.Length > 0) { langItems += "|"; }
+                    langItems += item;
+                }
+                sb.AppendLine("LanguageItems=" + langItems);
                 // 终端诊断：文本确实写进去了但被页签盖住时，TextLength > 0 而界面上看不到
                 sb.AppendLine("TerminalTextLength=" + richTextBox1.TextLength);
                 sb.AppendLine("TerminalFirstLine=" + (richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : "(empty)"));

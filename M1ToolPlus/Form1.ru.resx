@@ -326,15 +326,6 @@
   <data name="checkBoxWriteProtect.Text" xml:space="preserve">
     <value>Защита от записи данных (рекомендуется)</value>
   </data>
-  <data name="comboBox1.Items" xml:space="preserve">
-    <value>Китайский</value>
-  </data>
-  <data name="comboBox1.Items1" xml:space="preserve">
-    <value>Русский</value>
-  </data>
-  <data name="comboBox1.Items2" xml:space="preserve">
-    <value>Английский</value>
-  </data>
   <data name="groupBox1.Text" xml:space="preserve">
     <value>Управление устройством</value>
   </data>

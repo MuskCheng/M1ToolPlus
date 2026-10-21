@@ -1275,10 +1275,13 @@
             this.comboBox1.BackColor = System.Drawing.Color.AliceBlue;
             resources.ApplyResources(this.comboBox1, "comboBox1");
             this.comboBox1.FormattingEnabled = true;
+            // 语言名用各自的「本语言」写法（endonym），不随界面语言翻译：
+            // 中文用户、俄语用户、英语用户在任何界面语言下都能认出自己的语言。
+            // 顺序必须与 ApplyLanguageSelection() 的索引一致：0=中文 1=俄语 2=英语。
             this.comboBox1.Items.AddRange(new object[] {
-            resources.GetString("comboBox1.Items"),
-            resources.GetString("comboBox1.Items1"),
-            resources.GetString("comboBox1.Items2")});
+            "简体中文",
+            "Русский",
+            "English"});
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.ComboBox1_SelectedIndexChanged);
             // 

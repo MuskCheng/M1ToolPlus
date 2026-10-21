@@ -86,11 +86,13 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
 - 语言切换（`ComboBox1_SelectedIndexChanged`）按**下拉索引**映射文化
   （0=zh-cn 1=ru-RU 2=en-US），不比对各语言文案，新增语言只需：
   ① 生成对应 `.xx.resx` 并注册进 csproj ② combo 加一项 ③ switch 加一个分支
+- **下拉项文案固定用各语言本名**（`简体中文` / `Русский` / `English`），硬编码在
+  `Form1.Designer.cs`，**不要**放进 resx 本地化——否则会随界面语言翻译，外文用户认不出
 
 ### 设置项（Properties.Settings）
 
 `GitHubR`(应用配置) + 用户级：`Language` `AutoABN` `WriteCheck`
-`AutoLoadUidKey` `MainCLIColor` `MainCLIFontSize` `DefIsAdv` `AutoSave`
+`AutoLoadUidKey` `MainCLIColor` `MainCLIFontSize` `TerminalFontVersion` `DefIsAdv` `AutoSave`
 `HardLowCost` `LastTryKey` `NewScan` `MultiMode` `CuidKeyOver`
 
 ## 测试
