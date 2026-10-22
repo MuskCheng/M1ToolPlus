@@ -190,6 +190,15 @@ namespace M1ToolPlus
         {
             try
             {
+                // 0) 只有主窗口（原 FixedSingle）需要这套自适应。
+                //    工具窗/对话框是 FixedDialog，尺寸由 Designer 按内容定好
+                //    （如 DiffTool 370x456）；若也套用下面的 900x640 下限，
+                //    窗体被强行撑大、内容却仍挤在左上角，右侧/下方全是空白。
+                if (form.FormBorderStyle != FormBorderStyle.FixedSingle)
+                {
+                    return;
+                }
+
                 // 1) 允许缩放。最小尺寸不能写死：原下限 (900,640) 是功能区的「舒适」
                 //    下限，但在高缩放比例屏幕（如 1080p@200% 的逻辑高度只有 ~540）
                 //    上比整个工作区还大——窗口装不进屏幕、又缩不下去，表现为

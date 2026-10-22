@@ -609,3 +609,44 @@
 - [ ] HardNested：对话框可打开，KeyA/KeyB 可切换，执行/取消均正常
 - [ ] 上述通过后：版本号 1.7.0.0 → 1.8.0，打 tag，更新 `docs/TESTPLAN.md` 勾选并发布
 
+## 十五、2026-10-22 DiffTool 尺寸/标题 + S50HTool 行头空白（用户实测）
+
+### 1. 差异比较窗口过大、内容缩在左上角
+
+**现象**：窗口约 900×640，A / B / 比较按钮与输出框只占左上约 400×380，
+右侧和下方大片空白；标题栏是 `DiffTool`。
+
+**根因**：
+- `UiTheme.ApplyAdaptiveLayout` 里的 `MinimumSize=(900,640)` 是为主窗口
+  （`Form1`，`FixedSingle`）设计的，却无差别套到了所有窗体；
+  `FormDiff` 是 `FixedDialog` + `AutoSize`，内容只有 370×456，
+  被下限强行撑到 900×640 后内容不会跟着放大。
+- 标题写在 `FormDiff.resx` / `FormDiff.zh.resx` 的 `$this.Text`，值仍是 `DiffTool`。
+
+**修复**：
+- `ApplyAdaptiveLayout` 在入口判断 `FormBorderStyle != FixedSingle` 时直接返回；
+  主窗口的缩放/撑宽/边界钳制逻辑不变。
+- 标题改为「差异比较」；英文 `Compare Dumps`；俄文沿用 `Сравнение дампов`。
+
+**验证**：PrintWindow 截图确认 DiffTool 客户端 398×383，A/B/比较按钮与输出框铺满，
+标题栏「差异比较」；S50HTool 也从 900×640 收紧为约 738×650，右侧空白消失。
+
+### 2. S50HTool 扇区列表左侧的空白竖条
+
+**现象**：列表最左侧一条贯穿 16 行、无文字的窄竖条（用户红框）。
+
+**结论**：这是 `DataGridView` 的行头（RowHeader），默认可见，只显示行选中箭头，
+不承载业务数据。扇区号已包含在单元格文本「扇区 N: 空扇区/有数据」中，
+**没有隐藏列或未显示的内容**。
+
+**修复**：`FormHTool` 的 `dataGridView1.RowHeadersVisible=false`；
+保留 `FullRowSelect`，点击单元格仍选中整行。
+
+**验证**：截图确认左侧空白竖条消失，扇区行从 GroupBox 左边距开始，选中/加载正常。
+
+### 待真机复测（追加）
+
+- [ ] DiffTool：标题「差异比较」，窗口不再出现大片空白，比较按钮可用
+- [ ] S50HTool：左侧无空白竖条，点击扇区行可正常加载
+- [ ] 与前一轮三项一起复测通过后再升 1.8.0
+

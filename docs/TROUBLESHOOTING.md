@@ -272,6 +272,41 @@ CUID 卡不能像 UID 卡那样用后门随便写，必须用**卡内已有的�
   `TerminalFontSize=10pt`、`TerminalFontFamily=Microsoft YaHei UI`、
   `TerminalFontPx=… h=17`、`TerminalZoom=1`；滚轮后 `TerminalFontSize` 变、`TerminalZoom` 不变。
 
+### DiffTool 窗口被撑成 900×640、标题显示 DiffTool（1.7.0.0）
+
+**现象**：打开「差异比较」后窗口约 900×640，A / B / 比较按钮与输出框挤在左上角，
+右侧和下方是大片空白；标题栏显示英文 `DiffTool`。
+
+**根因**：
+1. `UiTheme.ApplyAdaptiveLayout` 原本只为主窗口（`FixedSingle`）设计，却对
+   `FormDiff`（`FixedDialog`）也设置了 `MinimumSize=(900,640)`。`FormDiff` 是
+   `AutoSize=true`，内容实际只有 370×456，窗体被下限强行撑大后，内容仍停在左上角。
+2. 标题来自 `FormDiff.resx` / `FormDiff.zh.resx` 的 `$this.Text`，两处都还是 `DiffTool`。
+
+**修复**：
+- `ApplyAdaptiveLayout` 现在只处理 `FixedSingle` 主窗口；`FixedDialog` 工具窗/对话框
+  保留 Designer 按内容计算的尺寸。S50HTool 也因此去掉了右侧同样的空白，窗口从
+  900×640 收紧到内容实际需要的约 738×650。
+- 标题改为「差异比较」（英文 `Compare Dumps`，俄文 `Сравнение дампов`）。
+
+**自检**：DiffTool 客户端约 398×383，A / B / 比较按钮与输出框铺满窗口，
+标题栏为「差异比较」。
+
+### S50HTool 扇区列表左侧的空白窄竖条（1.7.0.0）
+
+**现象**：扇区列表最左侧有一条约 40px 宽、贯穿 16 行、没有任何文字的窄竖条
+（用户截图红框圈出的位置）。
+
+**这是什么**：`DataGridView` 的**行头**（RowHeader），默认 `RowHeadersVisible=true`。
+它只显示当前行的小箭头/选中状态，不承载业务数据。S50HTool 只有一列「扇区」，
+扇区号已经写在单元格文本「扇区 N: 空扇区/有数据」里，所以行头本来就是空的，
+不是有内容没显示出来。
+
+**修复**：`dataGridView1.RowHeadersVisible=false`，把宽度让给扇区信息；
+`SelectionMode` 仍是 `FullRowSelect`，点击任意单元格照常选中整行并加载扇区。
+
+**自检**：列表左侧不再有空白竖条，单元格从 GroupBox 左内边距开始。
+
 ## 构建相关
 
 ### 报 MSB3086 / 缺少 al.exe

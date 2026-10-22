@@ -127,7 +127,7 @@
     <value>比较</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>DiffTool</value>
+    <value>差异比较</value>
   </data>
   <data name="richTextBox1.Lines[0]" xml:space="preserve">
     <value>欢迎使用M1T内置的差异工具！</value>
