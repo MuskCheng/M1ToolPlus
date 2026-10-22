@@ -142,7 +142,79 @@ CUID 卡不能像 UID 卡那样用后门随便写，必须用**卡内已有的�
   （`Form1.ru.resx` 等）算作主程序输入——它们只影响卫星程序集，
   以前只改俄语文案会误报「产物早于源文件」并中止构建。
 
+## 高级工具（S50HTool / HardNested）
+
+### S50HTool 十六进制框「浅底浅字」、扇区列表看不清（1.7.0.0）
+
+**现象**：
+1. 载入卡片后，十六进制 / KeyA / KeyB / 权限下拉框变成 Aquamarine（浅绿）或 Tomato（浅红），
+   而文字是深色主题的浅色 `#E6E6E6`——浅底浅字，几乎无法阅读；
+2. 左侧「扇区列表」是深色底 + 黑色单元格文字，扇区行（「扇区 N 空扇区」）几乎看不清。
+
+**根因**：
+1. `block0Edit_Validating` / `keyAEdit_Validating` / `comboBox1_Validating` 直接写
+   `Color.Aquamarine` / `Color.Tomato`，与主题无关；主题给这些控件的前景色是浅色，
+   于是形成浅底浅字。
+2. `buttonSaveSectorEdit_Click` 用「背景色是否等于 Aquamarine」判断输入是否有效，
+   颜色一改就误判。
+3. `DataGridView` 的背景被主题化，但 `DefaultCellStyle.ForeColor` 仍是黑色——深底黑字。
+
+**修复**：
+- 新增 `UiTheme.MarkField(Control,bool)` / `ResetField(Control)`：按当前主题**同时**设置底色与前景色
+  （深色：有效 `#17372A` / 文字 `#A7E8BE`，无效 `#3E1C1C` / 文字 `#FFB3B3`；
+  浅色：有效 `#D9F2E3`，无效 `#F8D7D7`，文字统一 `#1F1F1F`）。
+- 保存校验改用 `IsHex()` 正则，与颜色彻底解耦；`reloadEdit(-1)` 调 `ResetField` 恢复默认配色。
+- 新增 `UiTheme.StyleGrid(DataGridView)`：显式设置单元格、交替行、表头、选中行的底色与文字色。
+- `FormHardNes` 的校验配色同步改用 `MarkField`。
+
+**自检**：打开 S50HTool → 载入 dump → 有效字段应为深绿底浅绿字、无效字段深红底浅粉字；
+扇区列表每行文字清晰可读。探测脚本可直接读控件颜色：
+`block0Edit.BackColor=FF17372A / ForeColor=FFA7E8BE`、错误字段 `FF3E1C1C / FFFFB3B3`。
+
+### 点 HardNested 弹「Unable to cast ... RadioButton ... CheckBox」
+
+**现象**：点击主界面「HardNested」立即弹出
+`Unable to cast object of type 'System.Windows.Forms.RadioButton' to type 'System.Windows.Forms.CheckBox'`，
+对话框打不开。
+
+**根因**：`UiTheme.StyleControl` 把 `RadioButton` 也交给 `StyleCheckBox((CheckBox)c)` 处理。
+`RadioButton` 与 `CheckBox` 是**兄弟类型**（都继承 `ButtonBase`），没有继承关系，强制转换必然抛异常。
+
+**修复**：`StyleCheckBox` 参数类型改为 `ButtonBase`，`CheckBox` / `RadioButton` 分支都传
+`(ButtonBase)c`；主题适配逻辑（前景色、取消 TabStop、底色跟随父容器）对两者通用。
+
+**自检**：点「HardNested」应正常弹出「初始化HardNested参数」窗口，
+标题栏下方能看到 KeyA / KeyB 单选按钮，不出现任何异常框。
+
 ## 终端输出
+
+### 写卡过程没有日志，结束才一次性出现（1.7.0.0）
+
+**现象**：写卡时终端一直空白，直到进程结束才瞬间出现
+`需要写入 64 个块 |.x...|`、`完成！写入了 63 / 64 个块.`、
+`nfc_initiator_transceive_bytes: Mifare Authentication Failed` 等全部内容。
+
+**根因**：`nfc-mfclassic` 的进度用 `printf("%c", '.')` 逐字符输出、**不换行**，
+只在扇区边界 `fflush(stdout)`，整条进度直到最后的 `"|\n"` 才有换行。
+`ToolProcess.Pump` 原来用 `StreamReader.ReadLine()`——它必须等到 `\n` 才返回，
+于是写卡全程读不到内容，进程结束时才一次性返回。
+
+**修复**：
+- `ToolProcess.Pump` 改为**按字符读取**：`\n` 定稿一行；超过 250ms 仍未换行的内容
+  以 `ProgressPercentage = -1`（`ToolProcess.ProgressLiveLine`）上报，约每 120ms 刷新一次；
+  流结束时把残余内容定稿。`\r` / CRLF 均做了处理。
+- `Form1.default_rpt` 收到 -1 时走 `logLive()`：从 `liveLineStart` 到末尾**原地替换**，
+  进度条逐格增长，不会变成每个字符一行。
+- `logAppend()` 写正式日志前先删除临时进度行。
+- **坑**：终端 `richTextBox1.ReadOnly = true`，此时 `SelectedText = ""` 会被系统
+  **静默忽略**（插入 / 替换却有效），导致临时行删不掉、正式行接在它后面形成
+  `|...| |...|` 重复进度条。删除前必须临时关闭 `ReadOnly`。
+- `buttonConClr_Click` 清空终端时同步把 `liveLineStart` 复位为 -1。
+
+**自检**：用伪造的 `nfc-scan-device.exe`（每 140ms 输出一个进度字符、每 4 个字符 flush、
+整条进度不换行）点「检测连接」：终端最后一行应逐格变长，结束时只剩**一行**完整进度条，
+后面紧跟「完成！」与设备列表。自动化脚本：`scripts\test-livelog.ps1`
+（`growing=True singleLine=True` → PASS；脚本会自动准备测试副本，不影响 bin\Release）。
 
 ### 点「检测连接」后终端一片空白（1.7.0.0 及更早）
 

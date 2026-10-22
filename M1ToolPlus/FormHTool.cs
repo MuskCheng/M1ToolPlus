@@ -54,6 +54,16 @@ namespace M1ToolPlus
                 this.block1Edit.Text = "";
                 this.block0Edit.Text = "";
                 this.labelCurSec.Text = Resources.当前选定扇区;
+                // 清空后撤掉上一次的校验配色（否则会残留绿/红底，看起来像仍有数据）
+                UiTheme.ResetField(block0Edit);
+                UiTheme.ResetField(block1Edit);
+                UiTheme.ResetField(block2Edit);
+                UiTheme.ResetField(keyAEdit);
+                UiTheme.ResetField(keyBEdit);
+                UiTheme.ResetField(comboBox1);
+                UiTheme.ResetField(comboBox2);
+                UiTheme.ResetField(comboBox3);
+                UiTheme.ResetField(comboBox4);
                 return;
             }
             labelCurSec.Text = Resources.当前选定扇区0 + sectorIndex.ToString();
@@ -193,14 +203,17 @@ namespace M1ToolPlus
             const string pattern = @"[0-9A-Fa-f]{32}";
             TextBox tb = ((TextBox)sender);
             string content = tb.Text.Trim();
-            if (!(Regex.IsMatch(content, pattern)&&content.Length==32))
+            bool ok = Regex.IsMatch(content, pattern) && content.Length == 32;
+            if (!ok)
             {
-                tb.BackColor = Color.Tomato;
+                // 不能再用 Color.Tomato/Aquamarine 硬编码：深色主题下前景色是浅色，
+                // 浅红/浅绿底 + 浅字几乎不可读。交给 UiTheme 按主题配色。
+                UiTheme.MarkField(tb, false);
                 //e.Cancel = true;
             }
             else
             {
-                tb.BackColor = Color.Aquamarine;
+                UiTheme.MarkField(tb, true);
                 tb.Text = content;
             }
         }
@@ -210,16 +223,25 @@ namespace M1ToolPlus
             const string pattern = @"[0-9A-Fa-f]{12}";
             TextBox tb = ((TextBox)sender);
             string content = tb.Text.Trim();
-            if (!(Regex.IsMatch(content, pattern) && content.Length == 12))
+            bool ok = Regex.IsMatch(content, pattern) && content.Length == 12;
+            if (!ok)
             {
-                tb.BackColor = Color.Tomato;
+                UiTheme.MarkField(tb, false);
                 //e.Cancel = true;
             }
             else
             {
-                tb.BackColor = Color.Aquamarine;
+                UiTheme.MarkField(tb, true);
                 tb.Text = content;
             }
+        }
+
+        /// <summary>校验 16 进制文本：长度必须精确匹配（正则本身不锚定长度）。</summary>
+        private static bool IsHex(string text, int length)
+        {
+            if (text == null) { return false; }
+            string s = text.Trim();
+            return s.Length == length && Regex.IsMatch(s, "^[0-9A-Fa-f]+$");
         }
 
         private void buttonSaveSectorEdit_Click(object sender, EventArgs e)
@@ -227,11 +249,18 @@ namespace M1ToolPlus
             if (currentSector >= 0 && currentSector <= 15)
             {
                 this.ValidateChildren();
-                if (block0Edit.BackColor != Color.Aquamarine
-                    || block1Edit.BackColor != Color.Aquamarine
-                    || block2Edit.BackColor != Color.Aquamarine
-                    || keyAEdit.BackColor != Color.Aquamarine
-                    || keyBEdit.BackColor != Color.Aquamarine)
+                // 不再用「背景色是否等于 Aquamarine」判断有效性：颜色现在随主题变化。
+                // 直接按文本内容校验，既与配色解耦，也不会因主题刷新误判。
+                bool ok = IsHex(block0Edit.Text, 32)
+                    && IsHex(block1Edit.Text, 32)
+                    && IsHex(block2Edit.Text, 32)
+                    && IsHex(keyAEdit.Text, 12)
+                    && IsHex(keyBEdit.Text, 12)
+                    && comboBox1.SelectedIndex >= 0
+                    && comboBox2.SelectedIndex >= 0
+                    && comboBox3.SelectedIndex >= 0
+                    && comboBox4.SelectedIndex >= 0;
+                if (!ok)
                 {
                     MessageBox.Show(Resources.当前扇区数据仍有错误_不能执行修改);
                     return;
@@ -265,15 +294,8 @@ namespace M1ToolPlus
         private void comboBox1_Validating(object sender, CancelEventArgs e)
         {
             ComboBox tb = ((ComboBox)sender);
-            if (tb.SelectedIndex < 0 || tb.Text == Resources._文件中的值错误)
-            {
-                tb.BackColor = Color.Tomato;
-                //e.Cancel = true;
-            }
-            else
-            {
-                tb.BackColor = Color.Aquamarine;
-            }
+            bool ok = tb.SelectedIndex >= 0 && tb.Text != Resources._文件中的值错误;
+            UiTheme.MarkField(tb, ok);
         }
 
         private void 检查全卡ToolStripMenuItem_Click(object sender, EventArgs e)

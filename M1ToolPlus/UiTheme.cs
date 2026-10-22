@@ -394,8 +394,9 @@ namespace M1ToolPlus
             else if (c is TextBoxBase) StyleInput((TextBoxBase)c);
             else if (c is ComboBox) StyleInput((ComboBox)c);
             else if (c is NumericUpDown) StyleInput((NumericUpDown)c);
-            else if (c is CheckBox) StyleCheckBox((CheckBox)c);
-            else if (c is RadioButton) StyleCheckBox((CheckBox)c);   // RadioButton 继承 CheckedBox，属性相同
+            else if (c is DataGridView) StyleGrid((DataGridView)c);
+            else if (c is CheckBox) StyleCheckBox((ButtonBase)c);
+            else if (c is RadioButton) StyleCheckBox((ButtonBase)c); // RadioButton 与 CheckBox 是兄弟类型，都继承 ButtonBase，不能互转
             else if (c is Panel || c is FlowLayoutPanel || c is TableLayoutPanel)
             {
                 if (c is GroupBox) { /* handled */ }
@@ -1363,6 +1364,74 @@ namespace M1ToolPlus
         }
 
         /// <summary>
+        /// 表格（DataGridView）配色。
+        ///
+        /// 原生 DataGridView 在深色主题下会保留「深色底 + 黑色单元格文字」，
+        /// S50HTool 的扇区列表因此几乎看不清（截图中扇区行是灰黑对灰黑）。
+        /// 这里把默认单元格、交替行、表头、选中行全部按主题显式设定。
+        /// </summary>
+        private static void StyleGrid(DataGridView g)
+        {
+            try
+            {
+                g.EnableHeadersVisualStyles = false;
+                g.BorderStyle = BorderStyle.None;
+                g.BackgroundColor = _dark ? DCard : Color.White;
+                g.GridColor = _dark ? Color.FromArgb(0x3A, 0x3A, 0x3A) : Color.FromArgb(0xE4, 0xE4, 0xE4);
+
+                g.DefaultCellStyle.BackColor = _dark ? DInput : Color.White;
+                g.DefaultCellStyle.ForeColor = _dark ? DText : LText;
+                g.DefaultCellStyle.SelectionBackColor = _dark ? Color.FromArgb(0x0E, 0x4A, 0x7A) : Color.FromArgb(0xCC, 0xE4, 0xF7);
+                g.DefaultCellStyle.SelectionForeColor = _dark ? Color.White : LText;
+
+                g.AlternatingRowsDefaultCellStyle.BackColor = _dark ? DSurface : Color.FromArgb(0xF7, 0xF9, 0xFC);
+                g.AlternatingRowsDefaultCellStyle.ForeColor = _dark ? DText : LText;
+                g.AlternatingRowsDefaultCellStyle.SelectionBackColor = g.DefaultCellStyle.SelectionBackColor;
+                g.AlternatingRowsDefaultCellStyle.SelectionForeColor = g.DefaultCellStyle.SelectionForeColor;
+
+                g.ColumnHeadersDefaultCellStyle.BackColor = _dark ? DSurface : Color.FromArgb(0xF0, 0xF2, 0xF5);
+                g.ColumnHeadersDefaultCellStyle.ForeColor = _dark ? DText : LText;
+                g.ColumnHeadersDefaultCellStyle.SelectionBackColor = g.ColumnHeadersDefaultCellStyle.BackColor;
+                g.ColumnHeadersDefaultCellStyle.SelectionForeColor = g.ColumnHeadersDefaultCellStyle.ForeColor;
+
+                g.RowHeadersDefaultCellStyle.BackColor = _dark ? DCard : Color.White;
+                g.RowHeadersDefaultCellStyle.ForeColor = _dark ? DText : LText;
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 表单校验标记：把输入框标成「有效 / 无效」。
+        ///
+        /// 旧实现直接写 Color.Aquamarine / Color.Tomato（浅绿 / 浅红），
+        /// 而深色主题下这些控件的前景色是浅色（DText）——浅底浅字几乎不可读，
+        /// S50HTool 的十六进制框就是这样变成「白底白字」的。
+        /// 这里按主题同时设置底色与前景色，两种主题下都保证足够对比度。
+        /// </summary>
+        internal static void MarkField(Control c, bool valid)
+        {
+            if (c == null) { return; }
+            if (_dark)
+            {
+                c.BackColor = valid ? Color.FromArgb(0x17, 0x37, 0x2A) : Color.FromArgb(0x3E, 0x1C, 0x1C);
+                c.ForeColor = valid ? Color.FromArgb(0xA7, 0xE8, 0xBE) : Color.FromArgb(0xFF, 0xB3, 0xB3);
+            }
+            else
+            {
+                c.BackColor = valid ? Color.FromArgb(0xD9, 0xF2, 0xE3) : Color.FromArgb(0xF8, 0xD7, 0xD7);
+                c.ForeColor = Color.FromArgb(0x1F, 0x1F, 0x1F);
+            }
+            c.Invalidate();
+        }
+
+        /// <summary>把输入框恢复成主题默认配色（清空 / 未编辑状态）。</summary>
+        internal static void ResetField(Control c)
+        {
+            if (c is TextBoxBase) { StyleInput((TextBoxBase)c); }
+            else if (c is ComboBox) { StyleInput((ComboBox)c); }
+        }
+
+        /// <summary>
         /// 复选框 / 单选框适配。
         ///
         /// 坑：设 BackColor=Transparent 时，WinForms 会取**父容器**的背景色绘制。
@@ -1370,7 +1439,7 @@ namespace M1ToolPlus
         /// 带**显式的 Color.White**，于是深色主题下就是「浅色文字 + 白底」——看不清。
         /// 解决办法：显式给一个与主题一致的实色背景，不依赖父容器继承。
         /// </summary>
-        private static void StyleCheckBox(CheckBox cb)
+        private static void StyleCheckBox(ButtonBase cb)
         {
             cb.ForeColor = _dark ? DText : LText;
 

@@ -59,8 +59,20 @@ namespace M1ToolPlus
         }
 
         /// <summary>
-        /// 按 GBK(936) 逐行读取子进程输出。stdout 交给 lineHandler 处理（为 null 时直接输出到终端区），
+        /// 未换行的临时输出（进度条）以该 ProgressPercentage 上报。
+        /// Form1.default_rpt 据此在终端最后一行原地刷新；收到完整行（0）时再定稿。
+        /// </summary>
+        internal const int ProgressLiveLine = -1;
+
+        /// <summary>
+        /// 按 GBK(936) 读取子进程输出。stdout 交给 lineHandler 处理（为 null 时直接输出到终端区），
         /// stderr 始终输出到终端区。读取在独立线程上进行，不阻塞调用方。
+        ///
+        /// 为什么不能再用 ReadLine：nfc-mfclassic 的写卡进度是「|」+ 每个块一个字符，
+        /// 只在扇区边界 fflush，整条进度直到最后的 "|\n" 才有换行。ReadLine 会一直
+        /// 等到进程结束才返回，于是写卡过程一条日志都没有、最后瞬间全部出现。
+        /// 按字符读后：遇到 \n 定稿一行；没有换行的内容作为「临时行」上报，
+        /// 由终端原地刷新，进度条就能边写边长。
         /// </summary>
         public static void PumpOutput(Process process, System.ComponentModel.BackgroundWorker worker, Action<string> lineHandler)
         {
@@ -69,11 +81,11 @@ namespace M1ToolPlus
             {
                 if (process.StartInfo.RedirectStandardOutput)
                 {
-                    Pump(process.StandardOutput.BaseStream, worker, lineHandler);
+                    Pump(process.StandardOutput.BaseStream, worker, lineHandler, true);
                 }
                 if (process.StartInfo.RedirectStandardError)
                 {
-                    Pump(process.StandardError.BaseStream, worker, null);
+                    Pump(process.StandardError.BaseStream, worker, null, false);
                 }
             }
             catch (Exception)
@@ -88,7 +100,8 @@ namespace M1ToolPlus
             PumpOutput(process, worker, null);
         }
 
-        private static void Pump(Stream baseStream, System.ComponentModel.BackgroundWorker worker, Action<string> lineHandler)
+        private static void Pump(Stream baseStream, System.ComponentModel.BackgroundWorker worker,
+            Action<string> lineHandler, bool liveProgress)
         {
             if (baseStream == null) { return; }
             // 每个流各占一个线程池线程，避免只读单流时的管道写满死锁
@@ -99,12 +112,73 @@ namespace M1ToolPlus
                 {
                     using (StreamReader reader = new StreamReader(s, ConsoleEncoding))
                     {
-                        string line;
-                        while ((line = reader.ReadLine()) != null)
+                        char[] buf = new char[512];
+                        StringBuilder cur = new StringBuilder();
+                        DateTime lineStart = DateTime.UtcNow;
+                        DateTime lastLive = DateTime.MinValue;
+                        char prev = '\0';
+                        int n;
+                        while ((n = reader.Read(buf, 0, buf.Length)) > 0)
                         {
-                            if (lineHandler != null) { lineHandler(line); }
-                            else { worker.ReportProgress(0, line); }
+                            for (int i = 0; i < n; i++)
+                            {
+                                char ch = buf[i];
+
+                                if (ch == '\r' && i + 1 < n && buf[i + 1] == '\n')
+                                {
+                                    // CRLF：跳过 \r，交给后面的 \n 收尾，避免多出一个空行
+                                    continue;
+                                }
+
+                                if (ch == '\n')
+                                {
+                                    string line = cur.ToString();
+                                    cur.Length = 0;
+                                    Emit(worker, lineHandler, line);
+                                    prev = ch;
+                                    lineStart = DateTime.UtcNow;
+                                    continue;
+                                }
+
+                                if (ch == '\r')
+                                {
+                                    // 可能是进度条原地重写（\r 后不是 \n），等下一个字符再判断
+                                    prev = ch;
+                                    continue;
+                                }
+
+                                if (prev == '\r')
+                                {
+                                    // 上一段以 \r 结尾：先把它作为临时行播出，再从新行开始累积
+                                    if (liveProgress && cur.Length > 0)
+                                    {
+                                        worker.ReportProgress(ProgressLiveLine, cur.ToString());
+                                    }
+                                    cur.Length = 0;
+                                    lineStart = DateTime.UtcNow;
+                                    lastLive = DateTime.UtcNow;
+                                }
+
+                                cur.Append(ch);
+                                prev = ch;
+
+                                if (liveProgress && cur.Length > 0)
+                                {
+                                    DateTime now = DateTime.UtcNow;
+                                    // 250ms 内读完的整行不刷临时行（避免普通日志闪烁）；
+                                    // 进度条这类长时间不换行的输出约每 120ms 刷新一次。
+                                    if ((now - lineStart).TotalMilliseconds >= 250
+                                        && (now - lastLive).TotalMilliseconds >= 120)
+                                    {
+                                        worker.ReportProgress(ProgressLiveLine, cur.ToString());
+                                        lastLive = now;
+                                    }
+                                }
+                            }
                         }
+
+                        // 流结束：把没有换行收尾的残余内容定稿，避免进度条丢失
+                        if (cur.Length > 0) { Emit(worker, lineHandler, cur.ToString()); }
                     }
                 }
                 catch (Exception)
@@ -112,6 +186,12 @@ namespace M1ToolPlus
                     // 进程被强杀时读流会抛异常，忽略即可
                 }
             }, baseStream);
+        }
+
+        private static void Emit(System.ComponentModel.BackgroundWorker worker, Action<string> lineHandler, string line)
+        {
+            if (lineHandler != null) { lineHandler(line); }
+            else { worker.ReportProgress(0, line); }
         }
     }
 }

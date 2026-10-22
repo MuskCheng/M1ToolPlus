@@ -85,6 +85,13 @@ namespace M1ToolPlus
 
         void default_rpt(object sender, ProgressChangedEventArgs e)
         {
+            if (e.ProgressPercentage == ToolProcess.ProgressLiveLine)
+            {
+                // 未换行的进度（nfc-mfclassic 的 "|...x...|"）：原地刷新最后一行，
+                // 不能走 logAppend，否则每个字符都会变成独立的一行。
+                logLive((string)e.UserState);
+                return;
+            }
             if (e.ProgressPercentage == 100)
             {
                 logAppend((string)e.UserState);
@@ -187,9 +194,54 @@ namespace M1ToolPlus
             Application.DoEvents();
         }
 
+        /// <summary>终端里当前「临时进度行」的起始位置；-1 表示没有。</summary>
+        private int liveLineStart = -1;
+
         private void logAppend(string msg)
         {
+            if (liveLineStart >= 0)
+            {
+                // 正式日志到达：先删掉临时进度行，避免留下半截进度条。
+                // 注意：终端是只读 RichTextBox，此时 SelectedText = "" 会被系统静默忽略
+                // （插入/替换却有效），必须临时关掉只读再删，否则进度行会残留，
+                // 正式行接在它后面形成「|...| |...|」重复。
+                int start = Math.Min(liveLineStart, richTextBox1.TextLength);
+                if (start < richTextBox1.TextLength)
+                {
+                    bool readOnly = richTextBox1.ReadOnly;
+                    richTextBox1.ReadOnly = false;
+                    try
+                    {
+                        richTextBox1.Select(start, richTextBox1.TextLength - start);
+                        richTextBox1.SelectedText = "";
+                    }
+                    finally
+                    {
+                        richTextBox1.ReadOnly = readOnly;
+                    }
+                }
+                liveLineStart = -1;
+            }
             richTextBox1.AppendText(msg + "\n");
+            richTextBox1.SelectionStart = richTextBox1.TextLength;
+            richTextBox1.ScrollToCaret();
+        }
+
+        /// <summary>
+        /// 原地刷新终端最后一行（临时进度行）。
+        /// nfc-mfclassic 用 printf(".") 逐块输出且不换行，只在扇区边界 fflush；
+        /// 这里把每一小段重写到最后一行上，用户就能看到进度条逐格增长。
+        /// </summary>
+        private void logLive(string msg)
+        {
+            if (msg == null) { return; }
+            if (liveLineStart < 0 || liveLineStart > richTextBox1.TextLength)
+            {
+                liveLineStart = richTextBox1.TextLength;
+            }
+            richTextBox1.Select(liveLineStart, richTextBox1.TextLength - liveLineStart);
+            richTextBox1.SelectedText = msg;
+            richTextBox1.SelectionStart = richTextBox1.TextLength;
             richTextBox1.ScrollToCaret();
         }
 
@@ -1011,6 +1063,7 @@ namespace M1ToolPlus
         private void buttonConClr_Click(object sender, EventArgs e)
         {
             richTextBox1.Clear();
+            liveLineStart = -1;
         }
 
         private void buttonConSave_Click(object sender, EventArgs e)

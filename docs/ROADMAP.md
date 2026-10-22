@@ -546,3 +546,66 @@
 - 老项目的「设置项」可能只是写进配置、从没被读取过。改默认值时要加版本迁移，
   否则老配置会永远压着新默认值。
 - 截图验证用 `CopyFromScreen`（窗口置前后抓屏）；`PrintWindow` 在 DWM 下会返回旧帧或叠入其他窗口。
+
+## 十四、2026-10-22 三项用户实测问题（写卡日志 / S50HTool 配色 / HardNested 崩溃）
+
+> 状态：代码修复完成并已用自动化脚本验证；**真机复测通过后**再升 1.8.0 并发布。
+
+### 1. 写卡过程没有实时日志
+
+**现象**：写卡时终端空白，结束时一次性出现
+`需要写入 64 个块 |.x...|`、`完成！写入了 63 / 64 个块.`、认证失败等全部输出。
+
+**根因**：`nfc-mfclassic` 的进度条逐字符 `printf`、不换行，仅在扇区边界 `fflush`；
+`ToolProcess` 用 `ReadLine()`，必须等到 `\n` 才返回，所以直到进程结束才读到内容。
+
+**修复**：
+- `ToolProcess.Pump` 改字符流：`\n` 定稿；未换行内容以 `ProgressLiveLine = -1` 上报（约 120ms 一次）；
+  流结束残行定稿；CRLF / `\r` 进度重写均处理。
+- `Form1`：`logLive()` 从 `liveLineStart` 原地替换最后一行；`logAppend()` 先删临时行；
+  `buttonConClr_Click` 复位。
+- **关键坑**：`richTextBox1.ReadOnly = true` 时 `SelectedText = ""` 被静默忽略
+  （插入/替换有效），必须临时关闭只读再删，否则出现 `|...| |...|` 重复进度条。
+
+**验证**：伪造 `nfc-scan-device.exe`（每 140ms 一个字符、每 4 字符 flush、最后才换行）
+跑端到端：采样终端最后一行的长度从 4 → 7 → 10 → … → 62 逐格增长；
+结束时只剩一行完整进度条。自动化脚本：`scripts\test-livelog.ps1`
+（输出 `RESULT: growing=True singleLine=True` → `PASS`）。
+
+### 2. S50HTool 文本看不清
+
+**现象**：载入卡片后十六进制框 / 权限下拉框为 Aquamarine / Tomato 底 + 浅色字；
+扇区列表深底黑字。
+
+**根因**：校验色是硬编码浅色，与深色主题的浅色前景色冲突；DataGridView 单元格前景色未主题化。
+
+**修复**：
+- `UiTheme.MarkField / ResetField`：按主题同时设置底色与前景色（深色有效 `#17372A`/`#A7E8BE`，
+  无效 `#3E1C1C`/`#FFB3B3`；浅色有效 `#D9F2E3`、无效 `#F8D7D7`，文字 `#1F1F1F`）。
+- `buttonSaveSectorEdit_Click` 改用 `IsHex()` 正则，不再比较背景色。
+- `UiTheme.StyleGrid`：单元格 / 交替行 / 表头 / 选中行全部显式配色。
+- `FormHardNes` 配色同步改用 `MarkField`。
+
+**验证**：控件实测 `b0/kA back=FF17372A fore=FFA7E8BE`、`kB back=FF3E1C1C fore=FFFFB3B3`；
+截图确认深绿/深红底配可读文字，扇区列表浅字深底。
+
+### 3. HardNested 类型转换崩溃
+
+**现象**：点「HardNested」弹出
+`Unable to cast object of type 'System.Windows.Forms.RadioButton' to type 'System.Windows.Forms.CheckBox'`。
+
+**根因**：`UiTheme.StyleControl` 把 RadioButton 传给 `StyleCheckBox((CheckBox)c)`；
+两者是兄弟类型（都继承 `ButtonBase`）。
+
+**修复**：`StyleCheckBox(ButtonBase)`，两个分支都 `(ButtonBase)c`。
+
+**验证**：Win32 `PostMessage(BM_CLICK)` 点击「HardNested」→ 出现
+「初始化HardNested参数」窗口（标题、KeyA/KeyB 单选按钮均正常），无 `#32770` 错误框。
+
+### 待真机复测清单
+
+- [ ] 写卡：1 KB / 4 KB 普通卡，进度条实时增长、结束无重复行
+- [ ] S50HTool：深/浅主题下有效/无效字段与扇区列表均可读，保存校验正常
+- [ ] HardNested：对话框可打开，KeyA/KeyB 可切换，执行/取消均正常
+- [ ] 上述通过后：版本号 1.7.0.0 → 1.8.0，打 tag，更新 `docs/TESTPLAN.md` 勾选并发布
+

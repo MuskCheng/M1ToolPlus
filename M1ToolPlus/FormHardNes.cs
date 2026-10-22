@@ -71,46 +71,46 @@ namespace M1ToolPlus
             string content = tb.Text.Trim();
             if (!(Regex.IsMatch(content, pattern) && content.Length == 12))
             {
-                tb.BackColor = Color.Tomato;
+                UiTheme.MarkField(tb, false);
                 error = true;
             }
             else
             {
-                tb.BackColor = Color.Aquamarine;
+                UiTheme.MarkField(tb, true);
                 tb.Text = content;
             }
             int sec1, sec2;
             if (!int.TryParse(sector1.Text, out sec1))
             {
-                sector1.BackColor = Color.Tomato;
+                UiTheme.MarkField(sector1, false);
                 error = true;
             }
             else
             {
                 if (sec1 >= 0)
                 {
-                    sector1.BackColor = Color.Aquamarine;
+                    UiTheme.MarkField(sector1, true);
                 }
                 else
                 {
-                    sector1.BackColor = Color.Tomato;
+                    UiTheme.MarkField(sector1, false);
                     error = true;
                 }
             }
             if (!int.TryParse(sector2.Text, out sec2))
             {
-                sector2.BackColor = Color.Tomato;
+                UiTheme.MarkField(sector2, false);
                 error = true;
             }
             else
             {
                 if (sec2 >= 0)
                 {
-                    sector2.BackColor = Color.Aquamarine;
+                    UiTheme.MarkField(sector2, true);
                 }
                 else
                 {
-                    sector2.BackColor = Color.Tomato;
+                    UiTheme.MarkField(sector2, false);
                     error = true;
                 }
             }
