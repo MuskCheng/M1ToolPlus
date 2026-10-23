@@ -59,10 +59,15 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
 - **手动主题**：设置页「外观 / 主题」可选 `跟随系统` / `深色` / `浅色`，保存在
   `Settings.Theme`（`""` = 跟随系统、`dark` / `light` = 强制）；切换后立即刷新所有已打开窗体，不重启
 - **主题优先级**：`M1TOOL_THEME` 环境变量（仅调试/截图用） > `Settings.Theme` > Windows `AppsUseLightTheme`
-- **缩放性能**：用户拖动边框时临时把主 `TabControl.Dock` 改为 `None`，让功能区保持旧尺寸、
-  内容不重绘；终端和状态栏仍实时跟随。松手后恢复 Dock，一次性重排并刷新。
-  `LayoutFlowPanels` **不能**再调用 `PerformLayout()` 或 `FitButtonWidth()`——它们会让
-  AutoSize 反复级联（实测单次约 90–100ms）；只保留幂等的 `FitGroupWidth()`，单次约 4ms。
+- **窗口固定大小**：主窗口保持 `FixedSingle`，不再允许用户拖动边框缩放，避免拖动缩放时上百个
+  控件逐帧重绘导致的卡顿与白边；功能区初始宽度若不足，仅在启动时一次性撑宽。
+- **DPI / 显示清晰度**：进程在 `Program.Main` 中声明 `SetProcessDPIAware()`（系统级 DPI 感知），
+  界面按**物理像素 1:1** 渲染，不随系统缩放比例（100%/125%/150%）自动拉伸，文字边缘清晰、
+  不会发虚。界面字号使用像素值 `UiFontPx`（等价 9pt 微软雅黑），在任意 DPI 下都渲染出相同
+  的物理像素高度，控件坐标固定，绝对定位布局不会错位。
+  - **已知限制**：系统级 DPI 感知仅以主显示器 DPI 为准；多个显示器缩放比例不一致时，
+    非主显示器上的窗口会由系统做位图拉伸，可能略发虚。如需完美多显示器支持，需改为
+    Per-Monitor DPI Aware V2 并重构布局，暂不处理。
 - **按能力降级**：Win11 21H2+ 圆角、22H2+ Mica，Win10 回退纯色；所有 DWM 调用失败均静默忽略
 - 改配色只改 `UiTheme.cs`
 - **终端字体/字号例外**：主窗口终端是 `TerminalBox`，字体与字号由设置页 `numericCLIFontSize`
