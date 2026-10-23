@@ -43,6 +43,7 @@
 | 49e0247 | fix(dep): mff08.exe 改判随包附带（官方M1T-Release原样二进制）；外部工具缺失改报实际文件名，不再误称MFF08 |
 | 8f305ff | fix(ui): ApplyFont 跳过 TerminalBox——切换主题（手动深/浅）后终端字号不再退回 12px 等宽字体「异常缩小」 |
 | 859d7a0 | release: v1.8.0 —— README 重写为功能向导版（衍生声明并入许可证节）；AssemblyInfo 升 1.8.0.0，准备打 tag v1.8.0 与 GitHub Release |
+| f49ecd9 | feat(update): 「检查更新」指向本仓库最新 Release，内置自动下载（进度条）+「继续使用/重启更新」两选；重构 GitHubUpdate.cs、新增 FormUpdate.cs；GitHubR 改 MuskCheng；UpgradeRequired 升级迁移设置；打包统一 .NET ZipFile |
 
 ## 三、待办（按优先级）
 
