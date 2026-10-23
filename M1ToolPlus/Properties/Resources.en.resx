@@ -402,6 +402,51 @@ The operation is terminated. </value>
     <value>Unable to find the program file {0}.
 The operation is aborted.</value>
   </data>
+  <data name="更新_标题" xml:space="preserve">
+    <value>Software Update</value>
+  </data>
+  <data name="更新_正在检查" xml:space="preserve">
+    <value>Checking for updates…</value>
+  </data>
+  <data name="更新_已是最新" xml:space="preserve">
+    <value>You are already on the latest version ({0}).</value>
+  </data>
+  <data name="更新_发现新版本" xml:space="preserve">
+    <value>New version available: {0} (current: {1})</value>
+  </data>
+  <data name="更新_无更新包" xml:space="preserve">
+    <value>This release provides no update package.</value>
+  </data>
+  <data name="更新_暂无发布" xml:space="preserve">
+    <value>There is no published release yet.</value>
+  </data>
+  <data name="更新_下载进度" xml:space="preserve">
+    <value>Downloading {0} … {1}% ({2})</value>
+  </data>
+  <data name="更新_下载完成" xml:space="preserve">
+    <value>Update package downloaded.</value>
+  </data>
+  <data name="更新_下载失败" xml:space="preserve">
+    <value>Download failed: {0}</value>
+  </data>
+  <data name="更新_重试" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="更新_继续使用" xml:space="preserve">
+    <value>Keep current version</value>
+  </data>
+  <data name="更新_重启更新" xml:space="preserve">
+    <value>Restart to update</value>
+  </data>
+  <data name="更新_重启说明" xml:space="preserve">
+    <value>After restart the new package is extracted over this folder, then the updated program starts automatically.</value>
+  </data>
+  <data name="更新_打开发布页" xml:space="preserve">
+    <value>Open release page</value>
+  </data>
+  <data name="更新_关闭" xml:space="preserve">
+    <value>Close</value>
+  </data>
   <data name="显示扇区" xml:space="preserve">
     <value>Display sector</value>
   </data>

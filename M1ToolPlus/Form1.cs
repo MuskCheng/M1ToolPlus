@@ -1672,7 +1672,18 @@ namespace M1ToolPlus
 
         private void toolStripCheckUpdate_ButtonClick(object sender, EventArgs e)
         {
-            Process.Start("https://github.com/xcicode/MifareOneTool/releases/latest");
+            // v1.8.0 起：检查更新指向本仓库（Settings.GitHubR = MuskCheng/M1ToolPlus）的最新
+            // Release，不再跳转原作者地址。「软件更新」对话框自动检查并下载（带进度条），
+            // 完成后由用户选择「继续使用」或「重启更新」。
+            // DialogResult.OK = 用户已选择重启更新（解压脚本已启动），关闭主窗即退出进程，
+            // 脚本待本进程退出后解压覆盖并自动重启新版本。
+            using (FormUpdate updater = new FormUpdate())
+            {
+                if (updater.ShowDialog(this) == DialogResult.OK)
+                {
+                    Close();
+                }
+            }
         }
 
         private void buttonDiffTool_Click(object sender, EventArgs e)

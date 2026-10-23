@@ -105,6 +105,7 @@
       <DependentUpon>FormMFF08.cs</DependentUpon>
     </Compile>
     <Compile Include="GitHubUpdate.cs" />
+    <Compile Include="FormUpdate.cs" />
     <Compile Include="Program.cs" />
 <Compile Include="ToolProcess.cs" />
 <Compile Include="TerminalBox.cs" />

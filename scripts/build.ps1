@@ -213,6 +213,11 @@ if ($Pack) {
     Copy-Item (Join-Path $repoRoot "docs\DEPENDENCIES.md") (Join-Path $pkgDir "DEPENDENCIES.md") -Force
     $zip = Join-Path $repoRoot "artifacts\M1ToolPlus-local-build.zip"
     if (Test-Path $zip) { Remove-Item $zip -Force }
-    Compress-Archive -Path (Join-Path $pkgDir "*") -DestinationPath $zip
+    # 打包统一走 .NET ZipArchive（写入端 ZipFile.CreateFromDirectory 与更新器
+    # 解压端 ZipFile.ExtractToDirectory / Shell.Application 是同一套实现，语义一致）。
+    # 注意：.NET Framework 的 ZipFile 写入的是平台默认的**反斜杠**分隔符，Windows
+    # 解压与自更新链路均正常；Linux/macOS 的 unzip 不兼容（本项目仅支持 Windows）。
+    Add-Type -AssemblyName System.IO.Compression.FileSystem | Out-Null
+    [IO.Compression.ZipFile]::CreateFromDirectory($pkgDir, $zip)
     Write-Host "[build] 打包完成: $zip" -ForegroundColor Green
 }

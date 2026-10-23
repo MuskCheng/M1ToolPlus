@@ -68,7 +68,7 @@
 | 随包附带 GPL-3.0 LICENSE + README + DEPENDENCIES.md | ✅ `build.ps1 -Pack` 自动附带（原缺失，已补） |
 | nfc-bin 内上游 `*.bak`（libgcc_s_dw2-1/libnfc/libwinpthread-1/pcre3，约 1.0 MB） | ✅ 已清理：程序零引用、Windows 也不会加载。ACR122U 切换只依赖 `libnfc.dll` / `libnfc(ACR122Uslow).dll` / `libnfc(532).dll` + **运行期生成**的 `libnfc.dll.acr122u.bak`（见 `Form1.cs` 的 `buttonEnAcr122u_Click`），`build.ps1` 每次构建自动清理并保留运行期备份 |
 | nfc-bin\data\logs_proxmark3\trace*.txt | 官方包自带的日志残留（约 10 KB），无害，可选清理 |
-| zip 内路径分隔符 | ⚠️ PowerShell 5.1 `Compress-Archive` 写入的是反斜杠路径，Windows 解压正常，Linux/macOS 的 `unzip` 可能出错（本项目仅支持 Windows，暂不处理） |
+| zip 内路径分隔符 | ⚠️ 打包已统一为 .NET ZipArchive（`ZipFile.CreateFromDirectory`，替代 PS 5.1 的 Compress-Archive，与更新器解压端同源）。仍写入平台默认的反斜杠分隔符：Windows 解压、内置更新器均正常；Linux/macOS 的 `unzip` 不兼容（本项目仅支持 Windows） |
 
 ### B. 真机回归（本开发环境无硬件，必须待真机）
 

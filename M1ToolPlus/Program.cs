@@ -45,6 +45,22 @@ namespace M1ToolPlus
                 catch (Exception) { }
             }
 
+            // 版本号自 v1.8.0 起随发布变化，而 .NET 的 user.config 按「程序集版本」
+            // 分目录存放（%LOCALAPPDATA%\<公司>\<产品>_<哈希>\<版本>\user.config）。
+            // 启动时若尚未做过本次升级迁移（UpgradeRequired 为出厂默认值 true），
+            // 调用 Upgrade() 从旧版本目录把语言/主题/设备参数等用户设置迁过来，
+            // 避免「更新后所有偏好被重置」；全新安装无旧配置时为无害空操作。
+            try
+            {
+                if (Settings.Default.UpgradeRequired)
+                {
+                    Settings.Default.Upgrade();
+                    Settings.Default.UpgradeRequired = false;
+                    Settings.Default.Save();
+                }
+            }
+            catch (Exception) { }
+
             if (Properties.Settings.Default.MultiMode)
             {
                 Application.EnableVisualStyles();

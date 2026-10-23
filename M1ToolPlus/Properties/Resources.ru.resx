@@ -393,6 +393,51 @@
     <value>Не удалось найти программный файл {0}.
 Операция прекращена.</value>
   </data>
+  <data name="更新_标题" xml:space="preserve">
+    <value>Обновление программы</value>
+  </data>
+  <data name="更新_正在检查" xml:space="preserve">
+    <value>Проверка обновлений…</value>
+  </data>
+  <data name="更新_已是最新" xml:space="preserve">
+    <value>Установлена последняя версия ({0}).</value>
+  </data>
+  <data name="更新_发现新版本" xml:space="preserve">
+    <value>Доступна новая версия: {0} (текущая: {1})</value>
+  </data>
+  <data name="更新_无更新包" xml:space="preserve">
+    <value>В этом выпуске нет пакета обновления.</value>
+  </data>
+  <data name="更新_暂无发布" xml:space="preserve">
+    <value>В репозитории пока нет опубликованных выпусков.</value>
+  </data>
+  <data name="更新_下载进度" xml:space="preserve">
+    <value>Загрузка {0} … {1}% ({2})</value>
+  </data>
+  <data name="更新_下载完成" xml:space="preserve">
+    <value>Пакет обновления загружен.</value>
+  </data>
+  <data name="更新_下载失败" xml:space="preserve">
+    <value>Не удалось загрузить: {0}</value>
+  </data>
+  <data name="更新_重试" xml:space="preserve">
+    <value>Повторить</value>
+  </data>
+  <data name="更新_继续使用" xml:space="preserve">
+    <value>Оставить текущую версию</value>
+  </data>
+  <data name="更新_重启更新" xml:space="preserve">
+    <value>Перезапуск для обновления</value>
+  </data>
+  <data name="更新_重启说明" xml:space="preserve">
+    <value>После перезапуска пакет распаковывается поверх папки программы, затем новая версия запускается автоматически.</value>
+  </data>
+  <data name="更新_打开发布页" xml:space="preserve">
+    <value>Открыть страницу выпуска</value>
+  </data>
+  <data name="更新_关闭" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
   <data name="显示扇区" xml:space="preserve">
     <value>Показать сектор</value>
   </data>

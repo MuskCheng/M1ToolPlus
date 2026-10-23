@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="GitHubR" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">xcicode/MifareOneTool</Value>
+      <Value Profile="(Default)">MuskCheng/M1ToolPlus</Value>
     </Setting>
     <Setting Name="AutoABN" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
@@ -49,6 +49,9 @@
     </Setting>
     <Setting Name="Theme" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="UpgradeRequired" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
     </Setting>
   </Settings>
 </SettingsFile>

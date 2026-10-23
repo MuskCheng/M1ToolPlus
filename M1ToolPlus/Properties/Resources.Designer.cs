@@ -1033,6 +1033,111 @@ namespace M1ToolPlus.Properties {
             }
         }
         
+        /// <summary>软件更新。</summary>
+        public static string 更新_标题 {
+            get {
+                return ResourceManager.GetString("更新_标题", resourceCulture);
+            }
+        }
+        
+        /// <summary>正在检查更新…。</summary>
+        public static string 更新_正在检查 {
+            get {
+                return ResourceManager.GetString("更新_正在检查", resourceCulture);
+            }
+        }
+        
+        /// <summary>当前已是最新版本（{0}）。</summary>
+        public static string 更新_已是最新 {
+            get {
+                return ResourceManager.GetString("更新_已是最新", resourceCulture);
+            }
+        }
+        
+        /// <summary>发现新版本 {0}（当前为 {1}）。</summary>
+        public static string 更新_发现新版本 {
+            get {
+                return ResourceManager.GetString("更新_发现新版本", resourceCulture);
+            }
+        }
+        
+        /// <summary>该版本未提供更新包。</summary>
+        public static string 更新_无更新包 {
+            get {
+                return ResourceManager.GetString("更新_无更新包", resourceCulture);
+            }
+        }
+        
+        /// <summary>当前仓库还没有已发布的版本。</summary>
+        public static string 更新_暂无发布 {
+            get {
+                return ResourceManager.GetString("更新_暂无发布", resourceCulture);
+            }
+        }
+        
+        /// <summary>正在下载 {0} … {1}%（{2}）。</summary>
+        public static string 更新_下载进度 {
+            get {
+                return ResourceManager.GetString("更新_下载进度", resourceCulture);
+            }
+        }
+        
+        /// <summary>更新包已下载完成。</summary>
+        public static string 更新_下载完成 {
+            get {
+                return ResourceManager.GetString("更新_下载完成", resourceCulture);
+            }
+        }
+        
+        /// <summary>下载失败：{0}。</summary>
+        public static string 更新_下载失败 {
+            get {
+                return ResourceManager.GetString("更新_下载失败", resourceCulture);
+            }
+        }
+        
+        /// <summary>重试。</summary>
+        public static string 更新_重试 {
+            get {
+                return ResourceManager.GetString("更新_重试", resourceCulture);
+            }
+        }
+        
+        /// <summary>继续使用。</summary>
+        public static string 更新_继续使用 {
+            get {
+                return ResourceManager.GetString("更新_继续使用", resourceCulture);
+            }
+        }
+        
+        /// <summary>重启更新。</summary>
+        public static string 更新_重启更新 {
+            get {
+                return ResourceManager.GetString("更新_重启更新", resourceCulture);
+            }
+        }
+        
+        /// <summary>重启后将自动解压覆盖安装，完成后自动启动新版本。</summary>
+        public static string 更新_重启说明 {
+            get {
+                return ResourceManager.GetString("更新_重启说明", resourceCulture);
+            }
+        }
+        
+        /// <summary>打开发布页。</summary>
+        public static string 更新_打开发布页 {
+            get {
+                return ResourceManager.GetString("更新_打开发布页", resourceCulture);
+            }
+        }
+        
+        /// <summary>关闭。</summary>
+        public static string 更新_关闭 {
+            get {
+                return ResourceManager.GetString("更新_关闭", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Ищет локализованную строку, похожую на 显示扇区.
         /// </summary>

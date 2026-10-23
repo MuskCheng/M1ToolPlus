@@ -402,6 +402,51 @@
     <value>无法找到 {0} 程序文件。
 操作终止。</value>
   </data>
+  <data name="更新_标题" xml:space="preserve">
+    <value>软件更新</value>
+  </data>
+  <data name="更新_正在检查" xml:space="preserve">
+    <value>正在检查更新…</value>
+  </data>
+  <data name="更新_已是最新" xml:space="preserve">
+    <value>当前已是最新版本（{0}）。</value>
+  </data>
+  <data name="更新_发现新版本" xml:space="preserve">
+    <value>发现新版本 {0}（当前为 {1}）</value>
+  </data>
+  <data name="更新_无更新包" xml:space="preserve">
+    <value>该版本未提供更新包。</value>
+  </data>
+  <data name="更新_暂无发布" xml:space="preserve">
+    <value>当前仓库还没有已发布的版本。</value>
+  </data>
+  <data name="更新_下载进度" xml:space="preserve">
+    <value>正在下载 {0} … {1}%（{2}）</value>
+  </data>
+  <data name="更新_下载完成" xml:space="preserve">
+    <value>更新包已下载完成。</value>
+  </data>
+  <data name="更新_下载失败" xml:space="preserve">
+    <value>下载失败：{0}</value>
+  </data>
+  <data name="更新_重试" xml:space="preserve">
+    <value>重试</value>
+  </data>
+  <data name="更新_继续使用" xml:space="preserve">
+    <value>继续使用</value>
+  </data>
+  <data name="更新_重启更新" xml:space="preserve">
+    <value>重启更新</value>
+  </data>
+  <data name="更新_重启说明" xml:space="preserve">
+    <value>重启后将自动解压覆盖安装，完成后自动启动新版本。</value>
+  </data>
+  <data name="更新_打开发布页" xml:space="preserve">
+    <value>打开发布页</value>
+  </data>
+  <data name="更新_关闭" xml:space="preserve">
+    <value>关闭</value>
+  </data>
   <data name="显示扇区" xml:space="preserve">
     <value>显示扇区</value>
   </data>

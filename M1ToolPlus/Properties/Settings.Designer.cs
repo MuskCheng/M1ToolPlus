@@ -25,7 +25,7 @@ namespace M1ToolPlus.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("xcicode/MifareOneTool")]
+        [global::System.Configuration.DefaultSettingValueAttribute("MuskCheng/M1ToolPlus")]
         public string GitHubR {
             get {
                 return ((string)(this["GitHubR"]));
@@ -209,6 +209,23 @@ namespace M1ToolPlus.Properties {
             }
             set {
                 this["Theme"] = value;
+            }
+        }
+        
+        /// <summary>
+        /// 出厂默认 true：每个新版本首次启动时触发一次 Settings.Upgrade()，
+        /// 把上一个版本目录里的用户设置（语言/主题/设备参数等）迁移过来；
+        /// 迁移完成即置 false 并写盘。保证更新后偏好不被重置。
+        /// </summary>
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool UpgradeRequired {
+            get {
+                return ((bool)(this["UpgradeRequired"]));
+            }
+            set {
+                this["UpgradeRequired"] = value;
             }
         }
     }
