@@ -55,18 +55,11 @@ namespace M1ToolPlus
         private static Form _host;
         private static NativeWindowHook _themeHook;
 
-        // 主题刷新/缩放时避免重复挂事件、重复排队
-        private static readonly Hashtable _adaptiveHooked = new Hashtable();
+        // 主题刷新时避免重复挂事件、重复排队
         private static readonly Hashtable _tabsHooked = new Hashtable();
         private static readonly Hashtable _bandPending = new Hashtable();
         private static readonly Hashtable _bandHandleHooked = new Hashtable();
 
-        // 用户拖动窗口边缘缩放期间：临时取消功能区 Dock，避免逐帧重排/重绘；
-        // 松手后恢复并一次性刷新，避免每个 WM_SIZE 都重绘上百个控件（实测单步约 75ms）。
-        private static bool _inUserResize;
-        private static bool _resizeFrozen;
-        private static Size _resizeStartSize;
-        private static DockStyle _resizeTabsDock = DockStyle.Top;
 
         /// <summary>是否处于深色模式。</summary>
         internal static bool IsDark { get { return _dark; } }
@@ -205,34 +198,39 @@ namespace M1ToolPlus
         ///
         /// 原窗体是 FixedSingle（不可缩放）+ 绝对定位，内容宽度写死 726px。
         /// 一旦文案变长（如按钮按文本加宽），超出部分就会被裁掉——这是文字显示不完整的根因。
-        /// 这里把窗体改为可缩放，并把三个顶层区域（状态栏 / 功能区 / 终端）改为 Dock 布局：
-        ///   · 窗口放大时，终端区自动铺满剩余空间；
-        ///   · 窗口缩小时，由 MinimumSize 保证功能区仍有足够宽度；
-        ///   · 标签页内部的绝对定位保持不变（改动风险最小）。
+        /// 本版本**不再允许用户缩放窗口**，保持 FixedSingle 固定尺寸，避免拖动边框时
+        /// 上百个控件逐帧重绘导致的卡顿与白边；功能区初始宽度若不足，只在启动时
+        /// 一次性撑宽。
+        ///
+        /// DPI / 显示清晰度说明：
+        /// 进程在 Program.Main 中已声明 SetProcessDPIAware()（系统级 DPI 感知），
+        /// 界面按**物理像素 1:1** 渲染，不随系统缩放比例（100%/125%/150%）
+        /// 自动拉伸，文字边缘清晰、不会发虚。界面字号使用像素值 UiFontPx
+        ///（等价 9pt 微软雅黑），在任意 DPI 下都渲染出相同的物理像素高度，
+        /// 控件坐标固定，绝对定位布局不会错位。
+        ///
+        /// 已知限制：系统级 DPI 感知仅以主显示器 DPI 为准；若多个显示器缩放比例
+        /// 不一致，非主显示器上的窗口会由系统做位图拉伸，可能略发虚。如需
+        /// 完美多显示器支持，需改为 Per-Monitor DPI Aware V2 并重构布局，暂不处理。
         /// </summary>
         private static void ApplyAdaptiveLayout(Form form)
         {
             try
             {
                 // 0) 只有主窗口（原 FixedSingle）需要这套自适应。
-                //    工具窗/对话框是 FixedDialog，尺寸由 Designer 按内容定好
-                //    （如 DiffTool 370x456）；若也套用下面的 900x640 下限，
-                //    窗体被强行撑大、内容却仍挤在左上角，右侧/下方全是空白。
+                //    工具窗/对话框是 FixedDialog，尺寸由 Designer 按内容定好；
+                //    若也套用下面的下限，窗体被强行撑大、内容却仍挤在左上角。
                 if (form.FormBorderStyle != FormBorderStyle.FixedSingle)
                 {
                     return;
                 }
 
-                // 1) 允许缩放。最小尺寸不能写死：原下限 (900,640) 是功能区的「舒适」
-                //    下限，但在高缩放比例屏幕（如 1080p@200% 的逻辑高度只有 ~540）
-                //    上比整个工作区还大——窗口装不进屏幕、又缩不下去，表现为
-                //    「初始窗口超出桌面、拖拽调整无效」。两者取小 + 极小下限兜底。
-                if (form.FormBorderStyle == FormBorderStyle.FixedSingle)
-                {
-                    form.FormBorderStyle = FormBorderStyle.Sizable;
-                }
-                form.MaximizeBox = true;
+                // 保持窗口不可缩放，不再响应用户拖动边框；最大化按钮保持关闭。
+                form.MaximizeBox = false;
+
                 Rectangle waFit = Screen.FromControl(form).WorkingArea;
+                // 固定窗口不受 MinimumSize 限制用户拖动，但保留一个合理下限兜底，
+                // 防止程序化赋值 ClientSize 时被忽略，或窗口超出工作区。
                 form.MinimumSize = new Size(
                     Math.Min(900, Math.Max(420, waFit.Width - 16)),
                     Math.Min(640, Math.Max(360, waFit.Height - 16)));
@@ -241,7 +239,8 @@ namespace M1ToolPlus
                     form.StartPosition = FormStartPosition.CenterScreen;
                 }
 
-                // 2) 顶层三区改为 Dock：状态栏贴底、功能区贴顶、终端区放在功能区下方
+                // 顶层三区布局：状态栏贴底、功能区贴顶、终端区放在功能区下方。
+                // 窗口固定大小后，Dock/Anchor 在运行期不再变化，仅在初始化时生效一次。
                 StatusStrip status = null;
                 RichTextBox terminal = null;
                 TabControl tabs = FindTabControl(form);
@@ -251,10 +250,11 @@ namespace M1ToolPlus
                     else if (c is TabControl) { c.Dock = DockStyle.Top; }
                     else if (c is RichTextBox) { terminal = (RichTextBox)c; }
                 }
-                // 终端区不能 Dock.Fill 铺满整窗：TabControl 在 z 序上层，
-                // Fill 会把 RichTextBox 拉成 (0,0,整窗)，日志从顶部开始写，
-                // 前几百像素被页签盖住——用户看到的就是一片空白（Issue：检测连接无输出）。
-                // 这里显式放到功能区下方、状态栏上方，并四边锚定跟随窗口缩放。
+                // 终端区不能 Dock.Fill：TabControl 在 z 序上层，Fill 会把 RichTextBox
+                // 拉成整窗，前几百像素被页签盖住——用户看到的就是一片空白
+                //（历史 Issue：检测连接无输出）。
+                // 这里显式放到功能区下方、状态栏上方，四边锚定；窗口固定大小后
+                // 该布局在运行期不再变化。
                 if (terminal != null && terminal.Parent == form)
                 {
                     form.PerformLayout();
@@ -267,13 +267,13 @@ namespace M1ToolPlus
 
                 if (tabs != null)
                 {
-                    // 3) 宽度变化时重排功能区（TabControl 内的绝对定位控件默认不会重排）
-                    HookResizeReflow(form, tabs);
+                    // 初始化时重排一次功能区（TabControl 内的绝对定位控件默认不会重排）。
+                    // 窗口固定大小后，运行期不再响应尺寸变化，无需挂载缩放冻结。
                     LayoutFlowPanels(tabs);
 
-                    // 4) 功能区实测所需宽度：窗口初始宽度不足时自动扩展，
-                    //    避免按钮加宽后把右侧控件（提示文字、停止按钮）挤出可视区。
-                    //    撑宽同样受工作区约束——不检查的话，把窗口直接撑出屏幕。
+                    // 功能区实测所需宽度：窗口初始宽度不足时自动扩展一次，
+                    // 避免按钮加宽后把右侧控件（提示文字、停止按钮）挤出可视区。
+                    // 撑宽受工作区约束，不检查的话会把窗口撑出屏幕。
                     int needed = MeasureRequiredWidth(tabs);
                     if (needed > tabs.Width)
                     {
@@ -284,65 +284,11 @@ namespace M1ToolPlus
                     }
                 }
 
-                // 5) 初始位置钳制：CenterScreen 只居中、不查边界，窗口一旦比工作区
-                //    大就会两侧溢出（标题栏沉出屏幕顶、状态栏压进任务栏）。
+                // 初始位置钳制：CenterScreen 只居中、不查边界，窗口一旦比工作区
+                // 大就会两侧溢出（标题栏沉出屏幕顶、状态栏压进任务栏）。
                 ClampToWorkArea(form);
             }
             catch (Exception) { }
-        }
-
-        /// <summary>
-        /// 主窗口缩放事件只挂一次。用户拖动边缘缩放时：
-        ///   · 临时取消功能区的 Dock，让 TabControl 保持原尺寸、内容不重绘；
-        ///   · 新增区域由窗体背景填充，终端/状态栏仍实时跟随；
-        ///   · 松手后恢复 Dock，一次性重排并刷新功能区。
-        /// 程序化缩放（最大化/恢复）不走 ResizeBegin，仍然实时重排。
-        /// </summary>
-        private static void HookResizeReflow(Form form, TabControl tabs)
-        {
-            if (form == null || tabs == null || _adaptiveHooked.ContainsKey(form)) { return; }
-            _adaptiveHooked[form] = true;
-
-            tabs.Resize += delegate
-            {
-                if (!_inUserResize) { LayoutFlowPanels(tabs); }
-            };
-
-            form.ResizeBegin += delegate
-            {
-                // 拖动标题栏移动窗口时也会触发 ResizeBegin/ResizeEnd，但尺寸不变；
-                // 取消 Dock 再恢复对内容没有影响，松手后也不会做昂贵重排。
-                _resizeFrozen = true;
-                _resizeStartSize = form.Size;
-                _inUserResize = true;
-                _resizeTabsDock = tabs.Dock;
-                tabs.Dock = DockStyle.None;
-            };
-
-            form.ResizeEnd += delegate
-            {
-                bool frozen = _resizeFrozen;
-                bool sizeChanged = (form.Size != _resizeStartSize);
-                _resizeFrozen = false;
-                _inUserResize = false;
-                if (!frozen) { return; }
-                try
-                {
-                    tabs.Dock = _resizeTabsDock;
-                    if (sizeChanged)
-                    {
-                        LayoutFlowPanels(tabs);
-                        LayoutBandStrips(tabs);
-                        tabs.Invalidate(true);
-                        tabs.Update();
-                    }
-                    else
-                    {
-                        tabs.Invalidate(true);
-                    }
-                }
-                catch (Exception) { }
-            };
         }
 
         /// <summary>
@@ -1013,9 +959,11 @@ namespace M1ToolPlus
             {
                 _tabsHooked[t] = true;
                 StripNativeTabTheme(t);
+                // 窗口固定大小后运行期不再响应尺寸变化，此处保留挂载以防
+                // 程序化改变尺寸或 DPI 切换时重算标签条。
                 t.Resize += delegate(object sender, EventArgs e)
                 {
-                    if (!_inUserResize) { LayoutBandStrips((TabControl)sender); }
+                    LayoutBandStrips((TabControl)sender);
                 };
                 t.DrawItem += delegate(object sender, DrawItemEventArgs e)
                 {
@@ -1095,8 +1043,7 @@ namespace M1ToolPlus
                 t.BeginInvoke(new MethodInvoker(delegate
                 {
                     _bandPending.Remove(t);
-                    // 用户拖动缩放期间保持冻结，松手后由 ResizeEnd 统一重排
-                    if (!_inUserResize) { ApplyBandStrips(t); }
+                    ApplyBandStrips(t);
                 }));
             }
             catch (Exception) { if (t != null) { _bandPending.Remove(t); } }
