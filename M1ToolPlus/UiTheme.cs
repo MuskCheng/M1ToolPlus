@@ -1245,9 +1245,16 @@ namespace M1ToolPlus
 
                         // 圆角药丸：内缩一圈，上下左右都留白，选中项像一枚独立的标签
                         Rectangle pill = new Rectangle(r.Left + 3, r.Top + 3, Math.Max(4, r.Width - 6), Math.Max(4, r.Height - 6));
+                        // 浅色主题下选中/悬停标签不填底色，直接用面板底色（C.Band = LBack = 白色），
+                        // 彻底去掉“蓝底/灰底”选中高亮；深色主题下保留强调色/卡片色底色。
+                        Color fillBg = sel ? C.SelBg : (hover && !sel ? C.HoverBg : C.BtnBg);
+                        if (!_dark)
+                        {
+                            fillBg = C.Band;   // 浅色主题下所有状态都用面板底色，不填任何底色
+                        }
                         if (sel)
                         {
-                            FillRound(e.Graphics, pill, RadiusBand, bg);
+                            FillRound(e.Graphics, pill, RadiusBand, fillBg);
                             using (Pen pen = new Pen(C.SelLine))
                             {
                                 e.Graphics.DrawPath(pen, RoundPath(new Rectangle(pill.Left, pill.Top, pill.Width - 1, pill.Height - 1), RadiusBand));
@@ -1255,11 +1262,11 @@ namespace M1ToolPlus
                         }
                         else if (hover)
                         {
-                            FillRound(e.Graphics, pill, RadiusBand, bg);
+                            FillRound(e.Graphics, pill, RadiusBand, fillBg);
                         }
                         else
                         {
-                            using (SolidBrush b1 = new SolidBrush(bg)) { e.Graphics.FillRectangle(b1, pill); }
+                            using (SolidBrush b1 = new SolidBrush(fillBg)) { e.Graphics.FillRectangle(b1, pill); }
                         }
 
                         TextRenderer.DrawText(e.Graphics, t.TabPages[i].Text, t.Font, pill, fg,
@@ -1615,7 +1622,8 @@ namespace M1ToolPlus
             }
             else
             {
-                // 浅色主题下终端/日志框用白底深字，保证可读性，不再保留可能的深色底。
+                // 浅色主题下终端/日志框用白底深字。TerminalBox 是 RichTextBox 子类，
+                // 也会走到这里；强制设白底深字，覆盖任何之前的深色设置。
                 rt.BackColor = Color.White;
                 rt.ForeColor = Color.FromArgb(0x21, 0x21, 0x21);
             }
