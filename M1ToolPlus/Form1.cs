@@ -1928,8 +1928,8 @@ namespace M1ToolPlus
             }
         }
 
-        /// <summary>终端默认字号（磅）：比界面基准 9pt 大一号。</summary>
-        private const float DefaultTerminalFontPt = 10F;
+        /// <summary>终端默认字号（磅）：比界面基准 9pt 大两号。</summary>
+        private const float DefaultTerminalFontPt = 12F;
 
         /// <summary>已应用的终端字号（磅），用于避免同一次字号被重复建字体。</summary>
         private float _terminalFontPt = -1F;
