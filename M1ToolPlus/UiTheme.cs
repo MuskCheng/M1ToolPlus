@@ -1105,7 +1105,9 @@ namespace M1ToolPlus
                     Band = _dark ? DSurface : LBack,
                     BtnBg = _dark ? DSurface : LSurface,
                     BtnFg = _dark ? DTextDim : LTextDim,
-                    SelBg = _dark ? _accent : Color.FromArgb(0xE9, 0xF2, 0xFD),
+                    // 浅色主题下选中标签不填底色（用窗口底色 LBack），与未选中融为一体，
+                    // 彻底去掉“蓝底/灰底”选中高亮；深色主题下保留强调色底色。
+                    SelBg = _dark ? _accent : LBack,
                     SelFg = _dark ? DText : Color.FromArgb(0x0B, 0x57, 0xA4),
                     SelLine = _dark ? _accent : Color.FromArgb(0x0B, 0x57, 0xA4),
                     HoverBg = _dark ? DCardHover : LCardHover,
@@ -1768,6 +1770,22 @@ namespace M1ToolPlus
                 base.WndProc(ref m);
                 try
                 {
+                    // 窗口固定大小，拦截 NCHITTEST：把边框/角的命中测试（含右下角缩放句柄）
+                    // 强制改成 HTCLIENT，鼠标放上去不会变成缩放箭头，也不会响应拖动缩放。
+                    const int WM_NCHITTEST = 0x0084;
+                    const int HTCLIENT = 1;
+                    const int HTLEFT = 10, HTRIGHT = 11, HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14;
+                    const int HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
+                    if (m.Msg == WM_NCHITTEST)
+                    {
+                        int hit = m.Result.ToInt32();
+                        if (hit >= HTLEFT && hit <= HTBOTTOMRIGHT)
+                        {
+                            m.Result = (IntPtr)HTCLIENT;
+                            return;
+                        }
+                    }
+
                     if (m.Msg == WM_SETTINGCHANGE || m.Msg == WM_SYSCOLORCHANGE)
                     {
                         // 系统主题切换后控件句柄需重建，稍作延迟再重绘
