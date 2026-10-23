@@ -1941,10 +1941,12 @@ namespace M1ToolPlus
         /// </summary>
         private void ApplyTerminalFontSettings()
         {
-            if (Properties.Settings.Default.TerminalFontVersion < 1)
+            if (Properties.Settings.Default.TerminalFontVersion < 2)
             {
+                // 强制把老配置统一提升到新的默认字号 12pt，避免旧用户配置里残留的
+                // 奇怪字号（如 17pt）导致设置页和终端不一致。
                 Properties.Settings.Default.MainCLIFontSize = DefaultTerminalFontPt;
-                Properties.Settings.Default.TerminalFontVersion = 1;
+                Properties.Settings.Default.TerminalFontVersion = 2;
             }
             float pt = Properties.Settings.Default.MainCLIFontSize;
             if (pt < (float)numericCLIFontSize.Minimum || pt > (float)numericCLIFontSize.Maximum)
