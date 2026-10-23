@@ -496,6 +496,13 @@ namespace M1ToolPlus
             if (c == null) { return; }
             try
             {
+                // 主窗口终端（TerminalBox）例外：字体族/字号由设置页统一管理
+                // （Form1.ApplyTerminalFont → 12pt 像素字体），主题刷新不能覆盖——
+                // 否则手动切深/浅主题后终端会退回 12px 界面等宽字体，
+                // 用户看到的就是「切换主题后终端文字异常缩小」。
+                // StyleTerminal 里跳过字体赋值是同一理由的另一半防线。
+                if (c is TerminalBox) { return; }
+
                 // 终端输出区用等宽字体，其余控件用界面字体
                 bool mono = (c is RichTextBox);
                 Font want = mono ? TerminalFont : UiFont;
