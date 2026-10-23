@@ -17,7 +17,7 @@ GUI 通过子进程调用这些工具完成全部 NFC 操作。二进制来自�
 | `libnfc_hardnested.exe` / `libnfc_hardnestedlc.exe` | [libnfc-hardnested](https://github.com/nlpub/libnfc-hardnested)（Proxmark3 算法移植） | GPL-3.0 | 与主程序同许可，无冲突 |
 | `collect.exe`（Hardnested nonce 采集） | 上游为 [aczid/crypto1_bs](https://github.com/aczid/crypto1_bs) 内附的 libnfc 采集程序（"libnfc app + bitsliced cracker"），即 miLazyCracker 生态 | 源于 crypto1_bs（GPL 类，待最终确认） | 已定位到可重建源码分支：[GSWXXN/crypto1_bs `libnfc_collect`](https://github.com/GSWXXN/crypto1_bs/tree/libnfc_collect)（NFCToolsGUI 同款），可据此重新编译替换无源码二进制 |
 | `mfdetect.exe` | **mfoc 修改版**（代码注释 Form1.cs:1168 原话："其实mfdetect就是个mfoc的修改版"），支持自定义 `-f -k` 参数 | BSD-3-Clause | 源码分支已定位：[GSWXXN/mfoc `nfc-mfdetect`](https://github.com/GSWXXN/mfoc/tree/nfc-mfdetect)，可重建 |
-| `mff08.exe` | 作者基于 libnfc examples 自编译的定制工具（版本信息 libnfc.org 1.7.1），功能：修复写卡失败导致 0 块损坏的卡（`c`/`u` 命令写 block0，见 FormMFF08.cs） | 未公开源码 | **仍不明**：无公开对应项目，作者未提供源码。按 GPL-3.0 第 4 条，若作者曾分发本工具二进制，可向作者索取对应源码 |
+| `mff08.exe` | 作者基于 libnfc examples 自编译的定制工具（版本信息 libnfc.org 1.7.1），功能：修复写卡失败导致 0 块损坏的卡（`c`/`u` 命令写 block0，见 FormMFF08.cs） | 未公开源码 | **救砖专用**：仅用于修复 0 块被写坏的魔改卡（CUID/Gen1a），日常读卡/复制/写卡不依赖。**2026-10-23 版主决策：随包附带**——二进制取自原作者官方 `M1T-Release.zip`（v1.7.0）原样文件，属转发而非修改；分发时在 Release 说明保留「按 GPL-3.0 第 4 条可向原作者（xcicode）索取对应源码」的指引 |
 | `libusb0.dll` | [libusb-win32](https://sourceforge.net/projects/libusb-win32/) | LGPL-2.1+ | |
 | `data\`（mfcuk 模板指纹、proxmark3 日志） | 随 mfcuk / libnfc 数据分发 | 同上游 | |
 
@@ -27,9 +27,11 @@ GUI 通过子进程调用这些工具完成全部 NFC 操作。二进制来自�
 1. 分发时保留本文件 + 各上游项目声明
 2. 提供对应开源项目源码获取地址（见上表链接）
 3. `collect.exe` / `mfdetect.exe` 已定位到可重建的源码分支（见表），后续
-   优先替换为自编译版本；`mff08.exe` 来源仍不明，查清前我们自己的
-   Release **不重打包该文件**，只引导用户从原作者 Release 获取
-   （`scripts/fetch-deps.ps1` 即为此设计，nfc-bin 不入 git）
+   优先替换为自编译版本；~~`mff08.exe` 来源仍不明，查清前不重打包~~
+   **改判（2026-10-23）**：`mff08.exe` 按官方 `M1T-Release.zip` 原样附带
+   （救砖专用、源码仍不公开，Release 说明附索取源码指引）。
+   `scripts/fetch-deps.ps1` 保留：nfc-bin 整体仍不入 git，构建/打包前
+   从仓库内缓存的官方包或 GitHub Release 获取。
 
 ## 二、winhex.exe（⚠️ 不分发）
 
@@ -56,9 +58,10 @@ GUI 通过子进程调用这些工具完成全部 NFC 操作。二进制来自�
 
 - [x] 不含 `winhex.exe`（`build.ps1` 只取 `nfc-bin\` 子目录，已验证）
 - [x] 不含 CH341 等厂商驱动（从未打包）
-- [x] nfc-bin 若整体重打包：附上游源码链接声明（本文件随包附带）；
-      `mff08.exe` 来源不明，查清/取得源码前不重打包该文件（`build.ps1` 自动剔除，
-      已验证；GUI 缺失时提示并关闭 MFF08 对话框）
+- [x] ~~不含 `mff08.exe`~~ **改判（2026-10-23）：随包附带**——`build.ps1` 不再剔除，
+      取自官方 `M1T-Release.zip`（v1.7.0）原样文件，本文件随包附带并注明来源；
+      Release 说明需保留「向原作者索取 mff08 源码」的指引。无 nfc-bin 的开发环境
+      下 GUI 仍弹错并关闭 MFF08 对话框（不崩溃）
 - [x] 保留 GPL-3.0 LICENSE + 本依赖文档（`build.ps1 -Pack` 自动附带，已验证）
 - [x] 不含上游包里的 `*.bak` 历史残留（`libgcc_s_dw2-1.dll.bak` / `libnfc.dll.bak` /
       `libwinpthread-1.dll.bak` / `pcre3.dll.bak`，合计约 1.0 MB）：程序零引用、Windows 也不会加载，

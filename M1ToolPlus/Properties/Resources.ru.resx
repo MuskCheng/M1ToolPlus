@@ -389,6 +389,10 @@
     <value>Не удалось найти программный файл MFF08.
 Операция прекращена.</value>
   </data>
+  <data name="无法找到程序文件_操作终止" xml:space="preserve">
+    <value>Не удалось найти программный файл {0}.
+Операция прекращена.</value>
+  </data>
   <data name="显示扇区" xml:space="preserve">
     <value>Показать сектор</value>
   </data>

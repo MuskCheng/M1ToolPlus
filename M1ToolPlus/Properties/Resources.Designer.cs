@@ -1024,6 +1024,16 @@ namespace M1ToolPlus.Properties {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на 无法找到 {0} 程序文件。
+        ///操作终止。.
+        /// </summary>
+        public static string 无法找到程序文件_操作终止 {
+            get {
+                return ResourceManager.GetString("无法找到程序文件_操作终止", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на 显示扇区.
         /// </summary>
         public static string 显示扇区 {

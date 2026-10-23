@@ -61,7 +61,7 @@
 | 主程序为 `M1ToolPlus.exe` + `M1ToolPlus.exe.config` | ✅ |
 | en/ru/zh 三套卫星程序集齐全 | ✅ |
 | winhex.exe 未打包（专有软件） | ✅ `build.ps1` 只取 `nfc-bin\` 子目录；本地回收缓存里的 winhex.exe 也已删除 |
-| **`mff08.exe` 来源不明** | ✅ 已按策略剔除：`build.ps1` 自动删除输出目录中的 `nfc-bin\mff08.exe`；GUI 缺失时弹提示并自动关闭 MFF08 对话框（`FormMFF08_Load`） |
+| **`mff08.exe` 来源不明** | ~~已按策略剔除~~ **改判（2026-10-23）：随包附带**——`build.ps1` 不再剔除，取自官方 `M1T-Release.zip`（v1.7.0）原样二进制；依赖文档/发布说明保留来源与索取源码指引（见 `docs/DEPENDENCIES.md`）。无 nfc-bin 的开发环境下 GUI 弹提示并自动关闭 MFF08 对话框（`FormMFF08_Load`） |
 | 随包附带 GPL-3.0 LICENSE + README + DEPENDENCIES.md | ✅ `build.ps1 -Pack` 自动附带（原缺失，已补） |
 | nfc-bin 内上游 `*.bak`（libgcc_s_dw2-1/libnfc/libwinpthread-1/pcre3，约 1.0 MB） | ✅ 已清理：程序零引用、Windows 也不会加载。ACR122U 切换只依赖 `libnfc.dll` / `libnfc(ACR122Uslow).dll` / `libnfc(532).dll` + **运行期生成**的 `libnfc.dll.acr122u.bak`（见 `Form1.cs` 的 `buttonEnAcr122u_Click`），`build.ps1` 每次构建自动清理并保留运行期备份 |
 | nfc-bin\data\logs_proxmark3\trace*.txt | 官方包自带的日志残留（约 10 KB），无害，可选清理 |
@@ -73,7 +73,7 @@
 
 - Issue #26 修复实测：PN532 / ACR122U 启动与设备恢复。
 - en/ru/zh 界面切换实测（下拉索引 0=zh / 1=ru / 2=en）。
-- MFF08 对话框缺失提示：应弹窗后自动关闭，不崩溃。
+- MFF08 对话框回归：随包附带 `mff08.exe` 时窗口正常打开；仅缺失 nfc-bin 的开发环境下弹提示自动关闭，不崩溃。
 - 无回归后，到原作者仓库对应 Issue 下回复（措辞注意：非官方衍生、GPL-3.0、避免暗示原作者背书）。
 
 ### C. 阶段④现代化（未开始，需先装 .NET SDK）

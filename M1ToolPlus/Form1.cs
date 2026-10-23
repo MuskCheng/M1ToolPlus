@@ -349,7 +349,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行检测设备); running = true;
@@ -604,7 +604,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行扫描卡片);
@@ -736,7 +736,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行读取卡片); running = true;
@@ -874,7 +874,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行写入M1卡片); running = true;
@@ -934,7 +934,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行MFOC解密); running = true;
@@ -992,7 +992,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行重置UID卡片卡号); running = true;
@@ -1033,7 +1033,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行UID卡片全格); running = true;
@@ -1076,7 +1076,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行UID卡片读取); running = true;
@@ -1139,7 +1139,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行UID卡片写入); running = true;
@@ -1200,7 +1200,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行UID卡片设定卡号); running = true;
@@ -1234,7 +1234,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行全加密卡片爆破);
@@ -1320,7 +1320,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行CUID_FUID卡片写入); running = true;
@@ -1380,7 +1380,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行UFUID卡片锁定); running = true;
@@ -1435,7 +1435,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行格式化M1卡片); running = true;
@@ -1640,7 +1640,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行检测卡片加密); running = true;
@@ -1774,7 +1774,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行字典模式MFOC解密); running = true;
@@ -1860,7 +1860,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行HardNested解密强化卡); running = true;
@@ -1893,7 +1893,7 @@ namespace M1ToolPlus
                 lprocess = false;
                 running = false;
                 b.ReportProgress(100, Resources._运行出错);
-                logAppend(Resources.无法找到MFF08程序文件_操作终止);
+                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
                 return;
             }
             b.ReportProgress(0, Resources.开始执行HardNested收集数据); running = true;

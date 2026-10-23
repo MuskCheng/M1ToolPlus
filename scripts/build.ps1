@@ -161,13 +161,10 @@ if ((Test-Path $nfcBinSrc) -and -not (Test-Path (Join-Path $outDir "nfc-bin"))) 
     Write-Warning "[build] 未找到 nfc-bin（运行需要），请先运行 .\scripts\fetch-deps.ps1"
 }
 
-# 合规：mff08.exe 来源不明（作者自编译、源码未公开，见 docs/DEPENDENCIES.md 第一节/第五节），
-# 按既定策略我们的构建产物一律剔除，用户需该功能时请使用原作者 Release 包。
-$outMff08 = Join-Path $outDir "nfc-bin\mff08.exe"
-if (Test-Path $outMff08) {
-    Remove-Item $outMff08 -Force
-    Write-Host "[build] 合规剔除 nfc-bin\mff08.exe（来源不明，见 docs/DEPENDENCIES.md）" -ForegroundColor Yellow
-}
+# mff08.exe：2026-10-23 版主决策改判——随包附带（官方 M1T-Release 原样二进制，
+# 源码未公开、无法自编译，属救砖专用工具，日常功能不依赖）。
+# 来源与许可说明见 docs/DEPENDENCIES.md；发布说明需保留向原作者索取源码的指引。
+# 旧策略（构建后自动剔除）已废弃，此文件不再处理。
 
 # 清理上游包里的 *.bak 历史残留（libgcc_s_dw2-1 / libnfc / libwinpthread-1 / pcre3，
 # 合计约 1 MB）：程序零引用，Windows 也不会加载 .bak，纯属官方包遗留。
