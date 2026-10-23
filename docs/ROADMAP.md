@@ -46,7 +46,7 @@
 ### A. 发布准备（推送前必做/必决策）
 
 1. ~~**在 GitHub 建仓库并推送**~~ ✅ 已完成（2026-10-16）：`https://github.com/MuskCheng/M1ToolPlus`（public，默认分支 `dev`，GitHub 已识别 GPL-3.0，已设置简介与 10 个 topics）。远程布局：`origin` = 本人仓库，`upstream` = 原作者仓库（只读）。
-   ~~本地积压的 12 个提交~~ ✅ 已全部推送（2026-10-23）：`origin/dev` = `e8ef51c..ce49443`，本地与远端已同步。
+   ~~本地积压的 13 个提交~~ ✅ 已全部推送（2026-10-23）：`origin/dev` = `e8ef51c..fde0903`，本地与远端已同步。
 2. 复核两项暂缓决策（发布前定下来）：
    - `M1ToolPlus\app.config` 与 Settings 中 `GitHubR = xcicode/MifareOneTool`：目前为休眠配置（GitHubUpdate 类未启用）。若启用更新检查，需改为新仓库。
    - `M1ToolPlus\Form1.cs:1261` 硬编码原作者 releases 链接（下载最新版按钮），发布时决定改为新仓库或保留双链接。
