@@ -1321,17 +1321,37 @@ namespace M1ToolPlus
                 SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                          ControlStyles.OptimizedDoubleBuffer, true);
                 TabStop = false;
-                BackColor = Color.Transparent;
+                // 不用 Transparent：Transparent 会让 WinForms 先画父容器背景，
+                // 深色主题下若 Region 边界计算有偏差，边框区域就会露出白底。
+                BackColor = Color.Black;
             }
 
-            internal void ThemeColors(Color fill, Color line) { Fill = fill; Line = line; }
+            internal void ThemeColors(Color fill, Color line) { Fill = fill; Line = line; BackColor = fill; }
 
             protected override void OnPaint(PaintEventArgs e)
             {
                 try
                 {
+                    // 整块填页面底色，把 TabControl 去原生主题后残留的系统浅色边框
+                    //（左/上/右/下）彻底盖住，不再依赖 Region 边界是否精确。
                     e.Graphics.Clear(Fill);
-                    // 底边即内容区与终端的交界：统一 1px 主题色分隔线
+
+                    // 四条边框线再兜底一次：即便 Region 挖空边界有 1~2px 偏差，
+                    // 也能把残留的白色系统边框覆盖掉。
+                    using (Pen pen = new Pen(Line))
+                    {
+                        int w = ClientSize.Width;
+                        int h = ClientSize.Height;
+                        if (w > 0 && h > 0)
+                        {
+                            e.Graphics.DrawLine(pen, 0, 0, w - 1, 0);           // 上
+                            e.Graphics.DrawLine(pen, 0, h - 1, w - 1, h - 1);   // 下
+                            e.Graphics.DrawLine(pen, 0, 0, 0, h - 1);           // 左
+                            e.Graphics.DrawLine(pen, w - 1, 0, w - 1, h - 1);   // 右
+                        }
+                    }
+
+                    // 底边即内容区与终端的交界：统一 1px 主题色分隔线（加强一遍，确保可见）
                     int y = ClientSize.Height - 1;
                     if (y > 0)
                     {
