@@ -246,7 +246,23 @@ namespace M1ToolPlus
                 TabControl tabs = FindTabControl(form);
                 foreach (Control c in form.Controls)
                 {
-                    if (c is StatusStrip) { status = (StatusStrip)c; c.Dock = DockStyle.Bottom; }
+                    if (c is StatusStrip)
+                    {
+                        status = (StatusStrip)c;
+                        c.Dock = DockStyle.Bottom;
+                        // 窗口固定大小，不需要右下角的大小调整句柄（grip）；
+                        // 用 Paint 事件在右下角覆盖 grip 区域，彻底隐藏缩放箭头。
+                        c.Paint += delegate(object s, PaintEventArgs pe)
+                        {
+                            var strip = (StatusStrip)s;
+                            int grip = 16;
+                            using (var brush = new SolidBrush(strip.BackColor))
+                            {
+                                pe.Graphics.FillRectangle(brush,
+                                    strip.Width - grip, strip.Height - grip, grip, grip);
+                            }
+                        };
+                    }
                     else if (c is TabControl) { c.Dock = DockStyle.Top; }
                     else if (c is RichTextBox) { terminal = (RichTextBox)c; }
                 }
@@ -1384,6 +1400,8 @@ namespace M1ToolPlus
                 }
                 catch (Exception) { }
             }
+
+            // 窗口固定大小，不需要绘制右下角的大小调整句柄。
         }
 
         /// <summary>状态栏配色表：把系统默认的蓝灰分隔线/边框换成主题色。</summary>
