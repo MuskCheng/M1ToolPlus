@@ -250,18 +250,6 @@ namespace M1ToolPlus
                     {
                         status = (StatusStrip)c;
                         c.Dock = DockStyle.Bottom;
-                        // 窗口固定大小，不需要右下角的大小调整句柄（grip）；
-                        // 用 Paint 事件在右下角覆盖 grip 区域，彻底隐藏缩放箭头。
-                        c.Paint += delegate(object s, PaintEventArgs pe)
-                        {
-                            var strip = (StatusStrip)s;
-                            int grip = 16;
-                            using (var brush = new SolidBrush(strip.BackColor))
-                            {
-                                pe.Graphics.FillRectangle(brush,
-                                    strip.Width - grip, strip.Height - grip, grip, grip);
-                            }
-                        };
                     }
                     else if (c is TabControl) { c.Dock = DockStyle.Top; }
                     else if (c is RichTextBox) { terminal = (RichTextBox)c; }
@@ -1374,6 +1362,11 @@ namespace M1ToolPlus
             ss.RenderMode = ToolStripRenderMode.Professional;
             ss.Renderer = new StatusRenderer(_dark);
             ss.Padding = new Padding(8, 2, 8, 2);
+            // 右下角缩放箭头的真正根因：StatusStrip 自带 SizingGrip（默认 true），
+            // 它自己会绘制点阵把手，并在 WM_NCHITTEST 里对把手区域返回 HTBOTTOMRIGHT，
+            // 让鼠标变成缩放光标——这是子控件内部处理的消息，主窗口的 NCHITTEST
+            // 拦截根本收不到。从源头关掉，把手图形和缩放光标一并消失。
+            ss.SizingGrip = false;
             StyleToolStripImages(ss);
         }
 

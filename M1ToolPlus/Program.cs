@@ -14,19 +14,36 @@ namespace M1ToolPlus
         [DllImport("user32.dll")]
         private static extern bool SetProcessDPIAware();
 
+        [DllImport("user32.dll")]
+        private static extern bool SetProcessDpiAwarenessContext(IntPtr value);
+
+        private static readonly IntPtr PerMonitorAwareV2 = new IntPtr(-4);
+
         /// <summary>
         /// 应用程序的主入口点。
         /// </summary>
         [STAThread]
         static void Main()
         {
-            // UI 按物理像素 1:1 渲染。
-            // 不声明 DPI 感知时：125%/150% 缩放下系统会把整个窗口做 GDI 位图拉伸——
-            // 界面发虚，且窗口被整体放大 25%/50%（1080p@125% 下几乎占满屏幕）。
-            // 声明后系统不再拉伸；配合 UiTheme 的「像素字号」（见 UiFontPx），
-            // 界面在任何缩放比例下都渲染成同样的像素尺寸（1:1）。
-            try { SetProcessDPIAware(); }
-            catch (Exception) { }
+            // UI 按物理像素 1:1 渲染。优先声明 Per-Monitor V2 DPI 感知（Win10 1703+）：
+            // 任何缩放比例（100%/125%/150%）、任何多显示器组合下，系统都不会再把窗口
+            // 做 GDI 位图拉伸——文字和界面永远按原生像素锐利渲染，这是「界面发虚」
+            // 的唯一几何根源。旧系统（Win10 1703 之前）回退到系统级 SetProcessDPIAware。
+            // 配合 UiTheme 的「像素字号」（见 UiFontPx），界面在任何缩放比例下
+            // 都渲染成同样的像素尺寸（1:1）。
+            try
+            {
+                if (!SetProcessDpiAwarenessContext(PerMonitorAwareV2))
+                {
+                    try { SetProcessDPIAware(); }
+                    catch (Exception) { }
+                }
+            }
+            catch (Exception)
+            {
+                try { SetProcessDPIAware(); }
+                catch (Exception) { }
+            }
 
             if (Properties.Settings.Default.MultiMode)
             {

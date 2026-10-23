@@ -61,13 +61,16 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
 - **主题优先级**：`M1TOOL_THEME` 环境变量（仅调试/截图用） > `Settings.Theme` > Windows `AppsUseLightTheme`
 - **窗口固定大小**：主窗口保持 `FixedSingle`，不再允许用户拖动边框缩放，避免拖动缩放时上百个
   控件逐帧重绘导致的卡顿与白边；功能区初始宽度若不足，仅在启动时一次性撑宽。
-- **DPI / 显示清晰度**：进程在 `Program.Main` 中声明 `SetProcessDPIAware()`（系统级 DPI 感知），
-  界面按**物理像素 1:1** 渲染，不随系统缩放比例（100%/125%/150%）自动拉伸，文字边缘清晰、
-  不会发虚。界面字号使用像素值 `UiFontPx`（等价 9pt 微软雅黑），在任意 DPI 下都渲染出相同
-  的物理像素高度，控件坐标固定，绝对定位布局不会错位。
-  - **已知限制**：系统级 DPI 感知仅以主显示器 DPI 为准；多个显示器缩放比例不一致时，
-    非主显示器上的窗口会由系统做位图拉伸，可能略发虚。如需完美多显示器支持，需改为
-    Per-Monitor DPI Aware V2 并重构布局，暂不处理。
+- **DPI / 显示清晰度**：进程在 `Program.Main` 中优先声明 **Per-Monitor DPI Aware V2**
+  （Win10 1703+ `SetProcessDpiAwarenessContext`；旧系统回退 `SetProcessDPIAware()`），
+  任何缩放比例（100%/125%/150%）与多显示器组合下都按**物理像素 1:1** 渲染，系统不再做
+  GDI 位图拉伸，文字边缘清晰、不会发虚。界面字号使用像素值 `UiFontPx`（等价 9pt 微软雅黑），
+  在任意 DPI 下都渲染出相同的物理像素高度，控件坐标固定，绝对定位布局不会错位；
+  固定像素 UI 在高缩放显示器上物理尺寸偏小（不随 DPI 放大），是「清晰优先」的取舍。
+- **右下角缩放把手**：`StyleStatusStrip` 中显式 `SizingGrip = false`。该属性默认开启——
+  `StatusStrip` 自绘点阵把手，并在 `WM_NCHITTEST` 中对把手区域返回 `HTBOTTOMRIGHT`
+  使鼠标变缩放光标；这是子控件内部处理的消息，主窗口级的 NCHITTEST 拦截收不到，
+  必须在源头关闭，否则 coloring/覆盖绘制手段都只能盖住图形、盖不住光标。
 - **按能力降级**：Win11 21H2+ 圆角、22H2+ Mica，Win10 回退纯色；所有 DWM 调用失败均静默忽略
 - 改配色只改 `UiTheme.cs`
 - **终端字体/字号例外**：主窗口终端是 `TerminalBox`，字体与字号由设置页 `numericCLIFontSize`
