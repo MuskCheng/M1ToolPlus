@@ -1445,6 +1445,40 @@ namespace M1ToolPlus
             ts.ImageScalingSize = new Size(16, 16);
             ts.Padding = new Padding(4, 2, 4, 2);
             StyleToolStripImages(ts);
+            // 菜单栏（MenuStrip）的悬停高亮由系统 ProfessionalRenderer 决定，
+            // 深色主题下会出现浅色背景/看不清的文字，这里换成主题渲染器。
+            if (ts is MenuStrip) { ts.Renderer = new MenuRenderer(_dark); }
+        }
+
+        /// <summary>菜单栏渲染器：统一悬停高亮色与文字色，避免深浅主题下看不清。</summary>
+        private sealed class MenuRenderer : ToolStripProfessionalRenderer
+        {
+            private readonly bool _dark;
+            internal MenuRenderer(bool dark) : base(new StatusPalette(dark)) { _dark = dark; }
+
+            protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
+            {
+                try
+                {
+                    using (SolidBrush brush = new SolidBrush(
+                        e.Item.Selected ? (_dark ? DCardHover : LCardHover) : e.Item.Owner.BackColor))
+                    {
+                        e.Graphics.FillRectangle(brush, e.Item.ContentRectangle);
+                    }
+                }
+                catch (Exception) { }
+            }
+
+            protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
+            {
+                try
+                {
+                    // 选中与非选中均统一用主题前景色，避免系统默认文字在主题背景上不清晰
+                    e.TextColor = _dark ? DText : LText;
+                    base.OnRenderItemText(e);
+                }
+                catch (Exception) { }
+            }
         }
 
         // ---------------- 输入控件 ----------------
