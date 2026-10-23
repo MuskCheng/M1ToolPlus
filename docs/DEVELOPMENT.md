@@ -42,7 +42,7 @@ Form1.cs            主窗口，几乎全部业务逻辑（1490 行，待拆分�
 Form1.Designer.cs   主窗口布局（1687 行，绝对定位，勿改布局）
 ToolProcess.cs      子进程启动 + GBK(936) 输出解码封装
 TerminalBox.cs      终端控件：Ctrl+滚轮转字号步进（禁用 RichEdit 的 ZoomFactor 缩放）
-UiTheme.cs          运行时 UI 主题（跟随系统深浅色，改配色只改这里）
+UiTheme.cs          运行时 UI 主题（跟随系统 / 深色 / 浅色，改配色只改这里）
 ClassMifareS50.cs   S50/S70 卡数据模型 + MCT 格式转换
 FormHTool.cs        S50HTool（卡数据分析/修复/转 MCT）
 FormDiff.cs         卡数据对比
@@ -56,8 +56,15 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
 
 - **运行时集中应用**，不改 Designer/resx 布局：本界面是 VS2010 时代的绝对定位布局，改坐标会导致控件错位
 - **跟随系统深浅色**：读 `AppsUseLightTheme` 注册表值，监听 `WM_SETTINGCHANGE` 即时切换
+- **手动主题**：设置页「外观 / 主题」可选 `跟随系统` / `深色` / `浅色`，保存在
+  `Settings.Theme`（`""` = 跟随系统、`dark` / `light` = 强制）；切换后立即刷新所有已打开窗体，不重启
+- **主题优先级**：`M1TOOL_THEME` 环境变量（仅调试/截图用） > `Settings.Theme` > Windows `AppsUseLightTheme`
+- **缩放性能**：用户拖动边框时临时把主 `TabControl.Dock` 改为 `None`，让功能区保持旧尺寸、
+  内容不重绘；终端和状态栏仍实时跟随。松手后恢复 Dock，一次性重排并刷新。
+  `LayoutFlowPanels` **不能**再调用 `PerformLayout()` 或 `FitButtonWidth()`——它们会让
+  AutoSize 反复级联（实测单次约 90–100ms）；只保留幂等的 `FitGroupWidth()`，单次约 4ms。
 - **按能力降级**：Win11 21H2+ 圆角、22H2+ Mica，Win10 回退纯色；所有 DWM 调用失败均静默忽略
-- 改配色只改 `UiTheme.cs`；`M1TOOL_THEME=light|dark` 环境变量可强制主题（调试用）
+- 改配色只改 `UiTheme.cs`
 - **终端字体/字号例外**：主窗口终端是 `TerminalBox`，字体与字号由设置页 `numericCLIFontSize`
   统一管理（`UiTheme.StyleTerminal` 会跳过它），主题重刷不得覆盖；Ctrl+滚轮 = 字号 ±1 磅，
   `ZoomFactor` 恒为 1。`--ui-info` 的 `TerminalFont*` 行可用于自检。
@@ -91,7 +98,7 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
 
 ### 设置项（Properties.Settings）
 
-`GitHubR`(应用配置) + 用户级：`Language` `AutoABN` `WriteCheck`
+`GitHubR`(应用配置) + 用户级：`Language` `Theme` `AutoABN` `WriteCheck`
 `AutoLoadUidKey` `MainCLIColor` `MainCLIFontSize` `TerminalFontVersion` `DefIsAdv` `AutoSave`
 `HardLowCost` `LastTryKey` `NewScan` `MultiMode` `CuidKeyOver`
 

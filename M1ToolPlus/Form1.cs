@@ -25,7 +25,96 @@ namespace M1ToolPlus
             System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(Properties.Settings.Default.Language);
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(Properties.Settings.Default.Language);
             InitializeComponent();
+            // 主窗口背景重绘量较大；双缓冲只作用于窗体自身的背景绘制，减少闪烁。
+            this.DoubleBuffered = true;
+            InitializeThemeSelector();
             ApplyLanguageSelection();
+        }
+
+        /// <summary>构造期回显主题下拉框时置位，避免触发保存/刷新。</summary>
+        private bool suppressThemeChanged;
+        private ComboBox comboBoxTheme;
+
+        /// <summary>
+        /// 在「软件设置」页动态增加「外观 / 主题」组（跟随系统 / 深色 / 浅色）。
+        /// 不改进 Designer 的绝对布局：新组放入现有的 flowLayoutPanel22，
+        /// 由流式布局排在「语言和地区」等组右侧。
+        /// </summary>
+        private void InitializeThemeSelector()
+        {
+            try
+            {
+                GroupBox box = new GroupBox();
+                box.Name = "groupBoxTheme";
+                box.Text = Resources.外观;
+                box.AutoSize = true;
+                box.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+                box.TabStop = false;
+                box.Font = new Font(box.Font, FontStyle.Bold);
+
+                FlowLayoutPanel fp = new FlowLayoutPanel();
+                fp.Name = "flowLayoutPanelTheme";
+                fp.FlowDirection = FlowDirection.TopDown;
+                fp.WrapContents = false;
+                fp.AutoSize = true;
+                fp.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+                fp.Location = new Point(3, 18);
+
+                Label label = new Label();
+                label.Name = "labelTheme";
+                label.Text = Resources.主题;
+                label.AutoSize = true;
+                label.Font = new Font(label.Font, FontStyle.Bold);
+                label.Margin = new Padding(3, 0, 3, 0);
+
+                ComboBox combo = new ComboBox();
+                combo.Name = "comboBoxTheme";
+                combo.DropDownStyle = ComboBoxStyle.DropDownList;
+                combo.Font = new Font(box.Font, FontStyle.Regular);
+                combo.Width = 120;
+                combo.Margin = new Padding(3, 2, 3, 0);
+                // 顺序与 ComboBoxTheme_SelectedIndexChanged 的索引一致。
+                combo.Items.AddRange(new object[] { Resources.跟随系统, Resources.深色, Resources.浅色 });
+                combo.SelectedIndexChanged += ComboBoxTheme_SelectedIndexChanged;
+
+                fp.Controls.Add(label);
+                fp.Controls.Add(combo);
+                box.Controls.Add(fp);
+                flowLayoutPanel22.Controls.Add(box);
+
+                comboBoxTheme = combo;
+                ApplyThemeSelection();
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>把主题下拉框回显成当前设置（空 = 跟随系统）。</summary>
+        private void ApplyThemeSelection()
+        {
+            if (comboBoxTheme == null) { return; }
+            int index = 0;
+            string theme = Properties.Settings.Default.Theme;
+            if (string.Equals(theme, "dark", StringComparison.OrdinalIgnoreCase)) { index = 1; }
+            else if (string.Equals(theme, "light", StringComparison.OrdinalIgnoreCase)) { index = 2; }
+            suppressThemeChanged = true;
+            try { comboBoxTheme.SelectedIndex = index; }
+            finally { suppressThemeChanged = false; }
+        }
+
+        private void ComboBoxTheme_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (suppressThemeChanged) { return; }
+            string theme;
+            switch (comboBoxTheme.SelectedIndex)
+            {
+                case 1: theme = "dark"; break;
+                case 2: theme = "light"; break;
+                default: theme = ""; break;   // 跟随系统
+            }
+            Properties.Settings.Default.Theme = theme;
+            Properties.Settings.Default.Save();
+            // 不重启：重新读取设置并刷新所有已打开窗体
+            UiTheme.Refresh();
         }
 
         /// <summary>构造期回显语言下拉框时置位，避免触发 SelectedIndexChanged 里的「保存 + 重启」。</summary>

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using M1ToolPlus.Properties;
 
 namespace M1ToolPlus
 {
@@ -53,6 +54,19 @@ namespace M1ToolPlus
         private static Hashtable _fontCache;
         private static Form _host;
         private static NativeWindowHook _themeHook;
+
+        // 主题刷新/缩放时避免重复挂事件、重复排队
+        private static readonly Hashtable _adaptiveHooked = new Hashtable();
+        private static readonly Hashtable _tabsHooked = new Hashtable();
+        private static readonly Hashtable _bandPending = new Hashtable();
+        private static readonly Hashtable _bandHandleHooked = new Hashtable();
+
+        // 用户拖动窗口边缘缩放期间：临时取消功能区 Dock，避免逐帧重排/重绘；
+        // 松手后恢复并一次性刷新，避免每个 WM_SIZE 都重绘上百个控件（实测单步约 75ms）。
+        private static bool _inUserResize;
+        private static bool _resizeFrozen;
+        private static Size _resizeStartSize;
+        private static DockStyle _resizeTabsDock = DockStyle.Top;
 
         /// <summary>是否处于深色模式。</summary>
         internal static bool IsDark { get { return _dark; } }
@@ -141,22 +155,32 @@ namespace M1ToolPlus
 
         // ================= 对外入口 =================
 
-        /// <summary>应用主题（跟随系统深浅色）。窗体句柄需已创建才能设置 Mica/圆角。</summary>
+        /// <summary>应用主题（跟随系统深浅色，或设置页手动指定）。窗体句柄需已创建才能设置标题栏。</summary>
         internal static void Apply(Form form)
         {
             if (form == null) { return; }
-            _host = form;
+            // 只把第一个应用主题的窗体当作主窗体。工具窗/对话框也会调用 Apply，
+            // 不能让它抢走 _host，否则系统主题变化时主窗口不再刷新。
+            bool firstHost = (_host == null || _host.IsDisposed);
+            if (firstHost) { _host = form; }
             RefreshSystemTheme();
             ApplyPalette(form);
-            WatchSystemTheme(form);
+            if (firstHost) { WatchSystemTheme(form); }
         }
 
-        /// <summary>重新读取系统主题并刷新界面（系统切换深浅色或用户在设置里手动指定时调用）。</summary>
+        /// <summary>重新读取主题设置并刷新所有已打开窗体（系统切换深浅色或用户在设置里手动指定时调用）。</summary>
         internal static void Refresh()
         {
-            if (_host == null || _host.IsDisposed) { return; }
             RefreshSystemTheme();
-            ApplyPalette(_host);
+            // 复制一份：样式刷新过程中可能有窗体关闭，直接遍历 OpenForms 会抛异常。
+            ArrayList forms = new ArrayList();
+            foreach (Form open in Application.OpenForms) { forms.Add(open); }
+            foreach (Form form in forms)
+            {
+                if (form == null || form.IsDisposed) { continue; }
+                try { ApplyPalette(form); }
+                catch (Exception) { }
+            }
         }
 
         private static void RefreshSystemTheme()
@@ -244,7 +268,7 @@ namespace M1ToolPlus
                 if (tabs != null)
                 {
                     // 3) 宽度变化时重排功能区（TabControl 内的绝对定位控件默认不会重排）
-                    tabs.Resize += delegate { LayoutFlowPanels(tabs); };
+                    HookResizeReflow(form, tabs);
                     LayoutFlowPanels(tabs);
 
                     // 4) 功能区实测所需宽度：窗口初始宽度不足时自动扩展，
@@ -265,6 +289,60 @@ namespace M1ToolPlus
                 ClampToWorkArea(form);
             }
             catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 主窗口缩放事件只挂一次。用户拖动边缘缩放时：
+        ///   · 临时取消功能区的 Dock，让 TabControl 保持原尺寸、内容不重绘；
+        ///   · 新增区域由窗体背景填充，终端/状态栏仍实时跟随；
+        ///   · 松手后恢复 Dock，一次性重排并刷新功能区。
+        /// 程序化缩放（最大化/恢复）不走 ResizeBegin，仍然实时重排。
+        /// </summary>
+        private static void HookResizeReflow(Form form, TabControl tabs)
+        {
+            if (form == null || tabs == null || _adaptiveHooked.ContainsKey(form)) { return; }
+            _adaptiveHooked[form] = true;
+
+            tabs.Resize += delegate
+            {
+                if (!_inUserResize) { LayoutFlowPanels(tabs); }
+            };
+
+            form.ResizeBegin += delegate
+            {
+                // 拖动标题栏移动窗口时也会触发 ResizeBegin/ResizeEnd，但尺寸不变；
+                // 取消 Dock 再恢复对内容没有影响，松手后也不会做昂贵重排。
+                _resizeFrozen = true;
+                _resizeStartSize = form.Size;
+                _inUserResize = true;
+                _resizeTabsDock = tabs.Dock;
+                tabs.Dock = DockStyle.None;
+            };
+
+            form.ResizeEnd += delegate
+            {
+                bool frozen = _resizeFrozen;
+                bool sizeChanged = (form.Size != _resizeStartSize);
+                _resizeFrozen = false;
+                _inUserResize = false;
+                if (!frozen) { return; }
+                try
+                {
+                    tabs.Dock = _resizeTabsDock;
+                    if (sizeChanged)
+                    {
+                        LayoutFlowPanels(tabs);
+                        LayoutBandStrips(tabs);
+                        tabs.Invalidate(true);
+                        tabs.Update();
+                    }
+                    else
+                    {
+                        tabs.Invalidate(true);
+                    }
+                }
+                catch (Exception) { }
+            };
         }
 
         /// <summary>
@@ -321,10 +399,14 @@ namespace M1ToolPlus
                 {
                     try
                     {
-                        flp.PerformLayout();
+                        // 不再显式 flp.PerformLayout()：WinForms 在尺寸变化时已经会
+                        // 对流式容器做布局，这里再强制一次会让 24 个嵌套 FlowLayoutPanel
+                        // 反复级联布局（实测单次约 100ms，拖动窗口直接卡死）。
+                        // 按钮是 AutoSize=True，宽度由 WinForms 按字体算；这里再赋 Width
+                        // 会被 AutoSize 立刻拉回，反而触发整棵树反复重排（实测约 90ms）。
+                        // 只保留分组框标题的「放宽下限」，它是幂等的。
                         foreach (Control child in flp.Controls)
                         {
-                            FitButtonWidth(child as Button);
                             FitGroupWidth(child as GroupBox);
                         }
                     }
@@ -924,26 +1006,38 @@ namespace M1ToolPlus
             t.DrawMode = TabDrawMode.OwnerDrawFixed;
             t.Padding = new Point(18, 6);
             t.Appearance = TabAppearance.FlatButtons;
-            StripNativeTabTheme(t);
-            LayoutBandStrips(t);
-            t.Resize += delegate(object sender, EventArgs e) { LayoutBandStrips((TabControl)sender); };
-            t.DrawItem += delegate(object sender, DrawItemEventArgs e)
+
+            // 换主题会再次走 StyleTabs；事件只能挂一次，否则每切一次主题就多一层
+            // DrawItem/Resize 处理器，越切越卡。
+            if (!_tabsHooked.ContainsKey(t))
             {
-                TabControl tab = (TabControl)sender;
-                if (e.Index < 0 || e.Index >= tab.TabPages.Count) { return; }
-                Graphics g = e.Graphics;
-                bool sel = (e.Index == tab.SelectedIndex);
-                Rectangle r = e.Bounds;
+                _tabsHooked[t] = true;
+                StripNativeTabTheme(t);
+                t.Resize += delegate(object sender, EventArgs e)
+                {
+                    if (!_inUserResize) { LayoutBandStrips((TabControl)sender); }
+                };
+                t.DrawItem += delegate(object sender, DrawItemEventArgs e)
+                {
+                    TabControl tab = (TabControl)sender;
+                    if (e.Index < 0 || e.Index >= tab.TabPages.Count) { return; }
+                    Graphics g = e.Graphics;
+                    bool sel = (e.Index == tab.SelectedIndex);
+                    Rectangle r = e.Bounds;
 
-                Color bg = sel ? (_dark ? _accent : Color.FromArgb(0xE9, 0xF2, 0xFD)) : (_dark ? DSurface : LSurface);
-                Color fg = sel ? (_dark ? DText : Color.FromArgb(0x0B, 0x57, 0xA4)) : (_dark ? DTextDim : LTextDim);
-                Color line = sel ? (_dark ? _accent : Color.FromArgb(0x0B, 0x57, 0xA4)) : (_dark ? DBorder : LBorder);
+                    Color bg = sel ? (_dark ? _accent : Color.FromArgb(0xE9, 0xF2, 0xFD)) : (_dark ? DSurface : LSurface);
+                    Color fg = sel ? (_dark ? DText : Color.FromArgb(0x0B, 0x57, 0xA4)) : (_dark ? DTextDim : LTextDim);
+                    Color line = sel ? (_dark ? _accent : Color.FromArgb(0x0B, 0x57, 0xA4)) : (_dark ? DBorder : LBorder);
 
-                using (SolidBrush b1 = new SolidBrush(bg)) { g.FillRectangle(b1, r); }
-                using (Pen pen = new Pen(line)) { g.DrawLine(pen, r.Left, r.Bottom - 1, r.Right - 1, r.Bottom - 1); }
-                TextRenderer.DrawText(g, tab.TabPages[e.Index].Text, tab.Font, r, fg,
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-            };
+                    using (SolidBrush b1 = new SolidBrush(bg)) { g.FillRectangle(b1, r); }
+                    using (Pen pen = new Pen(line)) { g.DrawLine(pen, r.Left, r.Bottom - 1, r.Right - 1, r.Bottom - 1); }
+                    TextRenderer.DrawText(g, tab.TabPages[e.Index].Text, tab.Font, r, fg,
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                };
+            }
+
+            // 每次刷新都重算颜色/边界（DrawItem 读取的是静态 _dark/_accent，不重挂）
+            LayoutBandStrips(t);
         }
 
         /// <summary>
@@ -983,12 +1077,29 @@ namespace M1ToolPlus
                 if (t == null || t.IsDisposed || t.TabPages.Count == 0 || t.Parent == null) { return; }
                 if (!t.IsHandleCreated)
                 {
-                    t.HandleCreated += delegate(object s, EventArgs e) { LayoutBandStrips((TabControl)s); };
+                    // 刷新主题时可能反复走到这里，HandleCreated 只能挂一次
+                    if (!_bandHandleHooked.ContainsKey(t))
+                    {
+                        _bandHandleHooked[t] = true;
+                        t.HandleCreated += delegate(object s, EventArgs e)
+                        {
+                            _bandHandleHooked.Remove(t);
+                            LayoutBandStrips((TabControl)s);
+                        };
+                    }
                     return;
                 }
-                t.BeginInvoke(new MethodInvoker(delegate { ApplyBandStrips(t); }));
+                // 连续 Resize 会排很多 BeginInvoke；合并成一次，避免消息队列堆积。
+                if (_bandPending.ContainsKey(t)) { return; }
+                _bandPending[t] = true;
+                t.BeginInvoke(new MethodInvoker(delegate
+                {
+                    _bandPending.Remove(t);
+                    // 用户拖动缩放期间保持冻结，松手后由 ResizeEnd 统一重排
+                    if (!_inUserResize) { ApplyBandStrips(t); }
+                }));
             }
-            catch (Exception) { }
+            catch (Exception) { if (t != null) { _bandPending.Remove(t); } }
         }
 
         private static void ApplyBandStrips(TabControl t)
@@ -1513,11 +1624,12 @@ namespace M1ToolPlus
 
         private static bool SystemIsLight()
         {
-            // 调试/验证用：设置环境变量 M1TOOL_THEME=light 或 dark 可强制指定主题，
-            // 未设置（或为 system）时跟随 Windows 的深浅色设置。
+            // 优先级：调试环境变量 > 设置页「外观/主题」> Windows 应用主题。
+            // 环境变量仅用于截图/自动化验证，不写入用户设置。
             try
             {
                 string forced = Environment.GetEnvironmentVariable("M1TOOL_THEME");
+                if (string.IsNullOrEmpty(forced)) { forced = Settings.Default.Theme; }
                 if (!string.IsNullOrEmpty(forced))
                 {
                     if (forced.Equals("dark", StringComparison.OrdinalIgnoreCase)) { return false; }

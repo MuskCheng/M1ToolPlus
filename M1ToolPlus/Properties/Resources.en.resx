@@ -576,4 +576,19 @@ Unable to recover after locking! Unable to change 0 blocks again! Please confirm
   <data name="默认驱动已含ACR122U支持" xml:space="preserve">
     <value>The default driver already includes ACR122U (PCSC) support; try compatibility (slow) mode if the connection is unstable</value>
   </data>
+  <data name="外观" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="主题" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="跟随系统" xml:space="preserve">
+    <value>Follow system</value>
+  </data>
+  <data name="深色" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="浅色" xml:space="preserve">
+    <value>Light</value>
+  </data>
 </root>

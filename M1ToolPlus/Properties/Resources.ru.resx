@@ -565,4 +565,19 @@
   <data name="默认驱动已含ACR122U支持" xml:space="preserve">
     <value>Драйвер по умолчанию уже поддерживает ACR122U (PCSC); при нестабильном подключении попробуйте медленный режим</value>
   </data>
+  <data name="外观" xml:space="preserve">
+    <value>Внешний вид</value>
+  </data>
+  <data name="主题" xml:space="preserve">
+    <value>Тема</value>
+  </data>
+  <data name="跟随系统" xml:space="preserve">
+    <value>Как в системе</value>
+  </data>
+  <data name="深色" xml:space="preserve">
+    <value>Тёмная</value>
+  </data>
+  <data name="浅色" xml:space="preserve">
+    <value>Светлая</value>
+  </data>
 </root>

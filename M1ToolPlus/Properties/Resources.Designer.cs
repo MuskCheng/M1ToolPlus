@@ -1527,5 +1527,50 @@ namespace M1ToolPlus.Properties {
                 return ResourceManager.GetString("默认驱动已含ACR122U支持", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to 外观.
+        /// </summary>
+        public static string 外观 {
+            get {
+                return ResourceManager.GetString("外观", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to 主题.
+        /// </summary>
+        public static string 主题 {
+            get {
+                return ResourceManager.GetString("主题", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to 跟随系统.
+        /// </summary>
+        public static string 跟随系统 {
+            get {
+                return ResourceManager.GetString("跟随系统", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to 深色.
+        /// </summary>
+        public static string 深色 {
+            get {
+                return ResourceManager.GetString("深色", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to 浅色.
+        /// </summary>
+        public static string 浅色 {
+            get {
+                return ResourceManager.GetString("浅色", resourceCulture);
+            }
+        }
     }
 }

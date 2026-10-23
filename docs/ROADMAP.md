@@ -1,7 +1,7 @@
 # 后续开发路线图（交接备忘）
 
 > 面向接续开发的交接文档：记录项目现状、已完成工作、待办事项与开发环境要点。
-> 最后更新：2026-10-19（深色主题/字体/标签头专项修复后）。
+> 最后更新：2026-10-23（新增手动主题、窗口缩放流畅度优化后）。
 > 注意：本仓库原位于 `D:\repositories\MifareOneTool`，已更名为 **`D:\repositories\M1ToolPlus`**（纯文件夹改名，git 历史与远程配置不受影响）。
 > **进行中的工作**：问题驱动审计（对照原作者 16 个 open Issue）与六步修复计划见 [docs/FIXPLAN.md](FIXPLAN.md)。
 
@@ -109,8 +109,9 @@
 - **主题实现**：`M1ToolPlus\UiTheme.cs`，集中式皮肤，**运行时应用、不改 Designer 布局**。
   该界面是 VS2010 时代的绝对定位布局（FixedSingle 窗体 + 固定坐标），改布局会导致控件错位，
   因此改配色一律改 `UiTheme.cs`，不要动 Designer 里 `DodgerBlue` 之类的硬编码色。
-- **跟随系统深浅色**：读 `HKCU\...\Themes\Personalize\AppsUseLightTheme`，并监听 `WM_SETTINGCHANGE` 即时刷新；
-  调试可用环境变量 `M1TOOL_THEME=light|dark` 强制指定。
+- **主题来源与优先级**：`M1TOOL_THEME=light|dark`（仅调试/截图） > 设置页 `Settings.Theme`
+  （`""`=跟随系统 / `dark` / `light`） > `HKCU\...\Themes\Personalize\AppsUseLightTheme`，
+  并监听 `WM_SETTINGCHANGE` 即时刷新。设置页「外观 / 主题」保存后立即刷新所有已打开窗体，无需重启。
 - **按能力降级**：Win11 21H2+ 自动圆角、22H2+ 尝试 Mica；Win10 或不支持时回退纯色，功能不受影响。
 - **截图验证**：`.\scripts\screenshot.ps1 -Out <png>`（启动 → 等主窗体 → `PrintWindow` → 自动退出）；
   逐标签页用 `.\scripts\screenshot-tabs.ps1 -MaxWidth 1400`（配合程序的 `--tab N` 参数）。
@@ -118,6 +119,10 @@
 - **⚠️ 不要在 Resize 事件里修改控件尺寸**：会触发父容器 SizeChanged 形成无限重排循环，
   表现为界面卡死（已踩过一次，见提交 7a1af2c 的回退）。需要动态调整尺寸时，
   只在初始化阶段做一次，或用防抖 + 标记位避免重入。
+- **⚠️ 缩放时的已知行为**：用户拖拽窗口边框期间，主 `TabControl` 临时 `Dock=None`，
+  功能区保持旧尺寸、不逐帧重绘；新增区域由窗体背景填充，终端/状态栏仍实时跟随。
+  松手后恢复 Dock 并一次性重排（实测单步 75–213ms → 17–21ms）。不要为了“实时拉伸”
+  在每个 Resize 里强制重绘全部控件，否则卡顿会回来。
 - **⚠️ GroupBox 无法干净自绘**：系统已绘制标题，自绘边框会与之重影、或边框线横穿标题。
   深色下只调 `ForeColor`，不要接管 Paint。
 - **自动回归**：`.\scripts\regression-auto.ps1` —— 覆盖无需硬件的部分（子进程依赖完整性、
