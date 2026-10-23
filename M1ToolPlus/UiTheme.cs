@@ -287,6 +287,19 @@ namespace M1ToolPlus
                 // 初始位置钳制：CenterScreen 只居中、不查边界，窗口一旦比工作区
                 // 大就会两侧溢出（标题栏沉出屏幕顶、状态栏压进任务栏）。
                 ClampToWorkArea(form);
+
+                // 彻底去掉调整大小边框（WS_THICKFRAME / WS_SIZEBOX），确保窗口右下角
+                // 没有 resize grip，鼠标放上去不会变成缩放箭头。FixedSingle 已不包含
+                // 该样式，这里再做一次保险，防止句柄样式残留。
+                try
+                {
+                    const int GWL_STYLE = -16;
+                    const int WS_THICKFRAME = 0x00040000;
+                    int style = GetWindowLong(form.Handle, GWL_STYLE);
+                    style &= ~WS_THICKFRAME;
+                    SetWindowLong(form.Handle, GWL_STYLE, style);
+                }
+                catch (Exception) { }
             }
             catch (Exception) { }
         }
@@ -973,8 +986,11 @@ namespace M1ToolPlus
                     bool sel = (e.Index == tab.SelectedIndex);
                     Rectangle r = e.Bounds;
 
-                    Color bg = sel ? (_dark ? _accent : Color.FromArgb(0xE9, 0xF2, 0xFD)) : (_dark ? DSurface : LSurface);
-                    Color fg = sel ? (_dark ? DText : Color.FromArgb(0x0B, 0x57, 0xA4)) : (_dark ? DTextDim : LTextDim);
+                    // 浅色主题下选中标签不填底色（用窗口底色 LBack），与未选中融为一体，
+                    // 彻底去掉“蓝底/灰底”高亮；深色主题下保留强调色底色，文字用浅色，
+                    // 对比度足够。
+                    Color bg = sel ? (_dark ? _accent : LBack) : (_dark ? DSurface : LSurface);
+                    Color fg = sel ? (_dark ? DText : LText) : (_dark ? DTextDim : LTextDim);
                     Color line = sel ? (_dark ? _accent : Color.FromArgb(0x0B, 0x57, 0xA4)) : (_dark ? DBorder : LBorder);
 
                     using (SolidBrush b1 = new SolidBrush(bg)) { g.FillRectangle(b1, r); }
@@ -1595,8 +1611,10 @@ namespace M1ToolPlus
                 rt.BackColor = Color.FromArgb(0x18, 0x18, 0x18);
                 rt.ForeColor = Color.FromArgb(0xD4, 0xD4, 0xD4);
             }
-            else if (Luma(rt.ForeColor) - Luma(rt.BackColor) < 70)
+            else
             {
+                // 浅色主题下终端/日志框用白底深字，保证可读性，不再保留可能的深色底。
+                rt.BackColor = Color.White;
                 rt.ForeColor = Color.FromArgb(0x21, 0x21, 0x21);
             }
 
@@ -1713,6 +1731,12 @@ namespace M1ToolPlus
         }
 
         private static int ToRgb(Color c) { return c.R | (c.G << 8) | (c.B << 16); }
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
