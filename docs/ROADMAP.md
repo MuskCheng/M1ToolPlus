@@ -31,20 +31,29 @@
 | c453f2b | docs/TROUBLESHOOTING.md |
 | 19d6094 | 存档原作者上一版完整 README（docs/README.original.md） |
 | 1b97708 | 全面更名为 M1ToolPlus：命名空间/程序集/解决方案/目录/UI 文案/脚本/文档 |
+| ddfa58a | feat(ui): 设置页可切换主题（跟随系统/深色/浅色），优化窗口缩放卡顿，不重启生效 |
+| 425bea2 | fix(ui): 覆盖 TabControl 残留系统白边，TabFramePanel 改为实色背景并绘制四条边框线 |
+| 6214a88 | refactor(ui): 移除窗口缩放功能，保持 FixedSingle 固定窗口，避免拖动卡顿与白边 |
+| 35ed166 | docs: 移除缩放功能说明，补充窗口固定大小与 DPI/清晰度文档 |
+| 99abace | fix(ui): 浅色主题下选项卡取消选中底色，拦截 WM_NCHITTEST 移除右下角缩放句柄 |
+| 5005bc3 | fix(ui): 浅色主题下选项卡选中/悬停不填底色，终端强制白底深字 |
+| 2b80487 | fix(ui): StatusStrip 右下角 grip 覆盖隐藏，彻底移除缩放句柄；浅色主题选项卡/终端白底 |
+| 7c830c2 | fix(ui): 启动时强制把终端默认字号重置为12pt，避免旧配置残留奇怪字号 |
 
 ## 三、待办（按优先级）
 
 ### A. 发布准备（推送前必做/必决策）
 
 1. ~~**在 GitHub 建仓库并推送**~~ ✅ 已完成（2026-10-16）：`https://github.com/MuskCheng/M1ToolPlus`（public，默认分支 `dev`，GitHub 已识别 GPL-3.0，已设置简介与 10 个 topics）。远程布局：`origin` = 本人仓库，`upstream` = 原作者仓库（只读）。
+   ⚠️ **本地已有 8 个未推送提交（ddfa58a…7c830c2），因本机网络限制（github.com 被 hosts 指向 127.0.0.1，备用 IP 不通）暂无法 `git push origin dev`，需在可联网环境下手动推送。**
 2. 复核两项暂缓决策（发布前定下来）：
    - `M1ToolPlus\app.config` 与 Settings 中 `GitHubR = xcicode/MifareOneTool`：目前为休眠配置（GitHubUpdate 类未启用）。若启用更新检查，需改为新仓库。
    - `M1ToolPlus\Form1.cs:1261` 硬编码原作者 releases 链接（下载最新版按钮），发布时决定改为新仓库或保留双链接。
-3. ~~打开发布包~~ ✅ 已完成（2026-10-16）：`.\scripts\build.ps1 -Pack` → `artifacts\M1ToolPlus-local-build.zip`；
+3. ~~打开发布包~~ ✅ 已完成（2026-10-23）：`.\scripts\build.ps1 -Pack` → `artifacts\M1ToolPlus-local-build.zip`（含主题切换、移除缩放、终端字号12pt 等最新修复）。
    合规检查项已由脚本自动落实并实测通过（详见下方 A'）。
-4. 版本号策略：AssemblyInfo 仍为 1.7.0.0（延续原版）。**2026-10-16 决策：首发 Release 延后到真机回归之后**，届时再定版本号（建议 1.8.0）。
+4. 版本号策略：AssemblyInfo 仍为 1.7.0.0（延续原版）。**2026-10-23 决策：首发 Release 延后到真机回归之后**，届时再定版本号（建议 1.8.0）。本地已积累 8 个 UI/主题/缩放修复提交，推送后可评估是否合并为一个功能版本。
 
-### A' 发布包合规核对（2026-10-20 实测：`artifacts\M1ToolPlus-local-build.zip`，50 个文件 / 解压 8.05 MB / zip 2.64 MB）
+### A' 发布包合规核对（2026-10-23 实测：`artifacts\M1ToolPlus-local-build.zip`，51 个文件 / 解压 8.06 MB / zip 2.79 MB）
 
 | 检查项 | 结果 |
 |---|---|
