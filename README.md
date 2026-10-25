@@ -86,7 +86,7 @@ A GUI Mifare Classic tool on Windows
 3. 双击 `M1ToolPlus.exe` —— 插入读卡器后点「检测设备」确认即可
 
 无附加安装、无联网依赖：完整界面 + 第三方命令行工具（libnfc 组、MFOC、MFCUK、Hardnested、mfdetect、MFF08 修复）都在包内。
-更多完整使用说明可参考原作者的 [Wiki](https://github.com/xcicode/MifareOneTool/wiki)（内容对两版基本适用）。
+完整使用说明见本项目的 [应用手册 docs/USERGUIDE.md](docs/USERGUIDE.md)（改写自原作者手册并适配本版功能：双模式按钮对照、卡型兼容表、救砖、检查更新等）；原作者的 [Wiki](https://github.com/xcicode/MifareOneTool/wiki) 亦可参考（内容对两版基本适用）。
 
 ## 使用须知
 
