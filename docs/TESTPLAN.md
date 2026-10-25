@@ -189,5 +189,10 @@
 ## 6. 回归完成后的收尾
 
 - [ ] 把结果回填 docs/ROADMAP.md B 区（勾选项 + 结论）
-- [ ] 首发 Release：定版本号（建议 1.8.0）→ 改 AssemblyInfo → 打 tag → 创建 Release 并上传本地包
+- [x] 首发 Release **已完成（2026-10-25）**：版本号 1.8.0.0 → tag `v1.8.0` →
+      `gh release create v1.8.0 -R MuskCheng/M1ToolPlus <zip> --target dev` 上传
+      `M1ToolPlus-v1.8.0.zip`（发布说明含 mff08 索源指引与 winhex 剔除声明）。
+      ⚠️ 本仓库存在 `upstream` remote（原作者）时，`gh` 会误解析目标仓库并报
+      404 +「workflow scope may be required」误导提示——**必须显式加
+      `-R MuskCheng/M1ToolPlus`**。
 - [ ] 再考虑去原作者仓库回复对应 Issue（#26/#38/#41 等），措辞注意：非官方衍生、GPL-3.0、避免暗示原作者背书
