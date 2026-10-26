@@ -58,9 +58,21 @@ function Find-AlExe {
 $msbuild = Find-MSBuild
 Write-Host "[build] MSBuild: $msbuild" -ForegroundColor Cyan
 
+# CI 注入口（如 GitHub Actions 无 .NET 4.0 targeting pack）：
+#   $env:M1TP_MSBUILD_PROPS = "Key=Value;Key2=Value2"
+# 会以 /p:Key=Value;Key2=Value2 追加到所有 MSBuild 调用。
+# 典型用法：指向 Microsoft.NETFramework.ReferenceAssemblies.net40 包里的
+# *.targets（CustomAfterMicrosoftCommonTargets=...），由它设置 TargetFrameworkRootPath
+# 并显式引用 mscorlib，让没有 4.0 引用程序集的机器也能编 v4.0/Client 项目。
+$extraArgs = @()
+if ($env:M1TP_MSBUILD_PROPS) {
+    $extraArgs += "/p:$($env:M1TP_MSBUILD_PROPS)"
+    Write-Host "[build] 追加 MSBuild 属性: $($env:M1TP_MSBUILD_PROPS)" -ForegroundColor Cyan
+}
+
 if ($Clean) {
     Write-Host "[build] Clean..." -ForegroundColor Cyan
-    & $msbuild $csproj /t:Clean /p:Configuration=$Configuration /p:Platform=$platform /v:minimal /nologo | Out-Null
+    & $msbuild $csproj /t:Clean /p:Configuration=$Configuration /p:Platform=$platform @extraArgs /v:minimal /nologo | Out-Null
     Remove-Item $outDir -Recurse -Force -ErrorAction SilentlyContinue
 }
 
@@ -70,7 +82,7 @@ $fullBuildOk = $false
 if ($al) {
     Write-Host "[build] 找到 al.exe ($al)，执行标准 MSBuild 构建" -ForegroundColor Green
     & $msbuild $repoRoot\M1ToolPlus.sln /t:Rebuild `
-        /p:Configuration=$Configuration /p:Platform=$platform `
+        /p:Configuration=$Configuration /p:Platform=$platform @extraArgs `
         /v:minimal /nologo
     if ($LASTEXITCODE -eq 0) { $fullBuildOk = $true }
     else { Write-Warning "标准构建失败，回退到 csc 模式" }
@@ -83,7 +95,7 @@ if (-not $fullBuildOk) {
     #    注意: 必须用 /t:Build 而非 /t:CoreCompile —— 后者会跳过引用解析导致 CS0518/CS0246。
     #    预期在 GenerateSatelliteAssemblies 步骤因缺 al.exe 报 MSB3086，主 exe 此时已产出，视为可继续。
     $buildLog = & $msbuild $csproj /t:Build `
-        /p:Configuration=$Configuration /p:Platform=$platform `
+        /p:Configuration=$Configuration /p:Platform=$platform @extraArgs `
         /v:minimal /nologo 2>&1
     $mainExe = Join-Path $objDir "M1ToolPlus.exe"
     # 编译错误必须显式失败：MSBuild 出错时 obj 里可能残留上一次的 exe，

@@ -1,0 +1,67 @@
+# CI：在干净的 Windows runner 上编译 M1ToolPlus（.NET Framework 4.0 Client Profile）
+#
+# 关键点：GitHub 的 windows-latest 镜像只带 .NET Framework 4.6.2+ 的 targeting pack，
+# 没有 4.0 引用程序集，直接 msbuild 会报 MSB3644（找不到 .NETFramework v4.0 参考程序集）。
+# 解决：下载官方 Microsoft.NETFramework.ReferenceAssemblies.net40 包，通过
+# build.ps1 的 M1TP_MSBUILD_PROPS 注入口以 CustomAfterMicrosoftCommonTargets 导入其
+# targets——由它设置 TargetFrameworkRootPath / NoStdLib 并显式引用 mscorlib。
+#
+# 卫星程序集（en/ru/zh）依赖 al.exe（Windows SDK）：镜像上有则走标准构建，没有则
+# build.ps1 自动回退到 csc 手工生成——两条路径产物一致，CI 结束后统一校验。
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    name: Build & verify
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install .NET 4.0 reference assemblies
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $dir = Join-Path $env:RUNNER_TEMP "net40ref"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $zip = Join-Path $dir "net40.zip"
+          $ver = "1.0.3"
+          Invoke-WebRequest "https://www.nuget.org/api/v2/package/Microsoft.NETFramework.ReferenceAssemblies.net40/$ver" `
+            -OutFile $zip -UseBasicParsing
+          Expand-Archive $zip (Join-Path $dir "pkg") -Force
+          $targets = Join-Path $dir "pkg\build\Microsoft.NETFramework.ReferenceAssemblies.net40.targets"
+          if (-not (Test-Path $targets)) { throw "包结构异常，未找到 targets: $targets" }
+          # 注入给 build.ps1 的所有 MSBuild 调用（路径无空格，可直接作为单个 /p: 参数）
+          "M1TP_MSBUILD_PROPS=CustomAfterMicrosoftCommonTargets=$targets" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "targets = $targets"
+
+      - name: Build
+        shell: powershell
+        run: .\scripts\build.ps1
+
+      - name: Verify outputs
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = "M1ToolPlus\bin\Release"
+          $exe = Join-Path $out "M1ToolPlus.exe"
+          if (-not (Test-Path $exe)) { throw "未产出 M1ToolPlus.exe" }
+          if (-not (Test-Path (Join-Path $out "Newtonsoft.Json.dll"))) { throw "未产出 Newtonsoft.Json.dll" }
+          if (-not (Test-Path (Join-Path $out "M1ToolPlus.exe.config"))) { throw "未产出 M1ToolPlus.exe.config" }
+          foreach ($c in @("en", "ru", "zh")) {
+            $sat = Join-Path $out "$c\M1ToolPlus.resources.dll"
+            if (-not (Test-Path $sat)) { throw "缺少卫星程序集: $sat" }
+          }
+          Write-Host ("校验通过: {0} ({1:N0} bytes)" -f (Split-Path $exe -Leaf), (Get-Item $exe).Length)
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: M1ToolPlus-ci-build
+          path: M1ToolPlus/bin/Release/
+          retention-days: 7
