@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "M1ToolPlus", "M1ToolPlus\M1ToolPlus.csproj", "{CDB26016-FC77-403F-B22A-A011F8622FCF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "M1ToolPlus.Tests", "tests\M1ToolPlus.Tests\M1ToolPlus.Tests.csproj", "{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,18 @@ Global
 		{CDB26016-FC77-403F-B22A-A011F8622FCF}.Release|Win32.ActiveCfg = Release|x86
 		{CDB26016-FC77-403F-B22A-A011F8622FCF}.Release|x86.ActiveCfg = Release|x86
 		{CDB26016-FC77-403F-B22A-A011F8622FCF}.Release|x86.Build.0 = Release|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Debug|Win32.ActiveCfg = Debug|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Debug|x86.ActiveCfg = Debug|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Debug|x86.Build.0 = Debug|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Release|Any CPU.ActiveCfg = Release|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Release|Mixed Platforms.Build.0 = Release|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Release|Win32.ActiveCfg = Release|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Release|x86.ActiveCfg = Release|x86
+		{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

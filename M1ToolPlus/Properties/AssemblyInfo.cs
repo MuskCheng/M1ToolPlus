@@ -34,3 +34,8 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.8.0.0")]
 [assembly: AssemblyFileVersion("1.8.0.0")]
+
+// 让测试工程（tests\M1ToolPlus.Tests，无第三方测试框架的控制台断言程序）
+// 能访问内部类型：S50 / Sector / Utils、ReleaseInfo、GitHubUpdate、CardToolFlow。
+// 不用强名称签名，因此只需程序集名一致即可。
+[assembly: InternalsVisibleTo("M1ToolPlus.Tests")]

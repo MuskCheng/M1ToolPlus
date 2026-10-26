@@ -2,6 +2,7 @@
 # 用法:
 #   .\scripts\build.ps1                 # Release 构建（默认）
 #   .\scripts\build.ps1 -Configuration Debug
+#   .\scripts\build.ps1 -Test           # 构建并运行单元测试（失败则退出码非 0）
 #   .\scripts\build.ps1 -Pack           # 构建并打包到 artifacts\package\
 #
 # 说明: 完整 MSBuild 构建需要 Windows SDK 的 al.exe 生成本地化卫星程序集(ru/zh)。
@@ -11,6 +12,7 @@ param(
     [ValidateSet("Release", "Debug")]
     [string]$Configuration = "Release",
     [switch]$Pack,
+    [switch]$Test,
     [switch]$Clean
 )
 
@@ -211,6 +213,28 @@ if (Test-Path $exe) {
     Write-Host "[build] 成功: $($fi.FullName) ($([math]::Round($fi.Length/1KB,1)) KB) v$ver" -ForegroundColor Green
 } else {
     throw "[build] 未产出 M1ToolPlus.exe"
+}
+
+if ($Test) {
+    # 单元测试（tests\M1ToolPlus.Tests，控制台断言程序，无第三方框架）。
+    # BuildProjectReferences=false：主程序已在上面构建过，这里不再重编——
+    # 否则 csc 回退模式下会再次撞上 al.exe 缺失（MSB3086），测试工程被误判为失败。
+    $testProj = Join-Path $repoRoot "tests\M1ToolPlus.Tests\M1ToolPlus.Tests.csproj"
+    Write-Host "[test] 构建测试工程..." -ForegroundColor Cyan
+    $testLog = & $msbuild $testProj /t:Build `
+        /p:Configuration=$Configuration /p:Platform=$platform `
+        /p:BuildProjectReferences=false @extraArgs /v:minimal /nologo 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        $testLog | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+        throw "[test] 测试工程构建失败（见上方输出）"
+    }
+    $testExe = Join-Path $repoRoot "tests\M1ToolPlus.Tests\bin\$Configuration\M1ToolPlus.Tests.exe"
+    if (-not (Test-Path $testExe)) { throw "[test] 未产出测试程序: $testExe" }
+
+    Write-Host "[test] 运行单元测试: $testExe" -ForegroundColor Cyan
+    & $testExe
+    if ($LASTEXITCODE -ne 0) { throw "[test] 单元测试未全部通过（退出码 $LASTEXITCODE）" }
+    Write-Host "[test] 单元测试全部通过" -ForegroundColor Green
 }
 
 if ($Pack) {

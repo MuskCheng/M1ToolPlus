@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    M1ToolPlus.Tests：纯逻辑单元测试。
+
+    为什么是控制台程序而不是 NUnit/xUnit：
+      本仓库没有 NuGet 基建（上游是 VS2010 时代的 csproj，net40 Client），
+      为了跑测试引入包管理会牵动整条构建链。这里用一个极小的断言框架
+      （TestAssert.cs），失败时进程退出码非 0，CI 与 build.ps1 -Test 直接据此判成败。
+    访问内部类型靠主工程 AssemblyInfo.cs 里的 [assembly: InternalsVisibleTo("M1ToolPlus.Tests")]。
+  -->
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{8F3D2A41-6B7E-4C55-9D18-2E4A0C7B3F62}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>M1ToolPlus.Tests</RootNamespace>
+    <AssemblyName>M1ToolPlus.Tests</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="TestAssert.cs" />
+    <Compile Include="Tests.CardToolFlow.cs" />
+    <Compile Include="Tests.GitHubUpdate.cs" />
+    <Compile Include="Tests.S50.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\M1ToolPlus\M1ToolPlus.csproj">
+      <Project>{CDB26016-FC77-403F-B22A-A011F8622FCF}</Project>
+      <Name>M1ToolPlus</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

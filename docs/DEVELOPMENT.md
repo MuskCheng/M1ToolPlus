@@ -112,17 +112,38 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
 
 ## 测试
 
-无自动化测试。改动后最低验证线：
+分两层：
 
-1. `.\scripts\build.ps1` 构建成功
+**① 单元测试（无硬件，改动后必跑）**
+
+```
+.\scripts\build.ps1 -Test
+```
+
+构建主程序 + `tests\M1ToolPlus.Tests`（控制台断言程序，无第三方测试框架，退出码即成败），
+当前 19 个用例覆盖纯逻辑：`S50` 的 BCC/访问位校验与 mfd/mct 往返、`Utils` hex 工具、
+`ReleaseInfo.ParseVersion`、`GitHubUpdate.VerifyPackage`（SHA256 正/反/无 digest）、
+`CardToolFlow.BuildClassicArgs/BuildPsi`。访问内部类型靠主工程
+`Properties\AssemblyInfo.cs` 的 `[assembly: InternalsVisibleTo("M1ToolPlus.Tests")]`。
+
+新增可测逻辑时按同样方式在 `Tests.*.cs` 加用例；涉及 UI、子进程、真机的逻辑不进单测，
+落到 `docs/TESTPLAN.md`。
+
+**② 最低验证线（改动后）**
+
+1. `.\scripts\build.ps1 -Test` 构建成功且单测全过
 2. 启动 `bin\Release\M1ToolPlus.exe`，主窗口正常显示
 3. 涉及读卡逻辑的改动需要真机（PN532/ACR122U + 卡片）回归——
    本环境无硬件，需协作者配合
+4. 推送后 GitHub Actions `CI / Build & verify` 必须为绿
 
 ## 已知问题 / 技术债
 
 - `Form1.cs` 巨石类承担全部业务逻辑，UI 与逻辑强耦合，是重构第一优先级
+  （2026-10-26 已起步：终端渲染抽到 `TerminalView.cs`，读写卡流程骨架抽到 `CardToolFlow.cs`，
+  `mf_read`/`mf_write` 已迁入，其余 16 处复制的 DoWork 处理器待迁）
 - .NET Framework 4.0 Client Profile 已过支持期（现代化目标：.NET 8+ WinForms）
-- `GitHubUpdate.cs` 未启用 TLS12 显式设置（.NET4.0 默认行为，迁移时注意）
-- 无 CI（后续加 GitHub Actions），无单元测试
+- ~~无 CI（后续加 GitHub Actions），无单元测试~~ **已解决（2026-10-26）**：
+  `.github/workflows/build.yml`（net40 引用程序集注入 + 产物校验 + 跑单测）与
+  `tests\M1ToolPlus.Tests`
 - 官方 Release 包不含卫星程序集（历史问题），我们 build.ps1 已解决

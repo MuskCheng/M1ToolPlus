@@ -154,6 +154,25 @@
 - [ ] **更新后设置不丢**：语言/主题/终端字号/设备参数等保留——首次以新版本号启动时
       `Program.Main` 的 `Settings.Upgrade()` 迁移生效（`UpgradeRequired` 机制）
 
+## 2h. 工程化专项（CI / 单测 / Form1 拆分，2026-10-26）
+
+自动化部分（**CI 与本机都要绿**）：
+
+- [ ] `.\scripts\build.ps1 -Test` 构建 + 单元测试全过（19 用例，退出码 0）
+- [ ] 推送后 GitHub Actions `CI / Build & verify` 首跑通过；artifact
+      `M1ToolPlus-ci-build` 下载解压后含 `M1ToolPlus.exe` + `Newtonsoft.Json.dll` + en/ru/zh 三套卫星
+- [ ] 无 .NET 4.0 targeting pack 的机器上仍能构建（CI 走 net40 引用程序集注入）
+
+拆分后必须人工确认的行为（本机无硬件部分用反射冒烟，有硬件走真机）：
+
+- [ ] 主窗读卡：终端进度行**逐格增长**，正式日志到达后进度行被删除、不留半截
+      （拆分前靠只读控件的临时关写；`TerminalView.Append/Live` 承接该逻辑）
+- [ ] 「清空终端」后继续读卡，进度行仍正常显示（`liveLineStart` 状态随 Clear 复位）
+- [ ] 高级工具（FormHTool）加载 dump / 保存、卡对比（FormDiff）输出整屏正常
+- [ ] MFF08 救砖对话框日志正常滚动
+- [ ] 读卡/写卡/缺工具三种情况：正常跑完报「运行完毕」；`nfc-bin` 缺失时报
+      「无法找到程序文件」并终止，**不跟着报运行完毕**（`CardToolFlow.Run` 早退）
+
 ## 3. 功能冒烟（核心路径）
 
 - [ ] 检测（设备连接状态）
