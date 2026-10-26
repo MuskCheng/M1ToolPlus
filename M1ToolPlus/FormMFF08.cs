@@ -17,6 +17,7 @@ namespace M1ToolPlus
         public FormMFF08()
         {
             InitializeComponent();
+            term = new TerminalView(logBox);
         }
 
         private void buttonLoadKey_Click(object sender, EventArgs e)
@@ -42,9 +43,11 @@ namespace M1ToolPlus
 
         private void logAppend(string msg)
         {
-            logBox.AppendText(msg + "\n");
-            logBox.ScrollToCaret();
+            term.Append(msg);
         }
+
+        /// <summary>终端视图（与主窗同一套渲染逻辑，见 TerminalView）。</summary>
+        private TerminalView term;
 
         void default_rpt(object sender, ProgressChangedEventArgs e)
         {

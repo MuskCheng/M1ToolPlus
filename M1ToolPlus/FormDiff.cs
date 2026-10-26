@@ -16,6 +16,7 @@ namespace M1ToolPlus
         public FormDiff()
         {
             InitializeComponent();
+            term = new TerminalView(richTextBox1);
         }
 
         private S50 sa = new S50();
@@ -57,9 +58,11 @@ namespace M1ToolPlus
         }
         private void logAppend(string msg)
         {
-            richTextBox1.AppendText(msg + "\n");
-            richTextBox1.ScrollToCaret();
+            term.Append(msg);
         }
+
+        /// <summary>终端视图（与主窗同一套渲染逻辑，见 TerminalView）。</summary>
+        private TerminalView term;
 
         private void button2_Click(object sender, EventArgs e)
         {

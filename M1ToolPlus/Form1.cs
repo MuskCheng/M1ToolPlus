@@ -18,13 +18,16 @@ using System.Globalization;
 
 namespace M1ToolPlus
 {
-    public partial class Form1 : Form
+    public partial class Form1 : Form, IToolHost
     {
         public Form1()
         {
             System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(Properties.Settings.Default.Language);
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(Properties.Settings.Default.Language);
             InitializeComponent();
+            // 终端渲染抽到 TerminalView（正式行/临时进度行的删写与只读处理），
+            // 必须紧跟 InitializeComponent：之后的主题、语言初始化都可能写终端。
+            term = new TerminalView(richTextBox1);
             // 主窗口背景重绘量较大；双缓冲只作用于窗体自身的背景绘制，减少闪烁。
             this.DoubleBuffered = true;
             InitializeThemeSelector();
@@ -283,37 +286,12 @@ namespace M1ToolPlus
             Application.DoEvents();
         }
 
-        /// <summary>终端里当前「临时进度行」的起始位置；-1 表示没有。</summary>
-        private int liveLineStart = -1;
+        /// <summary>终端视图：正式日志行 + 临时进度行的渲染逻辑（原就地实现已抽出）。</summary>
+        private TerminalView term;
 
         private void logAppend(string msg)
         {
-            if (liveLineStart >= 0)
-            {
-                // 正式日志到达：先删掉临时进度行，避免留下半截进度条。
-                // 注意：终端是只读 RichTextBox，此时 SelectedText = "" 会被系统静默忽略
-                // （插入/替换却有效），必须临时关掉只读再删，否则进度行会残留，
-                // 正式行接在它后面形成「|...| |...|」重复。
-                int start = Math.Min(liveLineStart, richTextBox1.TextLength);
-                if (start < richTextBox1.TextLength)
-                {
-                    bool readOnly = richTextBox1.ReadOnly;
-                    richTextBox1.ReadOnly = false;
-                    try
-                    {
-                        richTextBox1.Select(start, richTextBox1.TextLength - start);
-                        richTextBox1.SelectedText = "";
-                    }
-                    finally
-                    {
-                        richTextBox1.ReadOnly = readOnly;
-                    }
-                }
-                liveLineStart = -1;
-            }
-            richTextBox1.AppendText(msg + "\n");
-            richTextBox1.SelectionStart = richTextBox1.TextLength;
-            richTextBox1.ScrollToCaret();
+            term.Append(msg);
         }
 
         /// <summary>
@@ -323,16 +301,33 @@ namespace M1ToolPlus
         /// </summary>
         private void logLive(string msg)
         {
-            if (msg == null) { return; }
-            if (liveLineStart < 0 || liveLineStart > richTextBox1.TextLength)
-            {
-                liveLineStart = richTextBox1.TextLength;
-            }
-            richTextBox1.Select(liveLineStart, richTextBox1.TextLength - liveLineStart);
-            richTextBox1.SelectedText = msg;
-            richTextBox1.SelectionStart = richTextBox1.TextLength;
-            richTextBox1.ScrollToCaret();
+            term.Live(msg);
         }
+
+        #region IToolHost —— CardToolFlow 执行骨架回写 Form1 状态的通道
+
+        Process IToolHost.CurrentProcess
+        {
+            get { return process; }
+            set { process = value; }
+        }
+
+        void IToolHost.SetBusy(bool busy)
+        {
+            lprocess = busy;
+        }
+
+        void IToolHost.SetRunning(bool isRunning)
+        {
+            running = isRunning;
+        }
+
+        void IToolHost.Log(string line)
+        {
+            logAppend(line);
+        }
+
+        #endregion
 
         void list_dev(object sender, DoWorkEventArgs e)
         {
@@ -718,39 +713,21 @@ namespace M1ToolPlus
         void mf_read(object sender, DoWorkEventArgs e)
         {
             if (lprocess) { return; }
-            ProcessStartInfo psi = new ProcessStartInfo("nfc-bin/nfc-mfclassic.exe");
             string[] args = (string[])e.Argument;
-            psi.Arguments = "r " + args[1] + " u \"" + args[0] + "\"";
-            if (keymfd != "" && args[2] == "")
-            {
-                psi.Arguments += " \"" + keymfd + "\" f";
-            }
-            psi.CreateNoWindow = true;
-            psi.UseShellExecute = false;
-            psi.RedirectStandardOutput = true;
-            psi.RedirectStandardError = true;
-            lprocess = true;
+            // args[2] != "" 表示用户在 KeyA/B/N 对话框里选了「不使用 Key」
+            ProcessStartInfo psi = CardToolFlow.BuildPsi("nfc-bin/nfc-mfclassic.exe",
+                CardToolFlow.BuildClassicArgs("r", args[1], args[0], keymfd, args[2] != ""));
             BackgroundWorker b = (BackgroundWorker)sender;
-            if (!ToolProcess.Start(psi, out process))
-            {
-                lprocess = false;
-                running = false;
-                b.ReportProgress(100, Resources._运行出错);
-                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
-                return;
-            }
-            b.ReportProgress(0, Resources.开始执行读取卡片); running = true;
-            ToolProcess.PumpOutput(process, b);
-            process.WaitForExit();
-            lprocess = false; running = false;
-            if (process.ExitCode == 0)
+            int exit = CardToolFlow.Run(this, b, psi, Resources.开始执行读取卡片);
+            if (exit < 0) { return; }   // 工具缺失：骨架已汇报
+            if (exit == 0)
             {
                 b.ReportProgress(101, Resources._运行完毕);
             }
             else
             {
                 b.ReportProgress(100, Resources._运行出错);
-                File.Delete(args[0]);
+                File.Delete(args[0]);   // 读失败的半截 dump 不能留给下次当密钥文件用
             }
         }
 
@@ -856,31 +833,14 @@ namespace M1ToolPlus
         void mf_write(object sender, DoWorkEventArgs e)
         {
             if (lprocess) { return; }
-            ProcessStartInfo psi = new ProcessStartInfo("nfc-bin/nfc-mfclassic.exe");
             string[] args = (string[])e.Argument;
-            psi.Arguments = "w " + args[1] + " u \"" + args[0] + "\"";
-            if (keymfd != "" && args[2] == "")
-            {
-                psi.Arguments += " \"" + keymfd + "\" f";
-            }
-            psi.CreateNoWindow = true;
-            psi.UseShellExecute = false;
-            psi.RedirectStandardOutput = true;
-            psi.RedirectStandardError = true;
-            lprocess = true;
+            ProcessStartInfo psi = CardToolFlow.BuildPsi("nfc-bin/nfc-mfclassic.exe",
+                CardToolFlow.BuildClassicArgs("w", args[1], args[0], keymfd, args[2] != ""));
             BackgroundWorker b = (BackgroundWorker)sender;
-            if (!ToolProcess.Start(psi, out process))
-            {
-                lprocess = false;
-                running = false;
-                b.ReportProgress(100, Resources._运行出错);
-                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
-                return;
-            }
-            b.ReportProgress(0, Resources.开始执行写入M1卡片); running = true;
-            ToolProcess.PumpOutput(process, b);
-            process.WaitForExit();
-            lprocess = false; running = false;
+            int exit = CardToolFlow.Run(this, b, psi, Resources.开始执行写入M1卡片);
+            if (exit < 0) { return; }   // 工具缺失：骨架已汇报「运行出错」，不能跟着报运行完毕
+            // 上游行为：写卡结束一律汇报「运行完毕」（写失败的报错由工具输出到终端），
+            // 此处保持不变以免改变用户可见提示；退出码检查留给后续统一。
             b.ReportProgress(100, Resources._运行完毕);
         }
 
@@ -1151,8 +1111,7 @@ namespace M1ToolPlus
 
         private void buttonConClr_Click(object sender, EventArgs e)
         {
-            richTextBox1.Clear();
-            liveLineStart = -1;
+            term.Clear();
         }
 
         private void buttonConSave_Click(object sender, EventArgs e)
