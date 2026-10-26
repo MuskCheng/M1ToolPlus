@@ -1,7 +1,7 @@
 # 后续开发路线图（交接备忘）
 
 > 面向接续开发的交接文档：记录项目现状、已完成工作、待办事项与开发环境要点。
-> 最后更新：2026-10-23（移除窗口缩放功能，固定窗口大小，补充 DPI/清晰度说明后）。
+> 最后更新：2026-10-26（落地 CI 构建门禁、更新包 SHA256 校验、Form1 首轮拆分 + 单元测试）。
 > 注意：本仓库原位于 `D:\repositories\MifareOneTool`，已更名为 **`D:\repositories\M1ToolPlus`**（纯文件夹改名，git 历史与远程配置不受影响）。
 > **进行中的工作**：问题驱动审计（对照原作者 16 个 open Issue）与六步修复计划见 [docs/FIXPLAN.md](FIXPLAN.md)。
 
@@ -16,7 +16,8 @@
 | origin | `https://github.com/MuskCheng/M1ToolPlus.git`（**本人仓库，已推送 dev 分支**） |
 | upstream | `https://github.com/xcicode/MifareOneTool.git`（原作者仓库，只读参考，用于 `fetch`） |
 | 构建产物 | `M1ToolPlus\bin\Release\M1ToolPlus.exe`（+ en/ru/zh 卫星程序集 + nfc-bin） |
-| 构建命令 | `.\scripts\build.ps1`（参数见 README / docs/DEVELOPMENT.md） |
+| 构建命令 | `.\scripts\build.ps1`（`-Test` 跑单元测试、`-Pack` 打包、`-Clean` 重来；参数见 README / docs/DEVELOPMENT.md） |
+| CI | `.github/workflows/build.yml`：干净 Windows runner 上构建 + 产物校验 + 跑单测（**推送受 token `workflow` scope 限制，见待办 A.5**） |
 | 用途声明 | 仅限对你有授权的卡片的安全研究（README 同样声明） |
 
 ## 二、已完成（本地提交清单）
@@ -44,6 +45,12 @@
 | 8f305ff | fix(ui): ApplyFont 跳过 TerminalBox——切换主题（手动深/浅）后终端字号不再退回 12px 等宽字体「异常缩小」 |
 | 859d7a0 | release: v1.8.0 —— README 重写为功能向导版（衍生声明并入许可证节）；AssemblyInfo 升 1.8.0.0，准备打 tag v1.8.0 与 GitHub Release |
 | f49ecd9 | feat(update): 「检查更新」指向本仓库最新 Release，内置自动下载（进度条）+「继续使用/重启更新」两选；重构 GitHubUpdate.cs、新增 FormUpdate.cs；GitHubR 改 MuskCheng；UpgradeRequired 升级迁移设置；打包统一 .NET ZipFile |
+| b729457 | docs(USERGUIDE): 新增应用手册 docs/USERGUIDE.md（改写自原作者 M1T 手册，适配 v1.8.0），README 加链接 |
+| 45559fa | docs(USERGUIDE): 合并段落内硬折行，保留空行/表格/列表/标题等结构性换行 |
+| c133f1b | **ci**: 新增 `.github/workflows/build.yml`（net40 引用程序集注入 + 产物校验 + artifact 上传）；`build.ps1` 加 `M1TP_MSBUILD_PROPS` 注入口 |
+| c3a323d | **feat(update)**: 下载包 SHA256 校验（GitHub asset `digest`，同尺寸篡改拒绝、无 digest 不阻断）；`-Pack` 打印哈希；四语新增「更新_校验失败」；v1.8.0 Release 说明补 SHA256 段 |
+| fd3c8cb | **refactor(form1)**: 抽出 `TerminalView.cs`（四处重复的终端渲染 + 只读删进度行）与 `CardToolFlow.cs`/`IToolHost`（工具流程执行骨架），`mf_read`/`mf_write` 先行迁入 |
+| 54ee71f | **test**: 新增 `tests\M1ToolPlus.Tests`（19 个纯逻辑用例，net40 控制台断言，无第三方框架）；`build.ps1 -Test`；CI 跑单测；DEVELOPMENT/TESTPLAN 补录 |
 
 ## 三、待办（按优先级）
 
@@ -57,6 +64,11 @@
 3. ~~打开发布包~~ ✅ 已完成（2026-10-23）：`.\scripts\build.ps1 -Pack` → `artifacts\M1ToolPlus-local-build.zip`（含主题切换、移除缩放、终端字号12pt 等最新修复）。
    合规检查项已由脚本自动落实并实测通过（详见下方 A'）。
 4. 版本号策略：AssemblyInfo 仍为 1.7.0.0（延续原版）。**2026-10-23 决策：首发 Release 延后到真机回归之后**，届时再定版本号（建议 1.8.0）。本地已积累 8 个 UI/主题/缩放修复提交，推送后可评估是否合并为一个功能版本。
+5. **⚠️ 推送阻塞（2026-10-26）**：`gh` 的 token（`gho_`，scopes `gist,read:org,repo`）缺 **`workflow`**，
+   remote 拒绝含 `.github/workflows/` 的 dev 推送 → 目前积压 6 个本地提交（`c133f1b`…`54ee71f`）未推。
+   解法：`gh auth refresh -h github.com -s workflow -c`（**这版 gh 无 `-w` 旗标**，用 `-c` + 回车），
+   到 https://github.com/login/device 输入打印的一次性码授权；此前一次尝试因 github.com 连接超时失败，需在网络可达时重试。
+   推送成功后用 `gh run list -R MuskCheng/M1ToolPlus` 观察 CI 首跑（`gh` 必须带 `-R`，upstream remote 会干扰解析）。
 
 ### A' 发布包合规核对（2026-10-23 实测：`artifacts\M1ToolPlus-local-build.zip`，51 个文件 / 解压 8.06 MB / zip 2.79 MB）
 
@@ -80,11 +92,16 @@
 - MFF08 对话框回归：随包附带 `mff08.exe` 时窗口正常打开；仅缺失 nfc-bin 的开发环境下弹提示自动关闭，不崩溃。
 - 无回归后，到原作者仓库对应 Issue 下回复（措辞注意：非官方衍生、GPL-3.0、避免暗示原作者背书）。
 
-### C. 阶段④现代化（未开始，需先装 .NET SDK）
+### C. 阶段④现代化（进行中）
 
-- .NET Framework 4.0 Client Profile → .NET 8+ WinForms 迁移。
-- 拆分 Form1.cs 巨石类（约 1456 行，UI 与逻辑强耦合，重构第一优先级）。
-- GitHub Actions CI（构建 + 无硬件冒烟）。
+- ~~GitHub Actions CI（构建 + 无硬件冒烟）~~ ✅ **2026-10-26 完成**（`c133f1b` + `54ee71f`）：
+  net40 引用程序集注入（runner 无 .NET 4.0 targeting pack 也能编）→ `build.ps1 -Test` →
+  产物校验（exe / Newtonsoft / 三语卫星）→ artifact 上传。**待推送后观察首跑。**
+- ~~单元测试基建~~ ✅ **2026-10-26 完成**（`54ee71f`）：`tests\M1ToolPlus.Tests`，19 用例，`build.ps1 -Test`。
+- **拆分 Form1.cs 巨石类：已起步**（`fd3c8cb`）——`TerminalView.cs`（终端渲染，四处重复归一）、
+  `CardToolFlow.cs` + `IToolHost`（18 处「启工具→泵输出→等退出→翻标志」骨架，先迁 `mf_read`/`mf_write`）。
+  下一步：其余 16 处 DoWork 处理器按同一接口迁移；`writecheck`、`GetUID`、密钥加载等纯逻辑继续下沉为可测函数。
+- .NET Framework 4.0 Client Profile → .NET 8+ WinForms 迁移（未开始，需先装 .NET SDK）。
 - 迁移注意：GitHubUpdate.cs 需显式启用 TLS 1.2、Newtonsoft.Json 依赖处理、现代 SDK 的 resx 本地化流程与现有 csc 卫星方案的取舍。
 
 ### D. 其他小事
@@ -97,6 +114,12 @@
 
 - **构建**：VS2022 Build Tools 的 MSBuild；本机无 Windows SDK（无 al.exe），build.ps1 自动用 csc 手工生成卫星程序集。
   卫星生成必须走 `/t:Build`（用 `/t:CoreCompile` 会因跳过引用解析报 CS0518/CS0246）。
+- **CI 无 .NET 4.0 targeting pack 时**：设 `M1TP_MSBUILD_PROPS=CustomAfterMicrosoftCommonTargets=<pkg>\build\Microsoft.NETFramework.ReferenceAssemblies.net40.targets`
+  （来自 `Microsoft.NETFramework.ReferenceAssemblies.net40/1.0.3` 包），build.ps1 会把它追加到所有 MSBuild 调用；
+  本地模拟 CI 也用同样办法。
+- **单元测试**：`.\scripts\build.ps1 -Test` → `tests\M1ToolPlus.Tests`（19 用例，控制台断言，无 NuGet）。
+  测试工程用 `BuildProjectReferences=false` 构建（主程序已先构建，避免再撞 al.exe 缺失）；
+  访问内部类型靠主工程 `InternalsVisibleTo`。新增用例放 `Tests.*.cs` 并在 `Program.cs` 注册。
 - **.NET SDK**：本机暂未安装——阶段④开始前先安装（8.x）。
 - **PowerShell 5.1 编码坑**：含中文的 .ps1 必须存为 **UTF-8 with BOM**，否则会被按 GBK 误读导致语法错乱；.cs/.resx 为 UTF-8（BOM 混杂，修改时逐文件保留原编码）。
 - **验证 x86 exe 资源**：64 位 PowerShell 不能 LoadFrom x86 程序集；
@@ -115,7 +138,7 @@
 1. 确认工作目录已是 `D:\repositories\M1ToolPlus`（若会话仍指向旧路径，先切换/移动会话）。
 2. `git status --short` 应为空；当前分支应为 `dev`。
 3. `git log --oneline -3` 应包含 `1b97708`（更名）与 `19d6094`（README 存档）。
-4. 快速构建验证：`.\scripts\build.ps1 -Clean`，确认输出 `M1ToolPlus.exe` + en/ru/zh 卫星。
+4. 快速构建验证：`.\scripts\build.ps1 -Clean -Test`，确认输出 `M1ToolPlus.exe` + en/ru/zh 卫星、单测全过。
 5. 阅读：README.md、docs/DEVELOPMENT.md、docs/DEPENDENCIES.md、docs/TROUBLESHOOTING.md，然后按「三、待办」从 A 开始推进。
 
 ### UI 主题与截图验证
