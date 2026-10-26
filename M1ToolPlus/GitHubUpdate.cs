@@ -2,6 +2,8 @@
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using Newtonsoft.Json.Linq;
 
 namespace M1ToolPlus
@@ -17,6 +19,7 @@ namespace M1ToolPlus
         public string AssetUrl;  // 更新包直链（browser_download_url）
         public string AssetName; // 更新包文件名
         public long AssetSize;   // 更新包字节数（缓存校验用）
+        public string AssetDigest; // GitHub 提供的内容摘要，形如 "sha256:xxxx"（可为空）
 
         public Version Remote
         {
@@ -64,6 +67,52 @@ namespace M1ToolPlus
         }
 
         /// <summary>
+        /// 计算文件 SHA256，返回小写十六进制。用于校验下载的更新包。
+        /// </summary>
+        public static string ComputeSha256(string path)
+        {
+            using (SHA256 sha = SHA256.Create())
+            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                byte[] hash = sha.ComputeHash(fs);
+                StringBuilder sb = new StringBuilder(hash.Length * 2);
+                for (int i = 0; i < hash.Length; i++) { sb.Append(hash[i].ToString("x2")); }
+                return sb.ToString();
+            }
+        }
+
+        /// <summary>
+        /// 用 GitHub 提供的 digest（"sha256:xxxx"）校验文件。
+        /// 返回 true = 校验通过（或无法校验：digest 为空 / 非 sha256 算法——
+        /// GitHub 未提供摘要时不能把「无数据」判为失败，否则老版本 Release 会全部卡死）。
+        /// actual 输出实际计算值（未计算时为 null），供失败提示展示。
+        /// </summary>
+        public static bool VerifyPackage(string path, string digest, out string actual)
+        {
+            actual = null;
+            if (string.IsNullOrEmpty(digest)) { return true; }
+            string algo = null;
+            string expected = digest;
+            int idx = digest.IndexOf(':');
+            if (idx > 0)
+            {
+                algo = digest.Substring(0, idx).Trim().ToLowerInvariant();
+                expected = digest.Substring(idx + 1).Trim();
+            }
+            if (algo != null && algo != "sha256") { return true; }  // 未知算法：不校验，不阻断更新
+            if (expected.Length == 0) { return true; }
+            try
+            {
+                actual = ComputeSha256(path);
+            }
+            catch (Exception)
+            {
+                return false;   // 读不到文件 = 包不可用，按失败处理
+            }
+            return string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// 拉取默认仓库的最新 Release。返回 null 表示查询失败（网络/接口错误），
         /// 失败原因写入 error 输出参数。
         /// </summary>
@@ -107,6 +156,9 @@ namespace M1ToolPlus
                                 info.AssetUrl = (string)a["browser_download_url"];
                                 info.AssetName = name;
                                 info.AssetSize = (long)a["size"];
+                                // GitHub 对上传资产计算的内容摘要（2024 起的 API 字段），
+                                // 客户端据此校验下载包完整性，防篡改/防截断。
+                                info.AssetDigest = (string)a["digest"];
                                 break;
                             }
                         }

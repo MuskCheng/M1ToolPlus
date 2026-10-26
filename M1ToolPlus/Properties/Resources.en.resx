@@ -429,6 +429,9 @@ The operation is aborted.</value>
   <data name="更新_下载失败" xml:space="preserve">
     <value>Download failed: {0}</value>
   </data>
+  <data name="更新_校验失败" xml:space="preserve">
+    <value>Update package verification failed (expected {0}, got {1}). The file was deleted; please retry.</value>
+  </data>
   <data name="更新_重试" xml:space="preserve">
     <value>Retry</value>
   </data>

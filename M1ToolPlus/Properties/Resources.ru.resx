@@ -420,6 +420,9 @@
   <data name="更新_下载失败" xml:space="preserve">
     <value>Не удалось загрузить: {0}</value>
   </data>
+  <data name="更新_校验失败" xml:space="preserve">
+    <value>Ошибка проверки пакета обновления (ожидалось {0}, получено {1}). Файл удалён, повторите попытку.</value>
+  </data>
   <data name="更新_重试" xml:space="preserve">
     <value>Повторить</value>
   </data>

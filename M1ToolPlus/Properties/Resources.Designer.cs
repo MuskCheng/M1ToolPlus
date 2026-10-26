@@ -1096,6 +1096,13 @@ namespace M1ToolPlus.Properties {
             }
         }
         
+        /// <summary>更新包校验失败（期望 {0}，实际 {1}），文件已删除，请重试。</summary>
+        public static string 更新_校验失败 {
+            get {
+                return ResourceManager.GetString("更新_校验失败", resourceCulture);
+            }
+        }
+        
         /// <summary>重试。</summary>
         public static string 更新_重试 {
             get {

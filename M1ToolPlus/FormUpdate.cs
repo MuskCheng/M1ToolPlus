@@ -248,14 +248,21 @@ namespace M1ToolPlus
             catch (Exception) { }
             _zipPath = Path.Combine(dir, "M1ToolPlus-" + _rel.Tag + ".zip");
 
-            // 已下载过（大小一致）则直接进入选择阶段，避免重复下载
+            // 已下载过（大小一致且 SHA256 校验通过）则直接进入选择阶段，避免重复下载；
+            // 大小对但摘要不对（截断/损坏/被篡改）→ 删掉重新下载。
             FileInfo cached = null;
             try { cached = new FileInfo(_zipPath); }
             catch (Exception) { }
             if (cached != null && cached.Exists && cached.Length == _rel.AssetSize)
             {
-                Ready();
-                return;
+                string cachedHash;
+                if (GitHubUpdate.VerifyPackage(_zipPath, _rel.AssetDigest, out cachedHash))
+                {
+                    Ready();
+                    return;
+                }
+                try { File.Delete(_zipPath); }
+                catch (Exception) { }
             }
 
             string workerErr = null;
@@ -318,7 +325,28 @@ namespace M1ToolPlus
                 Failed(e.Error.GetBaseException().Message);
                 return;
             }
+            // 下载完成 ≠ 可用：用 GitHub 提供的 digest 校验 SHA256，
+            // 不匹配（传输损坏或被篡改）则删除文件并提示，绝不开「重启更新」的门。
+            string actual;
+            if (!GitHubUpdate.VerifyPackage(_zipPath, _rel.AssetDigest, out actual))
+            {
+                string expected = (_rel.AssetDigest == null) ? "" : _rel.AssetDigest;
+                try { if (File.Exists(_zipPath)) { File.Delete(_zipPath); } }
+                catch (Exception) { }
+                _busyDownload = false;
+                FailedRaw(string.Format(Resources.更新_校验失败, ShortHash(expected), ShortHash(actual)));
+                return;
+            }
             Ready();
+        }
+
+        /// <summary>摘要截断为前 16 位十六进制，供失败提示展示（完整值无意义地占屏）。</summary>
+        private static string ShortHash(string h)
+        {
+            if (string.IsNullOrEmpty(h)) { return "—"; }
+            int i = h.IndexOf(':');
+            if (i >= 0) { h = h.Substring(i + 1); }
+            return (h.Length <= 16) ? h : h.Substring(0, 16) + "…";
         }
 
         private void Ready()
@@ -333,9 +361,14 @@ namespace M1ToolPlus
 
         private void Failed(string reason)
         {
+            FailedRaw(string.Format(Resources.更新_下载失败, reason));
+        }
+
+        private void FailedRaw(string text)
+        {
             _busyDownload = false;
             _bar.Value = 0;
-            _detail.Text = string.Format(Resources.更新_下载失败, reason);
+            _detail.Text = text;
             _btnRetry.Show();
             _lnk.Show();
         }

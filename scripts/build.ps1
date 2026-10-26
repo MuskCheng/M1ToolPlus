@@ -232,4 +232,8 @@ if ($Pack) {
     Add-Type -AssemblyName System.IO.Compression.FileSystem | Out-Null
     [IO.Compression.ZipFile]::CreateFromDirectory($pkgDir, $zip)
     Write-Host "[build] 打包完成: $zip" -ForegroundColor Green
+    # 打印 SHA256：随 Release 说明公布供人工核对；客户端另用 GitHub API 的
+    # asset digest（同为此文件哈希）在「检查更新」下载后自动校验，双保险。
+    $zipHash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
+    Write-Host "[build] SHA256: $zipHash" -ForegroundColor Cyan
 }
