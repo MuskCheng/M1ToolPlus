@@ -1,4 +1,4 @@
-﻿param([string]$ExePath = "M1ToolPlus\bin\Release\M1ToolPlus.exe", [string]$OutDir = "$env:TEMP", [int]$TabCount = 3, [int]$MaxWidth = 0)
+﻿param([string]$ExePath = "M1ToolPlus\bin\Release\M1ToolPlus.exe", [string]$OutDir = "$env:TEMP", [int]$TabCount = 3, [int]$MaxWidth = 0, [switch]$Print)
 # 逐个标签页截图（用于检查各页排版）
 # 依赖程序支持的命令行参数 --tab N（见 Form1.ApplyInitialTab）
 Add-Type -AssemblyName System.Drawing
@@ -51,7 +51,16 @@ public class Resize { [DllImport("user32.dll")] public static extern bool SetWin
     # 截图会“看起来正常但内容是旧的”。窗口已置前，用 CopyFromScreen 才是所见即所得。
     $bmp = New-Object System.Drawing.Bitmap $w, $h
     $g = [System.Drawing.Graphics]::FromImage($bmp)
-    $g.CopyFromScreen($r.Left, $r.Top, 0, 0, (New-Object System.Drawing.Size $w, $h))
+    if ($Print) {
+        # 离屏渲染：PrintWindow(flags=2 = PW_RENDERFULLCONTENT) 直接让窗口自己画一遍，
+        # 不依赖窗口是否在前台。SetForegroundWindow 在有其他进程占前台时会静默失败，
+        # 那种情况下 CopyFromScreen 抓到的是壁纸或别人的窗口（本机 125% DPI 下高发）。
+        $hdc = $g.GetHdc()
+        [Win]::PrintWindow($p.MainWindowHandle, $hdc, 2) | Out-Null
+        $g.ReleaseHdc($hdc)
+    } else {
+        $g.CopyFromScreen($r.Left, $r.Top, 0, 0, (New-Object System.Drawing.Size $w, $h))
+    }
     $g.Dispose()
 
     $f = Join-Path $OutDir ("tab_{0}.png" -f ($i + 1))

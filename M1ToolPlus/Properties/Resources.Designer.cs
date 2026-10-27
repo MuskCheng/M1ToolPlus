@@ -206,6 +206,33 @@ namespace M1ToolPlus.Properties {
         }
         
         /// <summary>
+        ///   终端欢迎语首行。
+        /// </summary>
+        public static string 欢迎语 {
+            get {
+                return ResourceManager.GetString("欢迎语", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   终端欢迎语第二行：首次运行的操作建议。
+        /// </summary>
+        public static string 首次运行提示 {
+            get {
+                return ResourceManager.GetString("首次运行提示", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   设置页「指定设备」下拉框在没检测到设备时的占位文案。
+        /// </summary>
+        public static string 未检测到设备 {
+            get {
+                return ResourceManager.GetString("未检测到设备", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на ##运行出错##.
         /// </summary>
         public static string _运行出错 {
@@ -1656,6 +1683,15 @@ namespace M1ToolPlus.Properties {
         public static string 外观 {
             get {
                 return ResourceManager.GetString("外观", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to 外观主题.
+        /// </summary>
+        public static string 外观主题 {
+            get {
+                return ResourceManager.GetString("外观主题", resourceCulture);
             }
         }
 

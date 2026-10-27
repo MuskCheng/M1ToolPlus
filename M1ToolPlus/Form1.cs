@@ -22,8 +22,11 @@ namespace M1ToolPlus
     {
         public Form1()
         {
-            System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(Properties.Settings.Default.Language);
-            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(Properties.Settings.Default.Language);
+            // v1.9.0 起只保留简体中文：界面资源仅剩中性 resx + zh 卫星程序集，
+            // 线程文化固定为 zh-CN，不再受系统区域设置或历史 Settings.Language 影响
+            // （旧配置里残留的 en-US / ru-RU 一律忽略，避免落到无资源可用的回退路径）。
+            System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(UiCulture);
+            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(UiCulture);
             InitializeComponent();
             // 终端渲染抽到 TerminalView（正式行/临时进度行的删写与只读处理），
             // 必须紧跟 InitializeComponent：之后的主题、语言初始化都可能写终端。
@@ -31,7 +34,6 @@ namespace M1ToolPlus
             // 主窗口背景重绘量较大；双缓冲只作用于窗体自身的背景绘制，减少闪烁。
             this.DoubleBuffered = true;
             InitializeThemeSelector();
-            ApplyLanguageSelection();
         }
 
         /// <summary>构造期回显主题下拉框时置位，避免触发保存/刷新。</summary>
@@ -49,7 +51,9 @@ namespace M1ToolPlus
             {
                 GroupBox box = new GroupBox();
                 box.Name = "groupBoxTheme";
-                box.Text = Resources.外观;
+                // 组标题用「外观主题」四字（单行）：原先组标题只写「外观」、组内再放「主题」
+                // 标签，视觉上像四个字被折成两行；合并到标题行后不会再换行。
+                box.Text = Resources.外观主题;
                 box.AutoSize = true;
                 box.AutoSizeMode = AutoSizeMode.GrowAndShrink;
                 box.TabStop = false;
@@ -61,14 +65,8 @@ namespace M1ToolPlus
                 fp.WrapContents = false;
                 fp.AutoSize = true;
                 fp.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-                fp.Location = new Point(3, 18);
-
-                Label label = new Label();
-                label.Name = "labelTheme";
-                label.Text = Resources.主题;
-                label.AutoSize = true;
-                label.Font = new Font(label.Font, FontStyle.Bold);
-                label.Margin = new Padding(3, 0, 3, 0);
+                // 组框自绘标题占顶部约 16px，控件从这里往下排，避免压到标题线。
+                fp.Location = new Point(6, 24);
 
                 ComboBox combo = new ComboBox();
                 combo.Name = "comboBoxTheme";
@@ -80,7 +78,6 @@ namespace M1ToolPlus
                 combo.Items.AddRange(new object[] { Resources.跟随系统, Resources.深色, Resources.浅色 });
                 combo.SelectedIndexChanged += ComboBoxTheme_SelectedIndexChanged;
 
-                fp.Controls.Add(label);
                 fp.Controls.Add(combo);
                 box.Controls.Add(fp);
                 flowLayoutPanel22.Controls.Add(box);
@@ -120,33 +117,8 @@ namespace M1ToolPlus
             UiTheme.Refresh();
         }
 
-        /// <summary>构造期回显语言下拉框时置位，避免触发 SelectedIndexChanged 里的「保存 + 重启」。</summary>
-        private bool suppressLanguageChanged;
-
-        /// <summary>
-        /// 把「语言和地区」下拉框回显成当前设置的语言。
-        /// 只设 SelectedIndex，不写设置；设置项的权威值始终是 Settings.Language。
-        /// 下拉项文案是**各语言自己的写法**（简体中文 / Русский / English），
-        /// 不随界面语言翻译，见 Form1.Designer.cs 的 comboBox1.Items。
-        /// </summary>
-        private void ApplyLanguageSelection()
-        {
-            try
-            {
-                int index = 0; // 0 = 简体中文（默认/空设置均视为中文）
-                string lang = Properties.Settings.Default.Language;
-                if (!string.IsNullOrEmpty(lang))
-                {
-                    string two = CultureInfo.GetCultureInfo(lang).TwoLetterISOLanguageName;
-                    if (two == "ru") { index = 1; }
-                    else if (two == "en") { index = 2; }
-                }
-                suppressLanguageChanged = true;
-                try { comboBox1.SelectedIndex = index; }
-                finally { suppressLanguageChanged = false; }
-            }
-            catch (Exception) { suppressLanguageChanged = false; }
-        }
+        /// <summary>界面语言（唯一支持的语言，见类注释）。</summary>
+        internal const string UiCulture = "zh-CN";
 
         private Process process = new Process();
         private bool lprocess = false;
@@ -391,14 +363,23 @@ namespace M1ToolPlus
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            // 欢迎语固定三行：Welcome / 首次运行建议 / 版本号。
+            // 逐行 logAppend（各自带换行），不要拼成一个字符串——原先首行来自
+            // Designer 的 richTextBox1.Text（末尾无换行），再接版本号就成了
+            // 「Hello,cardman!#软件版本 1.8.0.0」一行。
+            logAppend(Resources.欢迎语);
+            logAppend(Resources.首次运行提示);
             logAppend(Resources._软件版本 + Assembly.GetExecutingAssembly().GetName().Version.ToString());
             localVersionLabel.Text = Resources.本地版本 + Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            // 计时器空闲态给个 0 值：原先只有「计时器」三个字、后面空着，
+            // 看上去像这栏坏了或没加载；跑任务时会被 运行时间N秒 覆盖。
+            runTimeLabel.Text = Resources.运行时间 + "0" + Resources.秒;
             Directory.CreateDirectory("auto_keys");
             checkBoxAutoABN.Checked = Properties.Settings.Default.AutoABN;
             checkBoxWriteProtect.Checked = Properties.Settings.Default.WriteCheck;
             checkBoxAutoLoadKey.Checked = Properties.Settings.Default.AutoLoadUidKey;
             richTextBox1.ForeColor = Properties.Settings.Default.MainCLIColor;
-            buttonCLIColor.ForeColor = Properties.Settings.Default.MainCLIColor;
+            // 颜色按钮不用这里设前景色：它是色块预览，底色/文字对比由 UiTheme 统一算
             checkBoxDefIsAdv.Checked = Properties.Settings.Default.DefIsAdv;
             checkBoxHardLowCost.Checked = Properties.Settings.Default.HardLowCost;
             checkBoxNewScan.Checked = Properties.Settings.Default.NewScan;
@@ -426,6 +407,15 @@ namespace M1ToolPlus
                 }
             }
             catch (Exception) { /* libnfc.conf 损坏时忽略, 走正常手动检测流程 */ }
+            // 空下拉框看着像控件坏了（用户反馈过）：没有任何设备时给一条占位项。
+            // 选中项由 SetDeviceCombo_SelectedIndexChanged 判断，占位项不会写进 libnfc.conf。
+            if (SetDeviceCombo.Items.Count == 0)
+            {
+                SetDeviceCombo.SelectedIndexChanged -= SetDeviceCombo_SelectedIndexChanged;
+                SetDeviceCombo.Items.Add(Resources.未检测到设备);
+                SetDeviceCombo.SelectedIndex = 0;
+                SetDeviceCombo.SelectedIndexChanged += SetDeviceCombo_SelectedIndexChanged;
+            }
             //File.Delete("libnfc.conf");//用户COM口一般不常变化
             checkBoxMultiDev.Checked = Properties.Settings.Default.MultiMode;
             if (Properties.Settings.Default.MultiMode)
@@ -498,24 +488,21 @@ namespace M1ToolPlus
                 sb.AppendLine("CurrentCulture=" + System.Threading.Thread.CurrentThread.CurrentCulture.Name);
                 sb.AppendLine("TabPage1Text=" + tabControl1.TabPages[0].Text);
                 sb.AppendLine("ButtonListDevText=" + buttonListDev.Text);
-                sb.AppendLine("LanguageCombo=" + comboBox1.SelectedIndex + ":" + comboBox1.Text);
-                // 三个选项必须始终是各自语言的写法，不能随界面语言翻译
-                string langItems = "";
-                foreach (object item in comboBox1.Items)
-                {
-                    if (langItems.Length > 0) { langItems += "|"; }
-                    langItems += item;
-                }
-                sb.AppendLine("LanguageItems=" + langItems);
                 // 终端诊断：文本确实写进去了但被页签盖住时，TextLength > 0 而界面上看不到
                 sb.AppendLine("TerminalTextLength=" + richTextBox1.TextLength);
                 sb.AppendLine("TerminalFirstLine=" + (richTextBox1.Lines.Length > 0 ? richTextBox1.Lines[0] : "(empty)"));
+                sb.AppendLine("TerminalFore=" + richTextBox1.ForeColor.Name + " Back=" + richTextBox1.BackColor.Name);
+                // 逐行导出（换行转义），用来确认「界面上看不见的那行」到底有没有写进控件
+                sb.AppendLine("TerminalLines=" + string.Join(" | ", richTextBox1.Lines));
+                // 自适应定宽的诊断：量到的内容右缘与来源控件（宽度被莫名撑大时看这两行）
+                sb.AppendLine("MeasureWidth=" + UiTheme.LastMeasureWidth + " from=" + UiTheme.LastMeasureFrom);
+                sb.AppendLine("Overflow=" + UiTheme.LastOverflow + " (0=内容未越界, >0=被右缘裁切)");
                 // 字号诊断：设置页显示值 / 实际字体名 / 像素高度 / 缩放因子必须互相一致
                 sb.AppendLine("TerminalFontSize=" + numericCLIFontSize.Value + "pt");
                 sb.AppendLine("TerminalFontFamily=" + richTextBox1.Font.FontFamily.Name);
                 sb.AppendLine("TerminalFontPx=" + richTextBox1.Font.SizeInPoints.ToString("0.##") + "pt h=" + richTextBox1.Font.Height);
                 sb.AppendLine("TerminalZoom=" + richTextBox1.ZoomFactor.ToString("0.##"));
-                string[] names = new string[] { "tabControl1", "richTextBox1", "statusStrip1", "groupBox1", "buttonScanCard", "comboBox1" };
+                string[] names = new string[] { "tabControl1", "richTextBox1", "statusStrip1", "groupBox1", "buttonScanCard" };
                 foreach (string n in names)
                 {
                     Control[] found = Controls.Find(n, true);
@@ -526,10 +513,31 @@ namespace M1ToolPlus
                         sb.AppendLine(n + ".Screen=" + c.PointToScreen(Point.Empty));
                     }
                 }
+                // 全量控件快照：排查「某个控件被窗口右/下缘裁掉」时按绝对坐标定位，
+                // 不必靠猜（控制台里按 abs= 的 X+Width 与 ClientSize 比较即可）。
+                sb.AppendLine("--- controls (abs = 相对客户区) ---");
+                AppendControlTree(sb, this, 0);
                 string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "m1tool-ui-info.txt");
                 System.IO.File.WriteAllText(path, sb.ToString(), System.Text.Encoding.UTF8);
             }
             catch (Exception) { }
+        }
+
+        /// <summary>递归输出控件树（仅 --ui-info 诊断用）。</summary>
+        private void AppendControlTree(System.Text.StringBuilder sb, Control parent, int depth)
+        {
+            foreach (Control c in parent.Controls)
+            {
+                try
+                {
+                    Rectangle abs = RectangleToClient(c.Parent.RectangleToScreen(c.Bounds));
+                    sb.AppendLine(new string(' ', depth) + c.GetType().Name + " " + c.Name
+                        + " rel=" + c.Bounds + " abs=" + abs
+                        + (c.Visible ? "" : " [hidden]"));
+                    if (c.Controls.Count > 0) { AppendControlTree(sb, c, depth + 1); }
+                }
+                catch (Exception) { }
+            }
         }
 
         /// <summary>
@@ -550,6 +558,33 @@ namespace M1ToolPlus
                         {
                             SelectTab(idx);
                         }
+                    }
+                }
+                // 调试/截图用：M1ToolPlus.exe --update-dialog 直接打开「检查更新」对话框。
+                // 与 --tab 同一套路，只在显式传参时生效，正常启动完全不受影响；
+                // 用于回归核对动作按钮的右对齐/间距（脚本无法点状态栏按钮）。
+                foreach (string a in args)
+                {
+                    if (a == "--update-dialog")
+                    {
+                        BeginInvoke(new MethodInvoker(delegate
+                        {
+                            try
+                            {
+                                using (FormUpdate dlg = new FormUpdate()) { dlg.ShowDialog(this); }
+                            }
+                            catch (Exception ex)
+                            {
+                                try
+                                {
+                                    System.IO.File.WriteAllText(
+                                        System.IO.Path.Combine(System.IO.Path.GetTempPath(), "m1tool-update-dialog.log"),
+                                        ex.ToString(), System.Text.Encoding.UTF8);
+                                }
+                                catch (Exception) { }
+                            }
+                        }));
+                        break;
                     }
                 }
             }
@@ -1893,7 +1928,8 @@ namespace M1ToolPlus
             if (cd.ShowDialog() == DialogResult.OK)
             {
                 richTextBox1.ForeColor = cd.Color;
-                buttonCLIColor.ForeColor = cd.Color;
+                // 按钮本身画成色块预览（底色=所选颜色、文字自动取对比色）
+                UiTheme.SetColorChip(buttonCLIColor, cd.Color);
                 Properties.Settings.Default.MainCLIColor = cd.Color;
             }
         }
@@ -1993,8 +2029,12 @@ namespace M1ToolPlus
         {
             if (SetDeviceCombo.SelectedIndex >= 0)
             {
-                writeConfig(SetDeviceCombo.SelectedItem.ToString());
-                logAppend(Resources.已指定使用该NFC设备 + SetDeviceCombo.SelectedItem.ToString());
+                string dev = SetDeviceCombo.SelectedItem as string;
+                // 占位项（没检测到设备时提示用）不是真实设备，不能写进 libnfc.conf
+                if (dev == Resources.未检测到设备) { return; }
+
+                writeConfig(dev);
+                logAppend(Resources.已指定使用该NFC设备 + dev);
             }
         }
 
@@ -2013,35 +2053,6 @@ namespace M1ToolPlus
             FormMFF08 mff08 = new FormMFF08();
             UiTheme.Apply(mff08);
             mff08.ShowDialog();
-        }
-
-        private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            // 构造期回显（ApplyLanguageSelection）也会走到这里，必须屏蔽，
-            // 否则一启动就「保存设置 + 重启」，形成死循环。
-            if (suppressLanguageChanged) { return; }
-            // 按索引切换语言（0=中文 1=俄语 2=英语），
-            // 不再用文案比对匹配——各语言资源的下拉文案不同，索引式对新增语言更稳
-            string culture;
-            switch (comboBox1.SelectedIndex)
-            {
-                case 1:
-                    culture = "ru-RU";
-                    break;
-                case 2:
-                    culture = "en-US";
-                    break;
-                case 0:
-                    culture = "zh-cn";
-                    break;
-                default:
-                    return;
-            }
-            System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(culture);
-            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(culture);
-            Properties.Settings.Default.Language = culture;
-            Properties.Settings.Default.Save();
-            Application.Restart();
         }
     }
 }

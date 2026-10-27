@@ -670,6 +670,9 @@
   <data name="外观" xml:space="preserve">
     <value>外观</value>
   </data>
+  <data name="外观主题" xml:space="preserve">
+    <value>外观主题</value>
+  </data>
   <data name="主题" xml:space="preserve">
     <value>主题</value>
   </data>
@@ -681,5 +684,14 @@
   </data>
   <data name="浅色" xml:space="preserve">
     <value>浅色</value>
+  </data>
+  <data name="欢迎语" xml:space="preserve">
+    <value>Hello,cardman!</value>
+  </data>
+  <data name="首次运行提示" xml:space="preserve">
+    <value>首次运行建议点击"检测设备"以加快后续运行速度</value>
+  </data>
+  <data name="未检测到设备" xml:space="preserve">
+    <value>（未检测到设备）</value>
   </data>
 </root>
