@@ -5,7 +5,7 @@
 #   .\scripts\build.ps1 -Test           # 构建并运行单元测试（失败则退出码非 0）
 #   .\scripts\build.ps1 -Pack           # 构建并打包到 artifacts\package\
 #
-# 说明: 完整 MSBuild 构建需要 Windows SDK 的 al.exe 生成本地化卫星程序集(ru/zh)。
+# 说明: 完整 MSBuild 构建需要 Windows SDK 的 al.exe 生成本地化卫星程序集(zh)。
 #       本脚本自动探测: 有 al.exe -> 走标准 msbuild; 没有 -> 走 csc 手工生成卫星程序集。
 
 param(
@@ -120,14 +120,14 @@ if (-not $fullBuildOk) {
     Copy-Item (Join-Path $projDir "Newtonsoft.Json.dll") $outDir -Force
     Copy-Item (Join-Path $projDir "app.config") (Join-Path $outDir "M1ToolPlus.exe.config") -Force
 
-    # 3) 用 csc 生成卫星程序集 ru/zh（绕过缺失的 al.exe）
+    # 3) 用 csc 生成卫星程序集 zh（绕过缺失的 al.exe；v1.9.0 起只保留简体中文）
     $csc = "$env:WINDIR\Microsoft.NET\Framework\v4.0.30319\csc.exe"
     if (-not (Test-Path $csc)) { throw "[build] 未找到 csc.exe" }
 
     $asmInfo = Get-Content (Join-Path $projDir "Properties\AssemblyInfo.cs") -Raw
     $ver = if ($asmInfo -match 'AssemblyFileVersion\("([\d\.]+)"\)') { $Matches[1] } else { "1.7.0.0" }
 
-    foreach ($cult in @("en", "ru", "zh")) {
+    foreach ($cult in @("zh")) {
         $resFiles = Get-ChildItem $objDir -Filter "*.$cult.resources" -File -ErrorAction SilentlyContinue
         if (-not $resFiles) { Write-Warning "[$cult] 无卫星资源，跳过"; continue }
 
@@ -202,7 +202,7 @@ if (Test-Path $exe) {
     # 结果是拿旧 exe 继续测试（曾连续多轮验证的是旧程序）。这里做硬校验。
     # 排除构建过程自己生成的 sat_*.cs（卫星程序集源文件，生成时间必然晚于 exe）
     # 以及 obj/bin 中间目录。
-    # 再排除语言专用 resx（Form1.ru.resx 等）：它们只进卫星程序集，不参与主程序编译，
+    # 再排除语言专用 resx（Form1.zh.resx 等）：它们只进卫星程序集，不参与主程序编译，
     # 每次构建都会由下面的 csc 步骤重新生成卫星，不需要因此重编 exe。
     $newest = Get-ChildItem $projDir -Include *.cs, *.resx, *.csproj -Recurse -File |
               Where-Object { $_.Name -notlike 'sat_*.cs' -and $_.FullName -notmatch '\\(obj|bin)\\' -and $_.Name -notmatch '\.[a-z]{2}(-[A-Za-z]{2,4})?\.resx$' } |
@@ -238,17 +238,22 @@ if ($Test) {
 }
 
 if ($Pack) {
-    $pkgDir = Join-Path $repoRoot "artifacts\package"
-    if (Test-Path $pkgDir) { Remove-Item $pkgDir -Recurse -Force }
+    # 每次打包用一个带时间戳的新目录，不再先删旧的：
+    # 某些受管环境里 Remove-Item 会被拦成「回收站」且失败，导致整个打包中断
+    # （SAFE_DELETE_FAIL_CLOSED）。artifacts\ 是构建产物目录，旧包留着也无妨。
+    $stamp  = Get-Date -Format "yyyyMMdd-HHmmss"
+    $pkgDir = Join-Path $repoRoot "artifacts\package-$stamp"
     New-Item -ItemType Directory -Force -Path $pkgDir | Out-Null
     Copy-Item (Join-Path $outDir "*") $pkgDir -Recurse -Force
+    if (-not (Test-Path (Join-Path $pkgDir "nfc-bin"))) {
+        Write-Warning "[build] 包内没有 nfc-bin（读卡功能需要），先跑 .\scripts\fetch-deps.ps1 再打包"
+    }
     # winhex 等专有软件不打包（合规）：nfc-bin 取自官方包，只带 nfc-bin 子目录，不含根目录的 winhex.exe
     # 合规：随包附带 GPL-3.0 许可证与依赖来源说明（docs/DEPENDENCIES.md 第五节要求）
     Copy-Item (Join-Path $repoRoot "LICENSE") $pkgDir -Force
     Copy-Item (Join-Path $repoRoot "README.md") $pkgDir -Force
     Copy-Item (Join-Path $repoRoot "docs\DEPENDENCIES.md") (Join-Path $pkgDir "DEPENDENCIES.md") -Force
-    $zip = Join-Path $repoRoot "artifacts\M1ToolPlus-local-build.zip"
-    if (Test-Path $zip) { Remove-Item $zip -Force }
+    $zip = Join-Path $repoRoot "artifacts\M1ToolPlus-$stamp.zip"
     # 打包统一走 .NET ZipArchive（写入端 ZipFile.CreateFromDirectory 与更新器
     # 解压端 ZipFile.ExtractToDirectory / Shell.Application 是同一套实现，语义一致）。
     # 注意：.NET Framework 的 ZipFile 写入的是平台默认的**反斜杠**分隔符，Windows
