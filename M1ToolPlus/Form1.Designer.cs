@@ -656,8 +656,9 @@
             // flowLayoutPanel1
             // 
             resources.ApplyResources(this.flowLayoutPanel1, "flowLayoutPanel1");
-            this.flowLayoutPanel1.Controls.Add(this.label8);
+            // 加入顺序 = 纵向排布顺序（FlowDirection=TopDown）：箭头在上，竖排文字在下。
             this.flowLayoutPanel1.Controls.Add(this.pictureBox3);
+            this.flowLayoutPanel1.Controls.Add(this.label8);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
             // 
             // label8
@@ -665,12 +666,16 @@
             resources.ApplyResources(this.label8, "label8");
             this.label8.ForeColor = System.Drawing.SystemColors.HotTrack;
             this.label8.Name = "label8";
+            // Tag 是给 UiTheme 认的：这两条「请放卡」提示要走强调样式。
+            // 不能用控件名判断——FormHTool 里也有同名的 label7/label8，会被一起改掉。
+            this.label8.Tag = "place-card-hint";
             // 
             // pictureBox3
             // 
             resources.ApplyResources(this.pictureBox3, "pictureBox3");
             this.pictureBox3.Image = global::M1ToolPlus.Properties.Resources.round_chevron_right_black_24dp;
             this.pictureBox3.Name = "pictureBox3";
+            this.pictureBox3.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
             this.pictureBox3.TabStop = false;
             // 
             // groupBox16
@@ -705,6 +710,7 @@
             resources.ApplyResources(this.label7, "label7");
             this.label7.ForeColor = System.Drawing.SystemColors.HotTrack;
             this.label7.Name = "label7";
+            this.label7.Tag = "place-card-hint";   // 强调样式标记，见 label8 处说明
             // 
             // buttonEscan
             // 

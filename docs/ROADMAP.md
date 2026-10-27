@@ -1,4 +1,4 @@
-# 后续开发路线图（交接备忘）
+﻿# 后续开发路线图（交接备忘）
 
 > 面向接续开发的交接文档：记录项目现状、已完成工作、待办事项与开发环境要点。
 > 最后更新：2026-10-26（落地 CI 构建门禁、更新包 SHA256 校验、Form1 首轮拆分 + 单元测试）。
@@ -1516,3 +1516,61 @@ if (deviceScanPending && !running && !lprocess)   // 少了 !silentScanBusy
 > 测试环境注意：本机 `COM6` 是主板真实串口（`HKLM\HARDWARE\DEVICEMAP\SERIALCOMM`
 > 里 `\Device\Serial2 = COM6`），伪造 conf 必须用不存在的口（如 COM99）才能验证
 > 「确认消失 → 清空」分支；用 COM6 会让判断认为设备还在，测不出效果。
+
+## 二十九、「请放原卡 / 请放新卡」加醒目度并改竖排（2026-10-27）
+
+需求两条：① 这两句提示要**醒目**，现在和旁边一排蓝按钮几乎同质；
+② 「请放新卡」挪到右箭头**下面**、改成**竖排**。
+
+### 1. 醒目：14px 粗体 + 高对比强调色
+
+设计器里这两条标签是 `12px 常规 + HotTrack 深蓝`，混在一排 DodgerBlue 按钮里等于没有提示。
+`UiTheme.StyleLabel` 里给它们单独一档：**14px 粗体 + 强调色**
+（深色 `#8CCCFF` / 浅色 `#0B4FA8`）。只抬 2px 就够拉开层次，再大就会把 42px 宽的竖缝挤变形。
+
+识别方式用 **Tag（`place-card-hint`）而不是控件名**：`FormHTool` 里也有同名的
+`label7` / `label8`，按名字判断会把那边的标签一起改掉（`label13` 的旧写法有同样隐患，未动）。
+
+### 2. 竖排：箭头在上、四字在下
+
+- Designer 里把 `flowLayoutPanel1.Controls.Add` 的顺序换成 **先 pictureBox3 后 label8**
+  （`FlowDirection=TopDown`，加入顺序即纵向顺序）；
+- `label8.Text` 改成 `请\n放\n新\n卡`（中性 resx 与 `Form1.zh.resx` 两处都要改，卫星程序集优先）；
+- `pictureBox3.SizeMode=CenterImage`，24px 箭头在 42px 列宽里居中。
+
+### 3. 踩坑：整块提示凭空消失
+
+改完第一次运行，中间那条缝**什么都没有**。`--ui-info` 显示：
+
+```text
+FlowLayoutPanel flowLayoutPanel1 ... Width=1
+  PictureBox pictureBox3 ... Width=0 Height=40
+  Label      label8      ... Width=0 Height=122
+```
+
+两个子控件宽度都是 0，父面板跟着塌成 1px。根因有两层：
+
+1. **`FlowLayoutPanel` 不接受 `Dock=Fill`**。原设计里这两个子控件都是 `Dock=Fill`，
+   过去能显示只是因为 `label8.AutoSize=True`——首选尺寸盖过了 Dock。一旦把 AutoSize 关掉
+   （竖排需要固定 42px 宽做水平居中），Dock=Fill 就按「本行剩余宽度」分配，算出 **0**。
+2. **`InitializeComponent` 期间还有一轮 AutoScale**：按设计字体把这两个子控件放大成约 1.25 倍
+   （实测 `42×86 → 56×108`），与窗体最终 1:1 的像素基准不一致。
+
+解决办法是 `Form1.FixCopyCardHintLayout()`：在 `InitializeComponent()` 之后按设计像素复位
+（`Dock=None`、列宽 42、箭头 42×28、文字 42×78）。这类「初始化期被缩放、运行期又要 1:1」
+的控件只能这样钉，光靠 resx 一定会漂。
+
+### 4. 居中：Shown 之后才算
+
+窄缝是顶对齐的流式面板，分组框的最终高度要等窗口定型（`Shown`）才知道，
+构造期按设计高度 196 去算会整体偏上。`CenterCopyCardHint()` 在 `ApplyInitialTabAfterShown`
+里按定型的列高把「箭头 + 四字」整块垂直居中。
+
+### 5. 实测（`--ui-info`）
+
+```text
+FlowLayoutPanel flowLayoutPanel1 rel={X=403,Y=5,Width=37,Height=282}
+  PictureBox pictureBox3 rel={X=0,Y=77,Width=37,Height=32}    ← 上下各留 77/78，居中
+  Label      label8      rel={X=0,Y=116,Width=37,Height=88}   ← 四字竖排，14px 粗体
+Label label7 (请放原卡) Width=69 Height=46  font=Microsoft YaHei UI 8.4pt h=18  ← 14px
+```

@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 <h1>M1ToolPlus</h1>
 
@@ -14,7 +14,7 @@
 
 <p>
   <a href="LICENSE"><img src="docs/images/badges/badge-license.svg" height="20" alt="GPL-3.0"></a>
-  <a href="https://github.com/MuskCheng/M1ToolPlus/releases/latest"><img src="docs/images/badges/badge-release.svg" height="20" alt="release v1.8.1"></a>
+  <a href="https://github.com/MuskCheng/M1ToolPlus/releases/latest"><img src="docs/images/badges/badge-release.svg" height="20" alt="release v1.8.2"></a>
   <img src="docs/images/badges/badge-platform.svg" height="20" alt="Windows 7+">
   <img src="docs/images/badges/badge-dotnet.svg" height="20" alt=".NET Framework 4.0">
   <img src="docs/images/badges/badge-lang.svg" height="20" alt="简体中文">
@@ -217,5 +217,5 @@ Hex 编辑使用内置 S50HTool。
 （an independent community continuation under GPL-3.0）。
 
 <div align="center">
-<sub>GPL-3.0 · 非官方衍生版本 · 界面截图基于 v1.8.1</sub>
+<sub>GPL-3.0 · 非官方衍生版本 · 界面截图基于 v1.8.2</sub>
 </div>

@@ -1,8 +1,8 @@
-# M1ToolPlus 应用手册
+﻿# M1ToolPlus 应用手册
 
-> 本文档改写自原作者 XciCode 的《M1T 应用手册》v1.6.4（随 MifareOneTool 发布，GPL-3.0，原版权 © XciCode 保留），已按本衍生版 **M1ToolPlus v1.8.1** 修改与增补。变更点：程序名与仓库链接、新增功能章节（主题/语言/终端/检查更新/MFF08 救砖）、支持渠道指向本仓库。原版全文存档见 [原作者仓库](https://github.com/xcicode/MifareOneTool)。
+> 本文档改写自原作者 XciCode 的《M1T 应用手册》v1.6.4（随 MifareOneTool 发布，GPL-3.0，原版权 © XciCode 保留），已按本衍生版 **M1ToolPlus v1.8.2** 修改与增补。变更点：程序名与仓库链接、新增功能章节（主题/语言/终端/检查更新/MFF08 救砖）、支持渠道指向本仓库。原版全文存档见 [原作者仓库](https://github.com/xcicode/MifareOneTool)。
 
-**适用版本：M1ToolPlus v1.8.1**（上游 MifareOneTool v1.7.0）
+**适用版本：M1ToolPlus v1.8.2**（上游 MifareOneTool v1.7.0）
 
 ---
 
