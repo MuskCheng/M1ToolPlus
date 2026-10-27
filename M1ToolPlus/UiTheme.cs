@@ -48,6 +48,16 @@ namespace M1ToolPlus
         private static readonly Color DefaultAccent = Color.FromArgb(0x00, 0x78, 0xD4);
 
         private static bool _dark;
+
+        /// <summary>诊断：上次量宽度时取到的最大值与来源控件（--ui-info 会打印）。</summary>
+        internal static int LastMeasureWidth;
+        internal static string LastMeasureFrom = "";
+
+        /// <summary>诊断：内容超出客户区右缘的像素数（&gt;0 = 被裁切）。</summary>
+        internal static int LastOverflow;
+
+        /// <summary>窗口尺寸只定格一次：之后再套主题（UiTheme.Refresh）不要把用户挪过的窗口拉回中间。</summary>
+        private static bool _sizeApplied;
         private static Color _accent = DefaultAccent;
         private static Font _font;
         private static Font _terminalFont;
@@ -190,6 +200,7 @@ namespace M1ToolPlus
             foreach (Control c in form.Controls) { Prepare(c); }
             StyleChildren(form);
             ApplyAdaptiveLayout(form);
+            AlignCardControls(form);
             try { ApplyTitleBar(form); } catch (Exception) { }
         }
 
@@ -229,11 +240,12 @@ namespace M1ToolPlus
                 form.MaximizeBox = false;
 
                 Rectangle waFit = Screen.FromControl(form).WorkingArea;
-                // 固定窗口不受 MinimumSize 限制用户拖动，但保留一个合理下限兜底，
-                // 防止程序化赋值 ClientSize 时被忽略，或窗口超出工作区。
+                // 下限只做兜底：+MinimumSize 是**外层窗口**尺寸，原来写成 900
+                // 等于把窗口宽度硬顶到 900，复制卡页右侧因此永远空一条 150px 的空白带
+                //（用户截图里画红框的位置）。改小后宽度才能真正贴合内容。
                 form.MinimumSize = new Size(
-                    Math.Min(900, Math.Max(420, waFit.Width - 16)),
-                    Math.Min(640, Math.Max(360, waFit.Height - 16)));
+                    Math.Min(560, Math.Max(420, waFit.Width - 16)),
+                    Math.Min(420, Math.Max(340, waFit.Height - 16)));
                 if (form.StartPosition == FormStartPosition.WindowsDefaultLocation)
                 {
                     form.StartPosition = FormStartPosition.CenterScreen;
@@ -275,17 +287,65 @@ namespace M1ToolPlus
                     // 窗口固定大小后，运行期不再响应尺寸变化，无需挂载缩放冻结。
                     LayoutFlowPanels(tabs);
 
-                    // 功能区实测所需宽度：窗口初始宽度不足时自动扩展一次，
-                    // 避免按钮加宽后把右侧控件（提示文字、停止按钮）挤出可视区。
-                    // 撑宽受工作区约束，不检查的话会把窗口撑出屏幕。
-                    int needed = MeasureRequiredWidth(tabs);
-                    if (needed > tabs.Width)
+                    Rectangle waSize = Screen.FromControl(form).WorkingArea;
+                    int chromeW = Math.Max(0, form.Width - form.ClientSize.Width);
+                    int chromeH = Math.Max(0, form.Height - form.ClientSize.Height);
+
+                    // ── 固定窗口尺寸：787 × 787 ──
+                    //
+                    // 787 的来历：复制卡页横向四列（含三个 7px 间隔 + 「请放新卡」竖排标签）
+                    // 实测内容右缘 769px，加 12px 右边距 = 781 客户区，加 6px 边框 = 787 外层。
+                    // 高度取同值即正方形：功能区高度由卡片决定（331），多出来的全给日志。
+                    //
+                    // 为什么写死、不在运行时算：这套界面把 Fill/Bottom 停靠、右锚定、
+                    // TableLayoutPanel 绝对列宽混在一起，任何在线测量都会被「容器宽度」
+                    // 污染（试过三版：712 切卡 / 767~801 乱跳 / 1901 撑爆），
+                    // 详见 ROADMAP 第十九、二十节。尺寸稳定后写死最可靠，
+                    // 换 DPI/字号导致溢出时由 --ui-info 的 Overflow 行报出来。
+                    const int DesignOuterSize = 787;
+                    int outerSize = Math.Min(DesignOuterSize,
+                        Math.Min(waSize.Width - 16, waSize.Height));
+                    int width = Math.Max(520, outerSize - chromeW);
+                    int clientH = Math.Max(420, outerSize - chromeH);
+
+                    // 调试覆盖：--win-size 675x675 或环境变量 M1TOOL_WINSIZE=675x675
+                    // 跳过上面的自适应计算，按给定**外层窗口**尺寸定格，用来快速比对版式。
+                    int forcedW, forcedH;
+                    if (TryGetForcedSize(out forcedW, out forcedH))
                     {
-                        int want = needed + 12;
-                        Rectangle waGrow = Screen.FromControl(form).WorkingArea;
-                        if (want > waGrow.Width - 16) { want = waGrow.Width - 16; }
-                        form.ClientSize = new Size(want, form.ClientSize.Height);
+                        width = Math.Max(320, forcedW - chromeW);
+                        clientH = Math.Max(240, forcedH - chromeH);
                     }
+
+                    form.ClientSize = new Size(width, clientH);
+                    // 未选中的页签不会跟着 TabControl 变尺寸，这里同步一次，
+                    // 菜单里的叠层预览与下面的溢出体检才准。
+                    SyncPageSizes(tabs);
+                    form.PerformLayout();
+
+                    // 首次定格后重新居中：CenterScreen 是在句柄创建时按设计尺寸（726×559）
+                    // 算的位置，尺寸一换就偏到左上角。只在第一次做，避免切换主题时
+                    // 把用户已经挪过的窗口拽回来。
+                    if (!_sizeApplied)
+                    {
+                        _sizeApplied = true;
+                        form.Location = new Point(
+                            waSize.Left + Math.Max(0, (waSize.Width - form.Width) / 2),
+                            waSize.Top + Math.Max(0, (waSize.Height - form.Height) / 2));
+                    }
+                }
+
+                // 终端区高度按当前页签分配（窗口是固定尺寸、没有分隔条，只能按页签给）：
+                // 「复制卡模式」是引导流程，日志只需看结果，压到 5 行左右；
+                // 「高级操作模式」是排障主力，日志给足高度；设置页居中。
+                // 不这样做的话终端会吃掉窗口一半以上的高度，而里面通常只有一行版本号。
+                FitTerminalHeight(form, tabs, status, terminal);
+                if (tabs != null)
+                {
+                    tabs.SelectedIndexChanged += delegate { FitTerminalHeight(form, tabs, status, terminal); };
+                    // 溢出体检：>0 表示有内容被右缘裁掉（换 DPI/字号后可能出现），
+                    // 只报数、不改尺寸 —— 尺寸已经是设计决定的固定值。
+                    LastOverflow = MeasureOverflow(tabs, 0, form.ClientSize.Width);
                 }
 
                 // 初始位置钳制：CenterScreen 只居中、不查边界，窗口一旦比工作区
@@ -304,6 +364,28 @@ namespace M1ToolPlus
                     SetWindowLong(form.Handle, GWL_STYLE, style);
                 }
                 catch (Exception) { }
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 终端区高度：窗口高度已按 4:3 定格，日志区直接吃掉「功能区 + 状态栏」之外的全部高度。
+        ///
+        /// 为什么不再按页签分配：固定尺寸窗口下，日志是这个工具最常盯的输出面板，
+        /// 功能区高度由流程卡片决定、本来就不需要更多空间，剩下的全给日志即最大化。
+        /// 页签切换不再改窗口高度，因此也没有「切页签窗口跳高跳矮」的问题。
+        /// </summary>
+        private static void FitTerminalHeight(Form form, TabControl tabs, StatusStrip status, RichTextBox terminal)
+        {
+            try
+            {
+                if (tabs == null || terminal == null) { return; }
+
+                int statusH = (status != null) ? status.Height : 0;
+                int want = form.ClientSize.Height - tabs.Bottom - statusH;
+                if (want < 120) { want = 120; }
+
+                terminal.Bounds = new Rectangle(0, tabs.Bottom, form.ClientSize.Width, want);
             }
             catch (Exception) { }
         }
@@ -334,22 +416,84 @@ namespace M1ToolPlus
             catch (Exception) { }
         }
 
-        /// <summary>测量功能区实际需要的最宽一行（含绝对定位控件的右边缘）。</summary>
-        private static int MeasureRequiredWidth(Control root)
+        /// <summary>
+        /// 读取「强制窗口尺寸」：命令行 --win-size 675x675，或环境变量 M1TOOL_WINSIZE=675x675。
+        /// 尺寸指**外层窗口**（含标题栏与边框），与用户肉眼量到的一致。
+        /// 仅用于比对不同版式，正常运行时两者都不存在。
+        /// </summary>
+        private static bool TryGetForcedSize(out int w, out int h)
         {
-            int max = 0;
+            w = 0; h = 0;
             try
             {
-                foreach (Control c in root.Controls)
+                string spec = Environment.GetEnvironmentVariable("M1TOOL_WINSIZE");
+                string[] args = Environment.GetCommandLineArgs();
+                for (int i = 0; i < args.Length; i++)
                 {
-                    int right = c.Left + c.Width;
-                    if (right > max) { max = right; }
-                    int nested = MeasureRequiredWidth(c);
-                    if (nested > max) { max = nested; }
+                    if (args[i] == "--win-size" && i + 1 < args.Length) { spec = args[i + 1]; }
+                }
+                if (string.IsNullOrEmpty(spec)) { return false; }
+
+                string[] parts = spec.ToLowerInvariant().Split('x', '*');
+                if (parts.Length != 2) { return false; }
+                if (!int.TryParse(parts[0].Trim(), out w)) { return false; }
+                if (!int.TryParse(parts[1].Trim(), out h)) { return false; }
+                return w > 320 && h > 240;
+            }
+            catch (Exception) { return false; }
+        }
+
+        /// <summary>
+        /// 把未选中页签的尺寸同步到当前 TabControl 宽度。
+        /// TabPage 没被选中时**不会**跟随 TabControl 改尺寸（保持上一次的旧值），
+        /// 直接量会量到过期布局（实测残留 839px，把窗口宽度虚撑到 855）。
+        /// 这里只改尺寸、不切换页签，避免触发页签切换回调。
+        /// </summary>
+        private static void SyncPageSizes(TabControl tabs)
+        {
+            try
+            {
+                int w = Math.Max(100, tabs.ClientSize.Width - 8);   // 页签边框各 4px
+                foreach (TabPage page in tabs.TabPages)
+                {
+                    if (page.Width != w) { page.Size = new Size(w, page.Height); }
                 }
             }
             catch (Exception) { }
-            return max;
+        }
+
+        /// <summary>
+        /// 量出「内容越过客户区右缘」的最大像素数（正数=溢出，负数=还有多少余量）。
+        ///
+        /// 判据只有一条：**页签页的直接子容器算「外壳」不计入**（它的宽度就是窗口宽度，
+        /// 计入的话永远「刚好贴边」）。再深一层都是真实内容 —— 卡片、按钮、标签，
+        /// 以及 tableLayoutPanel3 这类被绝对列宽撑住、会捅出页面的单元格。
+        ///
+        /// 为什么不用「最右内容 vs 父容器右缘」那套：本项目里 Fill/Bottom 停靠、
+        /// 右锚定、绝对列宽混在一起，实测任何启发式都能把容器宽度误当内容宽度
+        /// （窗口被撑到 1901），或者把真实需求漏掉（窗口压到 712、卡片溢 41px）。
+        /// 量溢出最稳：漏判只会让窗口宽几像素，绝不会把布局撑爆。
+        /// </summary>
+        private static int MeasureOverflow(Control parent, int offsetX, int clientW)
+        {
+            int over = 0;
+            try
+            {
+                bool parentIsPage = parent is TabPage;
+                foreach (Control c in parent.Controls)
+                {
+                    int absLeft = offsetX + c.Left;
+                    if (!parentIsPage)
+                    {
+                        int delta = absLeft + c.Width - clientW;
+                        if (delta > over) { over = delta; }
+                    }
+                    int nested = MeasureOverflow(c, absLeft, clientW);
+                    if (nested > over) { over = nested; }
+                }
+            }
+            catch (Exception) { }
+            return over;
         }
 
         /// <summary>让所有流式容器在宽度变化后重新计算内边距与换行。</summary>
@@ -451,6 +595,7 @@ namespace M1ToolPlus
             else if (c is DataGridView) StyleGrid((DataGridView)c);
             else if (c is CheckBox) StyleCheckBox((ButtonBase)c);
             else if (c is RadioButton) StyleCheckBox((ButtonBase)c); // RadioButton 与 CheckBox 是兄弟类型，都继承 ButtonBase，不能互转
+            else if (c is TableLayoutPanel && c.Name == "tableLayoutPanel3") StyleCardPanel(c);
             else if (c is Panel || c is FlowLayoutPanel || c is TableLayoutPanel)
             {
                 if (c is GroupBox) { /* handled */ }
@@ -544,6 +689,19 @@ namespace M1ToolPlus
         }
 
         // ---------------- 按钮 ----------------
+        /// <summary>
+        /// 深色主题下次要（muted）按钮专用色。
+        ///
+        /// 实测（截图采样）：分组卡底色 = DCard #333333，而 muted 按钮原来也用 DCard，
+        /// 两者完全相同，按钮形状只剩一条 #454545 的细描边——深色下几乎看不出这是按钮。
+        /// 这里单独抬一档：底色比卡片亮、悬停再亮、按下最亮，描边同步加强，
+        /// 主操作仍用 accent 蓝、破坏性仍用 DangerAccent 红，三层语义不变。
+        /// </summary>
+        private static readonly Color DMutedFill = Color.FromArgb(0x3E, 0x3E, 0x3E);
+        private static readonly Color DMutedHover = Color.FromArgb(0x49, 0x49, 0x49);
+        private static readonly Color DMutedDown = Color.FromArgb(0x54, 0x54, 0x54);
+        private static readonly Color DMutedBorder = Color.FromArgb(0x55, 0x55, 0x55);
+
         private static void StyleButton(Button b)
         {
             string n = b.Name ?? string.Empty;
@@ -553,28 +711,97 @@ namespace M1ToolPlus
                         || Has(n, "Save") || Has(n, "Color") || Has(n, "Update");
 
             Color accent = danger ? (neutral ? DTextDim : DangerAccent) : (neutral ? DTextDim : _accent);
-            Color bg = _dark ? (neutral ? DCard : accent) : accent;
-            Color hover = _dark ? (neutral ? DCardHover : Lighten(accent, 0.14F)) : Lighten(accent, 0.12F);
+            Color bg = _dark ? (neutral ? DMutedFill : accent) : accent;
+            Color hover = _dark
+                ? (neutral ? DMutedHover : Lighten(accent, 0.14F))
+                : Lighten(accent, 0.12F);
+            Color down = _dark
+                ? (neutral ? DMutedDown : DCardHover)
+                : Lighten(accent, 0.24F);
             Color fg = _dark
                 ? (neutral ? DText : ContrastOn(accent))
                 : ContrastOn(accent);
+            string kindName = danger ? "danger" : (neutral ? "muted" : "primary");
+
+            // 颜色拾取按钮（「终端文字颜色」）：原先把选中的颜色设成按钮**文字色**，
+            // 主题一应用又被 ForeColor 覆盖，最终是一个灰块 + 灰字，完全看不出是颜色预览。
+            // 现在直接把按钮画成当前配色的色块，文字用对比色，border 用 chip 专属描边。
+            if (neutral && n.IndexOf("Color", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                Color swatch = TerminalColor();
+                bg = swatch;
+                hover = Lighten(swatch, 0.10F);
+                down = Lighten(swatch, 0.20F);
+                fg = ContrastOn(swatch);
+                kindName = "chip";
+                // 文字直接给十六进制值：比原来的占位符 #M1T# 更像「这是当前颜色」
+                b.Text = ColorHex(swatch);
+                // 尺寸：resx 里是 AutoSize + Dock=Fill，会跟着 TableLayoutPanel12 的行高
+                // （47px）撑满，比下面 21px 的数字框高出一倍多，一块大色板很突兀。
+                // 这里压成与数字框同高的横条，宽度按十六进制文本实测，垂直居中于单元格
+                // （Anchor 不含上下 = 居中，改 Left/Width 会被 TLP 覆盖，只能走 Anchor）。
+                b.AutoSize = false;
+                b.Dock = DockStyle.None;
+                b.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+                b.Height = 21;
+                int chipWidth = MeasureTextWidth(b.Text, b.Font) + ButtonPaddingX;
+                if (b.Width < chipWidth) { b.Width = chipWidth; }
+            }
 
             b.FlatStyle = FlatStyle.Flat;
             // 边框改由自绘描边：FlatAppearance 画的是直角矩形，圆角处会露断头线
             b.FlatAppearance.BorderSize = 0;
             b.FlatAppearance.MouseOverBackColor = hover;
-            b.FlatAppearance.MouseDownBackColor = _dark ? DCardHover : Lighten(accent, 0.24F);
+            b.FlatAppearance.MouseDownBackColor = down;
             b.BackColor = bg;
             b.ForeColor = fg;
             b.Cursor = Cursors.Hand;
 
             // 圆角：Region 裁剪 + 自绘填充/描边（见 UiTheme.Round.cs）
-            RegisterButtonKind(b, danger ? (neutral ? "muted" : "danger") : (neutral ? "muted" : "primary"), bg);
+            RegisterButtonKind(b, kindName, bg);
             HookRoundButton(b);
             ApplyRoundRegion(b, RadiusButton);
 
             // 字号变大后按钮高度写死的 25px 会挤字，按字体实测高度留白
             if (b.Parent is FlowLayoutPanel) { FitButtonWidth(b); FitHeight(b); }
+        }
+
+        /// <summary>当前终端文字颜色（settings 里按 Color 序列化）。</summary>
+        private static Color TerminalColor()
+        {
+            try
+            {
+                Color c = Properties.Settings.Default.MainCLIColor;
+                if (!c.IsEmpty) { return c; }
+            }
+            catch (Exception) { }
+            return Color.FromArgb(0xC0, 0xFF, 0xFF);
+        }
+
+        /// <summary>颜色 → #RRGGBB（色块按钮上的预览文字）。</summary>
+        private static string ColorHex(Color c)
+        {
+            return string.Format("#{0:X2}{1:X2}{2:X2}", c.R, c.G, c.B);
+        }
+
+        /// <summary>
+        /// 选完颜色后立即刷新色块：底色换成新色、文字换对比色，并登记回按钮语义表。
+        /// 不走 UiTheme.Refresh()——那会把整个窗体重套一遍主题，选个颜色没必要。
+        /// </summary>
+        internal static void SetColorChip(Button b, Color color)
+        {
+            if (b == null) { return; }
+            try
+            {
+                b.BackColor = color;
+                b.ForeColor = ContrastOn(color);
+                b.Text = ColorHex(color);
+                b.FlatAppearance.MouseOverBackColor = Lighten(color, 0.10F);
+                b.FlatAppearance.MouseDownBackColor = Lighten(color, 0.20F);
+                RegisterButtonKind(b, "chip", color);
+                b.Invalidate();
+            }
+            catch (Exception) { }
         }
 
         /// <summary>
@@ -687,6 +914,65 @@ namespace M1ToolPlus
         // 注：GroupBox 的标题由系统绘制（顶边留缺口），一旦自绘就会与系统标题重影。
         // 深色下边框呈浅灰属于系统观感，强行改色需要 owner-draw GroupBox（.NET 4.0 无现成实现），
         // 故此处只调 ForeColor，不自绘边框。
+
+        /// <summary>
+        /// 无标题卡片容器：复制卡页第 4 格（勾选图标 +「尝试一下是否成功」+ 右下「停止」）。
+        /// 只负责底色与圆角描边，内容仍由原控件排布。
+        /// </summary>
+        private static void StyleCardPanel(Control c)
+        {
+            c.BackColor = _dark ? DCard : Color.White;
+            // 右/下各留 6px：卡里的「停止」是 Bottom+Right 锚定，直接改它的 Left 会被
+            // TableLayoutPanel 的单元格布局覆盖回去（实测无效），改父容器的内边距才管用。
+            // 原本按钮距卡边只有 2~3px，贴着边线像溢出来了。
+            c.Padding = new Padding(0, 0, 6, 6);
+            HookCardPanel(c);
+        }
+
+        /// <summary>
+        /// 收尾微调：修「同列控件左边缘差几像素」这类排版毛刺。
+        ///
+        /// 设置页「终端文字颜色」的色块与「终端文字大小」的数字框同在一列，
+        /// 但两者 Margin 不同，实测数字框比色块右移 11px，看着像没对齐。
+        /// TableLayoutPanel 按 Margin 定位，直接改 Left 会被布局覆盖，所以改 Margin；
+        /// 已对齐时 dx = 0，重复调用（切主题）无副作用。
+        /// </summary>
+        private static void AlignCardControls(Form form)
+        {
+            try
+            {
+                Control chip = FindControl(form, "buttonCLIColor");
+                Control num = FindControl(form, "numericCLIFontSize");
+                if (chip == null || num == null || chip.Parent != num.Parent) { return; }
+
+                int dx = chip.Left - num.Left;
+                if (dx != 0)
+                {
+                    Padding m = num.Margin;
+                    num.Margin = new Padding(Math.Max(0, m.Left + dx), m.Top, m.Right, m.Bottom);
+                }
+
+                // 宽度也要齐：色块按「#RRGGBB」文字自适应后比数字框宽（约 76 vs 56），
+                // 上下两个控件右缘差一截，像没做完。数字框关掉 AutoSize 后按列宽拉伸
+                // （AutoSize=True 的 NumericUpDown 只认内容首选宽度，Anchor 拉不动它），
+                // 并保留 Top 锚点，否则会垂直居中而与左侧「终端文字大小」标签错位。
+                num.AutoSize = false;
+                num.Dock = DockStyle.None;
+                num.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+                if (num.Width != chip.Width) { num.Width = chip.Width; }
+            }
+            catch (Exception) { }
+        }
+
+        private static Control FindControl(Control root, string name)
+        {
+            try
+            {
+                Control[] found = root.Controls.Find(name, true);
+                return (found != null && found.Length > 0) ? found[0] : null;
+            }
+            catch (Exception) { return null; }
+        }
 
         /// <summary>
         /// 分组框标题溢出修复：标题过长时 WinForms 会折成两行（显示成竖排）。
@@ -1374,6 +1660,25 @@ namespace M1ToolPlus
             // 让鼠标变成缩放光标——这是子控件内部处理的消息，主窗口的 NCHITTEST
             // 拦截根本收不到。从源头关掉，把手图形和缩放光标一并消失。
             ss.SizingGrip = false;
+            // 状态栏内所有项（含右侧「检查更新」SplitButton）统一用状态栏文字色：
+            // 项上若残留 Designer 写的 SystemColors.ControlText，深色主题下就是黑字，
+            // 与左侧状态文字一深一浅。这里逐项覆盖，并在每次套主题时重新对齐。
+            Color itemFg = _dark ? DTextDim : LTextDim;
+            ss.ForeColor = itemFg;
+            foreach (ToolStripItem item in ss.Items)
+            {
+                if (item == null) { continue; }
+                item.ForeColor = itemFg;
+                // 下拉菜单里的项不会继承状态栏颜色，一并刷成同一色，避免弹出后又是黑字。
+                ToolStripDropDownItem drop = item as ToolStripDropDownItem;
+                if (drop != null && drop.HasDropDownItems)
+                {
+                    foreach (ToolStripItem sub in drop.DropDownItems)
+                    {
+                        if (sub != null) { sub.ForeColor = itemFg; }
+                    }
+                }
+            }
             StyleToolStripImages(ss);
         }
 
@@ -1402,6 +1707,20 @@ namespace M1ToolPlus
             }
 
             // 窗口固定大小，不需要绘制右下角的大小调整句柄。
+
+            /// <summary>
+            /// 文字色统一由渲染器给：状态栏各项（左侧状态文字与右侧「检查更新」）
+            /// 一律用同一色值，避免某一项自带 ForeColor 时出现深浅不一。
+            /// </summary>
+            protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
+            {
+                try
+                {
+                    e.TextColor = _dark ? DTextDim : LTextDim;
+                    base.OnRenderItemText(e);
+                }
+                catch (Exception) { }
+            }
         }
 
         /// <summary>状态栏配色表：把系统默认的蓝灰分隔线/边框换成主题色。</summary>
@@ -1513,6 +1832,8 @@ namespace M1ToolPlus
             ApplyRoundRegion(cb, RadiusInput, 1);
             // 原生下拉箭头是浅色块，盖掉自绘
             CoverComboArrow(cb);
+            // 被裁掉的 1px 交给父容器补一条圆角描边，否则白底上的下拉框看不见边界
+            HookInputBorder(cb);
         }
 
         private static void StyleInput(NumericUpDown nud)
@@ -1521,10 +1842,12 @@ namespace M1ToolPlus
             nud.ForeColor = _dark ? DText : LText;
             // 原生边框同样是系统浅色，直接关掉，靠圆角裁剪 + 底色分层
             try { nud.BorderStyle = BorderStyle.None; } catch (Exception) { }
-            HookRoundInput(nud);
-            ApplyRoundRegion(nud, RadiusInput);
+            HookRoundInput(nud, 1);
+            ApplyRoundRegion(nud, RadiusInput, 1);
             // 原生上下箭头是白色块，深色下盖掉自绘（浅色主题同样盖，避免系统灰块破坏圆角观感）
             CoverSpinner(nud);
+            // 与下拉框同理：内缩出的 1px 由父容器画成边框
+            HookInputBorder(nud);
         }
 
         /// <summary>
@@ -1649,6 +1972,46 @@ namespace M1ToolPlus
             // 终端区圆角：巨大的黑方块改成圆角面板，观感更整
             HookRoundInput(rt);
             ApplyRoundRegion(rt, RadiusCard);
+            // 文字不要贴着窗边：RichTextBox 的 Padding 属性无效，只能走 EM_SETMARGINS
+            ApplyTextMargin(rt, 8);
+        }
+
+        private static readonly Hashtable _marginHooked = new Hashtable();
+
+        private const int EM_SETMARGINS = 0x00D3;
+        private const int EC_LEFTMARGIN = 0x0001;
+        private const int EC_RIGHTMARGIN = 0x0002;
+
+        /// <summary>
+        /// 给 RichTextBox 设左右文字内边距（EM_SETMARGINS）。
+        /// 日志首行原本离窗口左缘只有 2px，一排 hex 输出顶到边上，看着局促。
+        /// </summary>
+        private static void ApplyTextMargin(RichTextBox rt, int px)
+        {
+            try
+            {
+                if (rt == null) { return; }
+                IntPtr margins = (IntPtr)((px << 16) | px);   // 低字 = 左，高字 = 右
+
+                SendMessage(rt.Handle, EM_SETMARGINS,
+                    (IntPtr)(EC_LEFTMARGIN | EC_RIGHTMARGIN), margins);
+
+                if (!_marginHooked.ContainsKey(rt))
+                {
+                    _marginHooked[rt] = true;
+                    // 句柄重建（换主题/字体）后边距会丢，重建时补一次
+                    rt.HandleCreated += delegate
+                    {
+                        try
+                        {
+                            SendMessage(rt.Handle, EM_SETMARGINS,
+                                (IntPtr)(EC_LEFTMARGIN | EC_RIGHTMARGIN), margins);
+                        }
+                        catch (Exception) { }
+                    };
+                }
+            }
+            catch (Exception) { }
         }
 
         private static double Luma(Color c) { return 0.299 * c.R + 0.587 * c.G + 0.114 * c.B; }
@@ -1765,6 +2128,9 @@ namespace M1ToolPlus
 
         [DllImport("user32.dll")]
         private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);

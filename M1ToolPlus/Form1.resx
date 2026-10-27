@@ -410,7 +410,7 @@
     <value>1</value>
   </data>
   <data name="richTextBox1.Text" xml:space="preserve">
-    <value>Hello,cardman!</value>
+    <value></value>
   </data>
   <data name="&gt;&gt;richTextBox1.Name" xml:space="preserve">
     <value>richTextBox1</value>
@@ -1970,8 +1970,10 @@
     <value>13</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>请放
-原卡</value>
+    <value>请放原卡</value>
+  </data>
+  <data name="label7.TextAlign" type="System.Drawing.ContentAlignment, System.Drawing">
+    <value>MiddleLeft</value>
   </data>
   <data name="&gt;&gt;label7.Name" xml:space="preserve">
     <value>label7</value>

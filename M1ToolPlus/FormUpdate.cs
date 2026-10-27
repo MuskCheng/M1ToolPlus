@@ -37,6 +37,13 @@ namespace M1ToolPlus
         private bool _busyDownload;   // 是否正在下载（防重复/供取消判断）
         private Timer _autoClose;     // 「已是最新」时自动关闭
 
+        // ---- 版面常量：动作按钮统一右对齐、等间距，随可见数量重排 ----
+        private const int PadL = 14;            // 左右留白
+        private const int ContentWidth = 448;   // 476 - 14*2
+        private const int ButtonHeight = 28;
+        private const int ButtonGap = 8;        // 按钮间距（原先是 4px，两个按钮几乎贴在一起）
+        private const int ActionTop = 176;      // 动作按钮行的顶边
+
         public FormUpdate()
         {
             SuspendLayout();
@@ -51,61 +58,74 @@ namespace M1ToolPlus
             ClientSize = new Size(476, 224);
 
             _info = new Label();
-            _info.AutoSize = true;
-            _info.Location = new Point(14, 13);
+            // 固定宽度 + 省略号：提示里带版本号/tag，AutoSize 会把窗口顶出右缘后被硬裁
+            _info.AutoSize = false;
+            _info.AutoEllipsis = true;
+            _info.Location = new Point(PadL, 13);
+            _info.Size = new Size(ContentWidth, 20);
             _info.Text = Resources.更新_正在检查;
             Controls.Add(_info);
 
             _bar = new ProgressBar();
-            _bar.Location = new Point(14, 44);
-            _bar.Size = new Size(448, 22);
+            _bar.Location = new Point(PadL, 44);
+            _bar.Size = new Size(ContentWidth, 22);
             Controls.Add(_bar);
 
             _detail = new Label();
-            _detail.AutoSize = true;
-            _detail.Location = new Point(14, 76);
+            // 失败原因（异常消息）长度不可控，同样用固定宽度 + 省略号而不是硬裁
+            _detail.AutoSize = false;
+            _detail.AutoEllipsis = true;
+            _detail.Location = new Point(PadL, 76);
+            _detail.Size = new Size(ContentWidth, 20);
             _detail.Text = "";
             Controls.Add(_detail);
 
             _hint = new Label();
             _hint.AutoSize = false;
-            _hint.Size = new Size(448, 34);
-            _hint.Location = new Point(14, 100);
+            _hint.Size = new Size(ContentWidth, 34);
+            _hint.Location = new Point(PadL, 100);
             _hint.Text = Resources.更新_重启说明;
             _hint.Visible = false;
             Controls.Add(_hint);
 
             _lnk = new LinkLabel();
             _lnk.AutoSize = true;
-            _lnk.Location = new Point(14, 146);
+            _lnk.Location = new Point(PadL, 146);
             _lnk.Text = Resources.更新_打开发布页;
             _lnk.Hide();
             _lnk.LinkClicked += new LinkLabelLinkClickedEventHandler(OnOpenPage);
             Controls.Add(_lnk);
 
             _btnRetry = new Button();
-            _btnRetry.Location = new Point(14, 176);
-            _btnRetry.Size = new Size(96, 28);
+            _btnRetry.Size = new Size(96, ButtonHeight);
             _btnRetry.Text = Resources.更新_重试;
             _btnRetry.Hide();
             _btnRetry.Click += new EventHandler(OnRetry);
             Controls.Add(_btnRetry);
 
             _btnLater = new Button();
-            _btnLater.Location = new Point(238, 176);
-            _btnLater.Size = new Size(110, 28);
+            _btnLater.Size = new Size(110, ButtonHeight);
             _btnLater.Text = Resources.更新_继续使用;
             _btnLater.Enabled = false;
             _btnLater.Click += new EventHandler(OnLater);
             Controls.Add(_btnLater);
 
             _btnRestart = new Button();
-            _btnRestart.Location = new Point(352, 176);
-            _btnRestart.Size = new Size(110, 28);
+            _btnRestart.Size = new Size(110, ButtonHeight);
             _btnRestart.Text = Resources.更新_重启更新;
             _btnRestart.Enabled = false;
             _btnRestart.Click += new EventHandler(OnRestart);
             Controls.Add(_btnRestart);
+
+            // 初值按「继续使用 + 重启更新 都可见」算好（此刻窗体还没显示，
+            // 子控件的 Visible 恒为 false，LayoutActions 拿不到真实可见性）
+            _btnRestart.Left = ClientSize.Width - PadL - _btnRestart.Width;
+            _btnLater.Left = _btnRestart.Left - ButtonGap - _btnLater.Width;
+            _btnRetry.Left = _btnLater.Left - ButtonGap - _btnRetry.Width;
+            foreach (Button b in new Button[] { _btnRetry, _btnLater, _btnRestart })
+            {
+                b.Top = ActionTop;
+            }
 
             _autoClose = new Timer();
             _autoClose.Interval = 1600;
@@ -121,6 +141,37 @@ namespace M1ToolPlus
             base.OnLoad(e);
             UiTheme.Apply(this);
             StartCheck();
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            // 窗体现在才真正可见，子控件的 Visible 从这一刻起才反映真实显隐
+            LayoutActions();
+        }
+
+        /// <summary>
+        /// 把当前可见的动作按钮排成「右对齐 + 等间距」的一行。
+        /// 任一按钮显隐变化后都要调用——原先的固定坐标会让「重试」孤零零贴在左边，
+        /// 只剩一个按钮时右边又会空出一大块，看起来像布局坏了。
+        /// </summary>
+        private void LayoutActions()
+        {
+            int right = ClientSize.Width - PadL;
+            foreach (Button b in new Button[] { _btnRestart, _btnLater, _btnRetry })
+            {
+                if (!b.Visible) { continue; }
+                b.Left = right - b.Width;
+                b.Top = ActionTop;
+                right = b.Left - ButtonGap;
+            }
+        }
+
+        /// <summary>显隐动作按钮并立即重排（窗体尚未显示时重排是空操作，保留构造期初值）。</summary>
+        private void ShowAction(Button b, bool on)
+        {
+            if (on) { b.Show(); } else { b.Hide(); }
+            LayoutActions();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -163,7 +214,7 @@ namespace M1ToolPlus
         {
             _btnRestart.Enabled = false;
             _btnLater.Enabled = false;
-            _btnRetry.Hide();
+            ShowAction(_btnRetry, false);
             _informationSet(Resources.更新_正在检查);
             _detail.Text = "";
             _bar.Value = 0;
@@ -212,7 +263,7 @@ namespace M1ToolPlus
             if (rel.AssetUrl == null || rel.AssetName == null)
             {
                 _info.Text = Resources.更新_无更新包;
-                _btnRestart.Hide();
+                ShowAction(_btnRestart, false);
                 _btnLater.Text = Resources.更新_关闭;
                 _btnLater.Enabled = true;
                 _lnk.Show();
@@ -231,7 +282,7 @@ namespace M1ToolPlus
         private void UpToDate()
         {
             _info.Text = string.Format(Resources.更新_已是最新, LocalTag());
-            _btnRestart.Hide();
+            ShowAction(_btnRestart, false);
             _btnLater.Text = Resources.更新_关闭;
             _btnLater.Enabled = true;
             _autoClose.Start();
@@ -241,7 +292,7 @@ namespace M1ToolPlus
 
         private void StartDownload()
         {
-            _btnRetry.Hide();
+            ShowAction(_btnRetry, false);
             _bar.Value = 0;
             string dir = Path.Combine(Path.GetTempPath(), "M1ToolPlusUpdate");
             try { Directory.CreateDirectory(dir); }
@@ -353,7 +404,7 @@ namespace M1ToolPlus
         {
             _bar.Value = _bar.Maximum;
             _detail.Text = Resources.更新_下载完成;
-            _btnRetry.Hide();
+            ShowAction(_btnRetry, false);
             _btnLater.Text = Resources.更新_继续使用;
             _btnLater.Enabled = true;
             _btnRestart.Enabled = true;
@@ -369,7 +420,11 @@ namespace M1ToolPlus
             _busyDownload = false;
             _bar.Value = 0;
             _detail.Text = text;
-            _btnRetry.Show();
+            // 失败后除了「重试」还要留一个明确的退出路径：
+            // 原先「继续使用」保持 disabled，用户只能靠标题栏的 × 关闭对话框
+            _btnLater.Text = Resources.更新_关闭;
+            _btnLater.Enabled = true;
+            ShowAction(_btnRetry, true);
             _lnk.Show();
         }
 

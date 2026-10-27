@@ -141,6 +141,56 @@ namespace M1ToolPlus
             catch (Exception) { }
         }
 
+        // ---------------- 输入控件的圆角边框（由父容器绘制） ----------------
+
+        // 为什么要父容器画：ComboBox / NumericUpDown 的圆角是用 Region 把最外 1px
+        // 裁掉实现的（为了盖住原生浅色系统边框），于是「画在控件自己身上」的描边
+        // 刚好落在被裁掉的那 1px 里 —— 永远看不见。控件被裁出的这一圈正好是父容器的
+        // 背景，让父容器在这圈上补一条 1px 圆角线，输入框才有可见边界。
+        private static readonly Hashtable _inputBorderChildren = new Hashtable();
+        private static readonly Hashtable _inputBorderParents = new Hashtable();
+
+        /// <summary>登记一个输入控件，让它的父容器负责画边框。</summary>
+        internal static void HookInputBorder(Control c)
+        {
+            if (c == null || c.Parent == null) { return; }
+            _inputBorderChildren[c] = true;
+
+            Control parent = c.Parent;
+            // 控件尺寸/位置变化后父容器画的那圈边框要跟着重画
+            c.Resize += delegate(object s, EventArgs e) { try { parent.Invalidate(); } catch (Exception) { } };
+            c.Move += delegate(object s, EventArgs e) { try { parent.Invalidate(); } catch (Exception) { } };
+            c.VisibleChanged += delegate(object s, EventArgs e) { try { parent.Invalidate(); } catch (Exception) { } };
+
+            if (_inputBorderParents.ContainsKey(parent)) { parent.Invalidate(); return; }
+            _inputBorderParents[parent] = true;
+            parent.Paint += delegate(object s, PaintEventArgs e) { PaintInputBorders((Control)s, e); };
+        }
+
+        /// <summary>父容器绘制：给登记过的可见子控件补 1px 圆角描边。</summary>
+        private static void PaintInputBorders(Control parent, PaintEventArgs e)
+        {
+            try
+            {
+                Color line = _dark ? Color.FromArgb(0x4C, 0x4C, 0x4C) : Color.FromArgb(0xC6, 0xCE, 0xD6);
+                using (Pen pen = new Pen(line))
+                {
+                    foreach (Control c in parent.Controls)
+                    {
+                        if (c == null || !c.Visible) { continue; }
+                        if (!_inputBorderChildren.ContainsKey(c)) { continue; }
+                        if (c.Width < 4 || c.Height < 4) { continue; }
+                        using (GraphicsPath path = RoundPath(
+                            new Rectangle(c.Left, c.Top, c.Width - 1, c.Height - 1), RadiusInput))
+                        {
+                            e.Graphics.DrawPath(pen, path);
+                        }
+                    }
+                }
+            }
+            catch (Exception) { }
+        }
+
         /// <summary>两色混合（t=0 取 a，t=1 取 b）。</summary>
         internal static Color Mix(Color a, Color b, float t)
         {
@@ -235,7 +285,9 @@ namespace M1ToolPlus
             try
             {
                 if (!enabled) { return Color.Empty; }
-                if (kind == "muted") { return _dark ? DBorder : LBorder; }
+                if (kind == "muted") { return _dark ? DMutedBorder : LBorder; }
+                // 色块按钮：按自身亮度往对比色方向混，浅色（近白）与深色色块都能看出边
+                if (kind == "chip") { return Mix(fill, ContrastOn(fill), 0.45F); }
                 if (kind == "danger") { return Mix(fill, Color.White, 0.18F); }
                 return Mix(fill, Color.White, 0.22F);
             }
@@ -287,6 +339,47 @@ namespace M1ToolPlus
                     TextRenderer.DrawText(e.Graphics, title, g.Font, tr, g.ForeColor,
                         TextFormatFlags.NoPrefix | TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
                 }
+            }
+            catch (Exception) { }
+        }
+
+        // ---------------- 无标题卡片（复制卡页第 4 格） ----------------
+
+        private static readonly Hashtable _hookCard = new Hashtable();
+
+        /// <summary>
+        /// 把普通容器画成与分组卡同款的白底圆角卡片（没有标题）。
+        /// 复制卡页第 4 格（勾选图标 +「尝试一下是否成功」+ 右下角「停止」）原本直接坐在
+        /// 页签底色上，中间一大片空白、按钮孤零零悬在角落，看着像这页没做完。
+        /// 套上卡片框后与前三张步骤卡同高同宽、四条边都对齐。
+        /// </summary>
+        internal static void HookCardPanel(Control c)
+        {
+            if (c == null || _hookCard.ContainsKey(c)) { return; }
+            _hookCard[c] = true;
+            c.Paint += delegate(object sender, PaintEventArgs e) { PaintCardPanel((Control)sender, e); };
+        }
+
+        private static void PaintCardPanel(Control c, PaintEventArgs e)
+        {
+            try
+            {
+                Rectangle r = new Rectangle(0, 0, c.Width, c.Height);
+                int rad = RadiusCard;
+                Color page = ParentBack(c);
+
+                // 四角用页签底色盖掉（与分组卡同一手法：只盖角上的小方块，不整块铺）
+                using (SolidBrush pb = new SolidBrush(page))
+                {
+                    e.Graphics.FillRectangle(pb, 0, 0, rad, rad);
+                    e.Graphics.FillRectangle(pb, r.Width - rad, 0, rad, rad);
+                    e.Graphics.FillRectangle(pb, 0, r.Height - rad, rad, rad);
+                    e.Graphics.FillRectangle(pb, r.Width - rad, r.Height - rad, rad, rad);
+                }
+
+                FillRound(e.Graphics, r, rad, c.BackColor);
+                DrawRound(e.Graphics, new Rectangle(0, 0, c.Width - 1, c.Height - 1), rad,
+                    _dark ? DBorder : LBorder, 1F);
             }
             catch (Exception) { }
         }
@@ -348,17 +441,34 @@ namespace M1ToolPlus
                         Color fg = _dark ? DText : Color.FromArgb(0x33, 0x33, 0x33);
                         int cx = cover.Width / 2;
                         int half = cover.Height / 2;
+                        // 上下两个三角的顶点方向必须朝外：上面的顶点在上、下面的顶点在下。
+                        // 早期版本把顶点写反了（两箭头朝内相对），渲染出来是一个
+                        // 「工」字形的实心块，看着就像坏掉的控件。
+                        int w = 3;                     // 半宽：箭头宽 7px（接近系统原生 9px）
+                        int h = 4;                     // 箭头高
+                        int gap = 2;                   // 两个箭头之间的间隔（太小会粘成一坨）
+                        // 抗锯齿：3~4px 的小三角不开 AA 会变成锯齿块，看着像坏控件
+                        SmoothingMode smooth = e.Graphics.SmoothingMode;
+                        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        int topBase = half - gap;      // 上箭头底边
+                        int botBase = half + gap;      // 下箭头顶边
                         using (SolidBrush b = new SolidBrush(fg))
                         {
+                            // 上箭头：底边在下，顶点在上
                             e.Graphics.FillPolygon(b, new[]
                             {
-                                new Point(cx - 3, half - 4), new Point(cx + 3, half - 4), new Point(cx, half - 1)
+                                new Point(cx - w, topBase), new Point(cx + w, topBase),
+                                new Point(cx, Math.Max(1, topBase - h))
                             });
+                            // 下箭头：顶边在上，顶点在下
                             e.Graphics.FillPolygon(b, new[]
                             {
-                                new Point(cx - 3, half + 3), new Point(cx + 3, half + 3), new Point(cx, half)
+                                new Point(cx - w, botBase), new Point(cx + w, botBase),
+                                new Point(cx, Math.Min(cover.Height - 2, botBase + h))
                             });
                         }
+                        // 竖分隔线要 1px 硬边，恢复原来的模式再画
+                        e.Graphics.SmoothingMode = smooth;
                         using (Pen p = new Pen(_dark ? DBorder : LBorder))
                         {
                             e.Graphics.DrawLine(p, 0, 1, 0, cover.Height - 2);
@@ -387,7 +497,9 @@ namespace M1ToolPlus
             {
                 if (nud == null || cover == null || cover.IsDisposed) { return; }
                 cover.BackColor = _dark ? DInput : Color.White;
-                cover.Bounds = new Rectangle(Math.Max(0, nud.ClientSize.Width - 17), 1, 16, Math.Max(8, nud.ClientSize.Height - 2));
+                // 高度用 Height-2（与 Region 裁切边界一致）：用 Height-3 会在框底露出
+                // 一条原生白边，深色下非常明显（截图里箭头下面那道白横线）。
+                cover.Bounds = new Rectangle(Math.Max(0, nud.ClientSize.Width - 18), 1, 17, Math.Max(8, nud.ClientSize.Height - 2));
                 cover.BringToFront();
                 cover.Invalidate();
             }
@@ -460,7 +572,9 @@ namespace M1ToolPlus
             {
                 if (cb == null || cover == null || cover.IsDisposed) { return; }
                 cover.BackColor = _dark ? DInput : Color.White;
-                cover.Bounds = new Rectangle(Math.Max(0, cb.ClientSize.Width - 18), 1, 17, Math.Max(8, cb.ClientSize.Height - 2));
+                // 宽度按 125% DPI 实测：原生箭头按钮连左沿分隔线共占右侧 22px，
+                // 只盖 17~21px 都会在箭头左边露出那条白竖线（逐像素定位到 x=523）。
+                cover.Bounds = new Rectangle(Math.Max(0, cb.ClientSize.Width - 24), 1, 23, Math.Max(8, cb.ClientSize.Height - 2));
                 cover.BringToFront();
                 cover.Invalidate();
             }
@@ -507,8 +621,6 @@ namespace M1ToolPlus
         {
             try
             {
-                Color border = _dark ? DBorder : LBorder;
-
                 // 深色主题下原生「下拉箭头」按钮用的是系统浅色（SystemColors.Control），
                 // 在深底上是一块刺眼的白方块。这里用输入框底色盖掉右端按钮区，
                 // 再补一个自绘的小三角；点击行为仍由原生控件处理（点哪都会展开列表）。
@@ -537,7 +649,9 @@ namespace M1ToolPlus
                     }
                 }
 
-                DrawRound(e.Graphics, new Rectangle(1, 1, cb.Width - 3, cb.Height - 3), RadiusInput, border, 1F);
+                // 圆角描边不在这里画：控件自身的 Region 把最外 1px 裁掉了，
+                // 画在这里会被裁没（这也是「下拉框只剩一个箭头」的根因）。
+                // 边框统一由父容器在裁出的那圈上补画，见 HookInputBorder。
             }
             catch (Exception) { }
         }

@@ -145,10 +145,6 @@
             this.label11 = new System.Windows.Forms.Label();
             this.SetDeviceCombo = new System.Windows.Forms.ComboBox();
             this.flowLayoutPanel22 = new System.Windows.Forms.FlowLayoutPanel();
-            this.groupBox15 = new System.Windows.Forms.GroupBox();
-            this.flowLayoutPanel23 = new System.Windows.Forms.FlowLayoutPanel();
-            this.label12 = new System.Windows.Forms.Label();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
             this.groupBox13 = new System.Windows.Forms.GroupBox();
             this.flowLayoutPanel4 = new System.Windows.Forms.FlowLayoutPanel();
             this.checkBoxDefIsAdv = new System.Windows.Forms.CheckBox();
@@ -222,8 +218,6 @@
             this.groupBox14.SuspendLayout();
             this.flowLayoutPanel5.SuspendLayout();
             this.flowLayoutPanel22.SuspendLayout();
-            this.groupBox15.SuspendLayout();
-            this.flowLayoutPanel23.SuspendLayout();
             this.groupBox13.SuspendLayout();
             this.flowLayoutPanel4.SuspendLayout();
             this.groupBox11.SuspendLayout();
@@ -1241,49 +1235,9 @@
             // flowLayoutPanel22
             // 
             resources.ApplyResources(this.flowLayoutPanel22, "flowLayoutPanel22");
-            this.flowLayoutPanel22.Controls.Add(this.groupBox15);
             this.flowLayoutPanel22.Controls.Add(this.groupBox13);
             this.flowLayoutPanel22.Controls.Add(this.groupBox11);
             this.flowLayoutPanel22.Name = "flowLayoutPanel22";
-            // 
-            // groupBox15
-            // 
-            resources.ApplyResources(this.groupBox15, "groupBox15");
-            this.groupBox15.BackColor = System.Drawing.Color.DodgerBlue;
-            this.groupBox15.Controls.Add(this.flowLayoutPanel23);
-            this.groupBox15.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.groupBox15.ForeColor = System.Drawing.Color.White;
-            this.groupBox15.Name = "groupBox15";
-            this.groupBox15.TabStop = false;
-            // 
-            // flowLayoutPanel23
-            // 
-            resources.ApplyResources(this.flowLayoutPanel23, "flowLayoutPanel23");
-            this.flowLayoutPanel23.BackColor = System.Drawing.Color.White;
-            this.flowLayoutPanel23.Controls.Add(this.label12);
-            this.flowLayoutPanel23.Controls.Add(this.comboBox1);
-            this.flowLayoutPanel23.ForeColor = System.Drawing.Color.DodgerBlue;
-            this.flowLayoutPanel23.Name = "flowLayoutPanel23";
-            // 
-            // label12
-            // 
-            resources.ApplyResources(this.label12, "label12");
-            this.label12.Name = "label12";
-            // 
-            // comboBox1
-            // 
-            this.comboBox1.BackColor = System.Drawing.Color.AliceBlue;
-            resources.ApplyResources(this.comboBox1, "comboBox1");
-            this.comboBox1.FormattingEnabled = true;
-            // 语言名用各自的「本语言」写法（endonym），不随界面语言翻译：
-            // 中文用户、俄语用户、英语用户在任何界面语言下都能认出自己的语言。
-            // 顺序必须与 ApplyLanguageSelection() 的索引一致：0=中文 1=俄语 2=英语。
-            this.comboBox1.Items.AddRange(new object[] {
-            "简体中文",
-            "Русский",
-            "English"});
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.ComboBox1_SelectedIndexChanged);
             // 
             // groupBox13
             // 
@@ -1397,7 +1351,8 @@
             // 
             this.toolStripCheckUpdate.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.toolStripCheckUpdate.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.toolStripCheckUpdate.ForeColor = System.Drawing.SystemColors.ControlText;
+            // 不设 ForeColor：由 UiTheme.StyleStatusStrip 统一成底部栏文字色，
+            // 否则这里写死 SystemColors.ControlText，深色主题下是黑字，与其它项不一致。
             resources.ApplyResources(this.toolStripCheckUpdate, "toolStripCheckUpdate");
             this.toolStripCheckUpdate.Margin = new System.Windows.Forms.Padding(0, 0, 10, 0);
             this.toolStripCheckUpdate.Name = "toolStripCheckUpdate";
@@ -1417,6 +1372,9 @@
             this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.richTextBox1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            // 本界面是绝对定位的老式布局，最大化后控件不会跟随（只剩左上角一块内容 +
+            // 整窗空白），所以干脆不给最大化：与「固定尺寸窗口」的设计决策一致。
+            this.MaximizeBox = false;
             this.Name = "Form1";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
@@ -1530,10 +1488,6 @@
             this.flowLayoutPanel5.PerformLayout();
             this.flowLayoutPanel22.ResumeLayout(false);
             this.flowLayoutPanel22.PerformLayout();
-            this.groupBox15.ResumeLayout(false);
-            this.groupBox15.PerformLayout();
-            this.flowLayoutPanel23.ResumeLayout(false);
-            this.flowLayoutPanel23.PerformLayout();
             this.groupBox13.ResumeLayout(false);
             this.groupBox13.PerformLayout();
             this.flowLayoutPanel4.ResumeLayout(false);
@@ -1670,10 +1624,6 @@
         private System.Windows.Forms.Button buttonEMfWrite;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel22;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel14;
-        private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel23;
-        private System.Windows.Forms.GroupBox groupBox15;
-        private System.Windows.Forms.Label label12;
-        private System.Windows.Forms.ComboBox comboBox1;
         private System.Windows.Forms.Label label13;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.GroupBox groupBox16;

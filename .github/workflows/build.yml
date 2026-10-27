@@ -6,7 +6,7 @@
 # build.ps1 的 M1TP_MSBUILD_PROPS 注入口以 CustomAfterMicrosoftCommonTargets 导入其
 # targets——由它设置 TargetFrameworkRootPath / NoStdLib 并显式引用 mscorlib。
 #
-# 卫星程序集（en/ru/zh）依赖 al.exe（Windows SDK）：镜像上有则走标准构建，没有则
+# 卫星程序集（zh）依赖 al.exe（Windows SDK）：镜像上有则走标准构建，没有则
 # build.ps1 自动回退到 csc 手工生成——两条路径产物一致，CI 结束后统一校验。
 
 name: CI
@@ -53,7 +53,7 @@ jobs:
           if (-not (Test-Path $exe)) { throw "未产出 M1ToolPlus.exe" }
           if (-not (Test-Path (Join-Path $out "Newtonsoft.Json.dll"))) { throw "未产出 Newtonsoft.Json.dll" }
           if (-not (Test-Path (Join-Path $out "M1ToolPlus.exe.config"))) { throw "未产出 M1ToolPlus.exe.config" }
-          foreach ($c in @("en", "ru", "zh")) {
+          foreach ($c in @("zh")) {
             $sat = Join-Path $out "$c\M1ToolPlus.resources.dll"
             if (-not (Test-Path $sat)) { throw "缺少卫星程序集: $sat" }
           }

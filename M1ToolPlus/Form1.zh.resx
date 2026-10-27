@@ -402,8 +402,7 @@
     <value>尝试一下是否成功</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>请放
-原卡</value>
+    <value>请放原卡</value>
   </data>
   <data name="label8.Text" xml:space="preserve">
     <value>请放
@@ -413,7 +412,7 @@
     <value>终端文字颜色</value>
   </data>
   <data name="richTextBox1.Lines[0]" xml:space="preserve">
-    <value>Hello,cardman!</value>
+    <value></value>
     <comment>Previous text: ппппппппппппппппппп</comment>
   </data>
   <data name="runTimeLabel.Text" xml:space="preserve">
