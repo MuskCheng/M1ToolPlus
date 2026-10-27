@@ -40,10 +40,36 @@ jobs:
     name: Build & publish
     runs-on: windows-latest
     steps:
+      # Do NOT point checkout at inputs.tag: a manual run may happen BEFORE the tag
+      # exists (that is exactly what draft-mode acceptance testing is for), and
+      # checkout would fail fetching a non-existent ref. Check out the trigger ref,
+      # then switch to the tag only if it is actually present on the remote.
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Switch to tag if it already exists
+        if: github.event_name == 'workflow_dispatch'
+        shell: powershell
+        run: |
+          # Actions sets $ErrorActionPreference = 'stop' for powershell steps, and
+          # `git fetch` of a missing ref writes to stderr -> would abort the step.
+          # Probing for a tag that may not exist is an expected path, so relax it.
+          $ErrorActionPreference = "Continue"
+          $tag = '${{ inputs.tag }}'
+          $refspec = "refs/tags/" + $tag + ":refs/tags/" + $tag
+          git fetch --no-tags origin $refspec 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            git checkout --detach "refs/tags/$tag"
+            if ($LASTEXITCODE -ne 0) { throw "failed to check out tag $tag" }
+            Write-Host "checked out existing tag $tag"
+          } else {
+            Write-Host "tag $tag not on remote yet - building $env:GITHUB_REF_NAME head; the release step will create the tag"
+          }
+          # Actions appends `exit $LASTEXITCODE`: the failed probe above must not
+          # be mistaken for a failed step.
+          $global:LASTEXITCODE = 0
 
       - name: Install .NET 4.0 reference assemblies
         shell: powershell
@@ -68,7 +94,12 @@ jobs:
           if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') { $tag = '${{ inputs.tag }}' } else { $tag = $env:GITHUB_REF_NAME }
           if ($tag -notmatch '^v\d+\.\d+\.\d+$') { throw "unsupported tag format: $tag (expected v1.8.1)" }
           "RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host "release tag = $tag"
+          # Pin the commit we actually built: when the tag does not exist yet,
+          # gh release create needs --target or it would tag the default branch head,
+          # which may have moved on since this run started.
+          $sha = (& git rev-parse HEAD).Trim()
+          "RELEASE_SHA=$sha" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "release tag = $tag  (commit $sha)"
 
       - name: Check version matches tag
         shell: powershell
@@ -143,16 +174,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $ErrorActionPreference = "Stop"
+          # Same stderr caveat as the tag probe: `gh release view` on a release that
+          # does not exist yet writes to stderr and would abort under EAP=stop.
+          $ErrorActionPreference = "Continue"
           $tag     = $env:RELEASE_TAG
           $assets  = @($env:RELEASE_ZIP, $env:RELEASE_SUM)
           $null = gh release view $tag 2>$null
-          if ($LASTEXITCODE -eq 0) {
+          $exists = ($LASTEXITCODE -eq 0)
+          if ($exists) {
             Write-Host "release $tag already exists - re-uploading assets"
             gh release upload $tag $assets --clobber
             if ($LASTEXITCODE -ne 0) { throw "gh release upload failed" }
           } else {
-            $releaseArgs = @('release', 'create', $tag) + $assets + @('--title', $tag, '--generate-notes')
+            $releaseArgs = @('release', 'create', $tag) + $assets + @('--title', $tag, '--generate-notes', '--target', $env:RELEASE_SHA)
             if ('${{ inputs.draft }}' -eq 'true') { $releaseArgs += '--draft' }
             Write-Host "gh $($releaseArgs -join ' ')"
             & gh @releaseArgs
