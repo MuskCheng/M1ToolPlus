@@ -352,18 +352,49 @@ namespace M1ToolPlus
                 // 大就会两侧溢出（标题栏沉出屏幕顶、状态栏压进任务栏）。
                 ClampToWorkArea(form);
 
-                // 彻底去掉调整大小边框（WS_THICKFRAME / WS_SIZEBOX），确保窗口右下角
-                // 没有 resize grip，鼠标放上去不会变成缩放箭头。FixedSingle 已不包含
-                // 该样式，这里再做一次保险，防止句柄样式残留。
-                try
-                {
-                    const int GWL_STYLE = -16;
-                    const int WS_THICKFRAME = 0x00040000;
-                    int style = GetWindowLong(form.Handle, GWL_STYLE);
-                    style &= ~WS_THICKFRAME;
-                    SetWindowLong(form.Handle, GWL_STYLE, style);
-                }
-                catch (Exception) { }
+                // 去掉调整大小边框与最大化按钮（细节见 StripCaptionButtons）。
+                StripCaptionButtons(form);
+                // 句柄重建（改字体/DPI 迁移）后样式会被重置，重建时再抹一遍。
+                form.HandleCreated += delegate { StripCaptionButtons(form); };
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 锁定窗口的两个「可调整」样式位：
+        ///
+        /// - WS_THICKFRAME：去掉可缩放边框，窗口右下角不再出现 resize grip，
+        ///   鼠标贴边也不会变成缩放箭头（FixedSingle 本来就没有，这里防样式残留）；
+        /// - WS_MAXIMIZEBOX：确保系统层面也不认「最大化」（WinForms 的
+        ///   <c>MaximizeBox = false</c> 已负责，这里再兜一层，防止外部代码把它打开）。
+        ///
+        /// 注意：Windows 11 的标题栏**始终画三颗按钮**，对不可最大化的窗口只画一颗
+        /// 灰色的禁用方框——实测把 WS_MAXIMIZEBOX 摘掉、甚至从设计器关掉 MaximizeBox，
+        /// 那颗灰按钮依然在（它本来就点不动）。想让标题栏只剩「最小化 + 关闭」，
+        /// 只能自绘标题栏（FormBorderStyle.None），代价远大于收益，故不处理。
+        ///
+        /// 改完样式必须 SetWindowPos(SWP_FRAMECHANGED) 让系统重画非客户区。
+        /// </summary>
+        internal static void StripCaptionButtons(Form form)
+        {
+            if (form == null || !form.IsHandleCreated) { return; }
+            try
+            {
+                const int GWL_STYLE = -16;
+                const int WS_THICKFRAME = 0x00040000;
+                const int WS_MAXIMIZEBOX = 0x00010000;
+                int style = GetWindowLong(form.Handle, GWL_STYLE);
+                int wanted = style & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX;
+                if (wanted == style) { return; }
+
+                SetWindowLong(form.Handle, GWL_STYLE, wanted);
+                const uint SWP_NOSIZE = 0x0001;
+                const uint SWP_NOMOVE = 0x0002;
+                const uint SWP_NOZORDER = 0x0004;
+                const uint SWP_NOACTIVATE = 0x0010;
+                const uint SWP_FRAMECHANGED = 0x0020;
+                SetWindowPos(form.Handle, IntPtr.Zero, 0, 0, 0, 0,
+                    SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
             }
             catch (Exception) { }
         }
@@ -2128,6 +2159,10 @@ namespace M1ToolPlus
 
         [DllImport("user32.dll")]
         private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        [DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
+            int x, int y, int cx, int cy, uint uFlags);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
