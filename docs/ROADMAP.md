@@ -1193,3 +1193,40 @@ set M1TOOL_WINSIZE=675x675 && M1ToolPlus.exe
 
 9 张表列数一致；16 个相对链接（LICENSE + 6 篇文档 + 2 张截图 + 7 个 SVG）全部可解析；
 用无头 Edge 按 GitHub 样式渲染全页，逐屏核对徽章、截图、表格与末尾说明。
+
+---
+
+## 二十三、release.yml：Tag 触发的自动发版流水线（2026-10-27，v1.8.1）
+
+需求：推完 tag 之后，自动构建并把软件本体挂到 Release。
+
+### 1. 发现的关键阻塞：nfc-bin 不在版本库
+
+`M1ToolPlus/nfc-bin/` 被 `.gitignore` 排除（`git ls-files` 为 0），而 `build.ps1` 打包时
+发现缺依赖只是 `Write-Warning`。照搬现有 CI 的构建步骤去发布，runner 会 checkout 出一个
+不含依赖的仓库 → 编译通过 → 打包成功 → Actions 全绿，但发出去的包**能安装能启动、
+却读不了卡**。这种失败最难发现，所以流水线第一步必须是 `.\scripts\fetch-deps.ps1`
+（从上游 v1.7.0 Release 还原 nfc-bin），并把"缺依赖"在 CI 侧升级为硬失败。
+
+### 2. 三道护栏
+
+1. **依赖还原**（上条）；
+2. **tag 与版本号对齐**：tag `v1.8.1` 必须与 `AssemblyVersion` 前三位一致。
+   踩到的坑——`AssemblyInfo.cs` 第 34 行有一行注释模板 `// [assembly: AssemblyVersion("1.0.*")]`，
+   朴素正则会先匹配到它，正则必须锚定行首 `^\[assembly:`；
+3. **产物在位校验**：exe / Newtonsoft.Json.dll / app.config / zh 卫星 / 9 个 nfc-bin 工具，逐个确认。
+
+### 3. 其它设计取舍
+
+- **不与 CI 合并**：`build.yml` 已是 `on: push` + `pull_request`，再塞 `if:` 判断可读性差；
+  独立成 `release.yml`，职责清楚。推 tag 时两个 workflow 都会跑（CI 那份算双保险）。
+- **零第三方 Action**：发布用 runner 自带的 `gh`（配 `GH_TOKEN`），不引入
+  softprops/action-gh-release 这类社区依赖；已存在 Release 时走 `gh release upload --clobber`。
+- **附件名稳定**：`-Pack` 输出带时间戳，CI 里重命名为 `M1ToolPlus-<tag>.zip` + `SHA256SUMS.txt`，
+  便于脚本比对与自更新链路。
+- 支持 `workflow_dispatch` 手动触发并可勾选 draft，用于首次上线试跑。
+
+### 4. 遗留风险（已写入 DEVELOPMENT 技术债）
+
+`fetch-deps.ps1` 依赖上游 `xcicode/MifareOneTool` 的 v1.7.0 Release 存续；
+后续应把 `M1T-Release.zip` 作为长期资产挂到自家 Release，并让拉取顺序改为自家优先。
