@@ -25,7 +25,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Install .NET 4.0 reference assemblies
         shell: powershell
@@ -64,7 +64,7 @@ jobs:
           Write-Host ("verify ok: {0} ({1:N0} bytes)" -f (Split-Path $exe -Leaf), (Get-Item $exe).Length)
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: M1ToolPlus-ci-build
           path: M1ToolPlus/bin/Release/
