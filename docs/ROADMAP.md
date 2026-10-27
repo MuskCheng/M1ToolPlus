@@ -1259,7 +1259,8 @@ set M1TOOL_WINSIZE=675x675 && M1ToolPlus.exe
 修完「checkout 指向不存在的 tag」与「EAP=stop」两处后重跑，流水线一次通过：
 `Verify package contents → Rename artifacts and write checksum → Publish release` 全绿，
 产出 **Draft Release v1.8.1**（target `2a0040f`，附件 `M1ToolPlus-v1.8.1.zip` 2.87 MB +
-`SHA256SUMS.txt`）。
+`SHA256SUMS.txt`）。实机试读后于 2026-10-27 06:15 UTC 正式 Publish，`latest` 徽章转到 v1.8.1，
+tag `v1.8.1` 落在 `2a0040f`；v1.8.0 的标题一并统一为 `v1.8.0`。
 
 ### 1. 产物复核（本地下载附件后解包）
 
