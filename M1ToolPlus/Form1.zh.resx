@@ -405,8 +405,10 @@
     <value>请放原卡</value>
   </data>
   <data name="label8.Text" xml:space="preserve">
-    <value>请放
-新卡</value>
+    <value>请
+放
+新
+卡</value>
   </data>
   <data name="label9.Text" xml:space="preserve">
     <value>终端文字颜色</value>

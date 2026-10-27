@@ -110,6 +110,19 @@ namespace M1ToolPlus
         private const int ButtonPaddingX = 18;
 
         /// <summary>
+        /// 「请放原卡 / 请放新卡」这类**动作提示**的强调字号（像素）。
+        ///
+        /// 为什么单独给一档：这两句是全流程里唯一要求用户「动手」的提示，
+        /// 却和按钮同字号、同色系，混在蓝色按钮堆里等于没有提示。
+        /// 14px 粗体 vs 正文 12px 常规——只抬 2px 就够跳出层次，再大就会
+        /// 把 42px 宽的竖排缝隙和按钮列挤变形（绝对定位布局没有余量）。
+        /// </summary>
+        private const float PlaceHintFontPx = 14F;
+
+        /// <summary>设计器里给「请放卡」提示打的标记（Form1.Designer.cs 的 label7/label8）。</summary>
+        internal const string PlaceCardHintTag = "place-card-hint";
+
+        /// <summary>
         /// 界面字体。
         ///
         /// 为什么不用 Segoe UI：它是**拉丁字体，不含中文字形**，中文全靠系统回退渲染，
@@ -1102,10 +1115,20 @@ namespace M1ToolPlus
                 ll.DisabledLinkColor = _dark ? Color.FromArgb(0x6A, 0x6A, 0x6A) : Color.FromArgb(0xA0, 0xA0, 0xA0);
             }
 
+            // 「请放原卡 / 请放新卡」是复制卡流程里唯一要求用户动手的提示，
+            // 原样式（12px 常规 + 通知蓝）和旁边一排蓝色按钮几乎同质，用户会漏看。
+            // 这里抬到 14px 粗体 + 高对比强调色：字重拉开层次，颜色从灰底上跳出来。
+            // 只认 Tag 不认控件名：FormHTool 里也有同名的 label7/label8。
+            bool placeHint = (l.Tag as string) == PlaceCardHintTag;
+            if (placeHint)
+            {
+                l.Font = GetFont(UiFont.FontFamily, PlaceHintFontPx, FontStyle.Bold);
+                l.ForeColor = _dark ? Color.FromArgb(0x8C, 0xCC, 0xFF) : Color.FromArgb(0x0B, 0x4F, 0xA8);
+            }
             // SAK 支持说明是原作者刻意用蓝色强调的重要提示（原本靠父容器继承），
             // 分组框配色会覆盖继承色，这里显式补回。
-            if (l.Name == "label13") { l.ForeColor = _dark ? Color.FromArgb(0x8A, 0xC0, 0xFF) : Color.FromArgb(0x0D, 0x47, 0xA1); }
-            // 设计器里用 HotTrack（深蓝）强调的提示标签（如「请放原卡/新卡」），
+            else if (l.Name == "label13") { l.ForeColor = _dark ? Color.FromArgb(0x8A, 0xC0, 0xFF) : Color.FromArgb(0x0D, 0x47, 0xA1); }
+            // 设计器里用 HotTrack（深蓝）强调的其它提示标签，
             // 深色底上对比度极低，换成同色系的浅蓝。
             else if (l.ForeColor == SystemColors.HotTrack) { l.ForeColor = _dark ? Color.FromArgb(0x6C, 0xB6, 0xFF) : SystemColors.HotTrack; }
             else if (l.ForeColor == SystemColors.ControlText) { l.ForeColor = _dark ? DText : LText; }

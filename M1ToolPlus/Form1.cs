@@ -28,12 +28,45 @@ namespace M1ToolPlus
             System.Threading.Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(UiCulture);
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(UiCulture);
             InitializeComponent();
+            // 复制卡页中间竖排提示的几何复位，必须在 InitializeComponent 之后（初始化期会自己缩放一轮）
+            FixCopyCardHintLayout();
             // 终端渲染抽到 TerminalView（正式行/临时进度行的删写与只读处理），
             // 必须紧跟 InitializeComponent：之后的主题、语言初始化都可能写终端。
             term = new TerminalView(richTextBox1);
             // 主窗口背景重绘量较大；双缓冲只作用于窗体自身的背景绘制，减少闪烁。
             this.DoubleBuffered = true;
             InitializeThemeSelector();
+        }
+
+        /// <summary>
+        /// 复制卡页中间那条竖排提示（右箭头 + 「请放新卡」四个字）的几何复位。
+        ///
+        /// 为什么必须在代码里钉尺寸、不全交给设计器：
+        /// 这一列是装在 AutoSize 表格列里的 FlowLayoutPanel 窄缝（42px 宽）。
+        /// InitializeComponent 期间 WinForms 会按设计字体先做一轮 AutoScale，
+        /// 把这两个子控件放大成约 1.25 倍（实测 label8 由 42×86 变成 56×108）；
+        /// 而带 Dock=Fill 的子控件在流式面板里又要按行宽重新分配，宽度直接算成 0——
+        /// 界面上看到的就是整块提示消失（本轮改版实测踩过）。
+        /// 这里在 InitializeComponent 之后按设计像素复位，与旁边分组框保持同一基准。
+        /// </summary>
+        private void FixCopyCardHintLayout()
+        {
+            // 列宽固定：箭头与竖排文字都按 42px 居中，宽度不再由内容决定
+            flowLayoutPanel1.AutoSize = false;
+            flowLayoutPanel1.Size = new Size(42, 196);
+
+            // 上：右箭头（指示「读原卡 → 写入新卡」的流程方向）
+            pictureBox3.Dock = DockStyle.None;
+            pictureBox3.Size = new Size(42, 28);
+            pictureBox3.Margin = new Padding(0, 24, 0, 0);            // 顶部留白，让整块提示在两列之间居中
+            pictureBox3.SizeMode = PictureBoxSizeMode.CenterImage;   // 24px 图标在 42px 宽内居中
+
+            // 下：竖排四字（一行一字），与箭头同列宽、水平居中
+            label8.Dock = DockStyle.None;
+            label8.AutoSize = false;
+            label8.Size = new Size(42, 78);                          // 4 行 × 约 19px 行高
+            label8.Margin = new Padding(0, 6, 0, 0);
+            label8.TextAlign = ContentAlignment.MiddleCenter;
         }
 
         /// <summary>构造期回显主题下拉框时置位，避免触发保存/刷新。</summary>
@@ -534,14 +567,32 @@ namespace M1ToolPlus
             {
                 if (Properties.Settings.Default.DefIsAdv) { SelectTab(1); }
                 ApplyInitialTab();
+                CenterCopyCardHint();   // 竖排提示整块居中：分组框高度在 Shown 之后才定型
                 StartSilentUpdateCheck();
                 DumpUiInfoIfRequested();
             }
             catch (Exception) { }
         }
 
-        // ---------- 启动时静默检查更新 ----------
+        /// <summary>
+        /// 把复制卡页中间那块提示（右箭头 + 竖排「请放新卡」）在窄缝里垂直居中。
+        ///
+        /// 窄缝是 FlowDirection=TopDown 的流式面板，天生顶对齐；而分组框的最终高度
+        /// 要等窗口尺寸定型（Shown 之后）才知道，构造期按 196 去算会整体偏上。
+        /// </summary>
+        private void CenterCopyCardHint()
+        {
+            try
+            {
+                pictureBox3.Margin = new Padding(0);   // 先清零再量，避免把上次的留白重复计入
+                int block = pictureBox3.Height + label8.Height + label8.Margin.Vertical;
+                int top = (flowLayoutPanel1.ClientSize.Height - block) / 2;
+                if (top > 0) { pictureBox3.Margin = new Padding(0, top, 0, 0); }
+            }
+            catch (Exception) { }
+        }
 
+        // ---------- 启动时静默检查更新 ----------
         private ReleaseInfo pendingUpdate;   // 非空 = 远端有比本地更新的版本
 
         /// <summary>
