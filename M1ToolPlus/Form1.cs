@@ -144,7 +144,7 @@ namespace M1ToolPlus
             cfg += "device.name = \"NFC-Device\"\n";
             cfg += "device.connstring = \"" + devstr + "\"";
             File.WriteAllText("libnfc.conf", cfg);
-            curDevice.Text = Resources.设备串口 + devstr.Replace("pn532_uart:", "").Replace(":115200", "");
+            curDevice.Text = DeviceStatus.Format(devstr);
         }
 
         void default_rpt(object sender, ProgressChangedEventArgs e)
@@ -158,6 +158,12 @@ namespace M1ToolPlus
             }
             if (e.ProgressPercentage == 100)
             {
+                if (quietDeviceScan)
+                {
+                    // 静默扫描不留下任何日志痕迹（见 RefreshDeviceList）
+                    Application.DoEvents();
+                    return;
+                }
                 logAppend((string)e.UserState);
                 logAppend("");
                 Text = Resources.MifareOne_Tool_运行完毕;
@@ -231,25 +237,33 @@ namespace M1ToolPlus
             }
             else if (e.ProgressPercentage == 103)
             {
-                logAppend(Resources.识别了以下设备);
                 List<string> myReaders = (List<string>)(e.UserState);
-                foreach (string reader in myReaders)
+                if (quietDeviceScan)
                 {
-                    logAppend(reader);
-                }
-                if (myReaders.Count > 0)
-                {
-                    logAppend(Resources.将自动选择首个设备 + myReaders.First());
-                    writeConfig(myReaders.First());
-                    SetDeviceCombo.Items.Clear();
-                    SetDeviceCombo.Items.AddRange(myReaders.ToArray());
-                    SetDeviceCombo.SelectedIndex = 0;
+                    // 热插拔重扫：只更新下拉框与状态栏，不回显到终端、不改窗口标题。
+                    ApplyDeviceList(myReaders);
                 }
                 else
                 {
-                    logAppend(Resources.没有发现任何有效的NFC设备);
-                    logAppend(Resources.请检查接线是否正确_驱动是否正常安装_设备电源是否已经打开_);
+                    logAppend(Resources.识别了以下设备);
+                    foreach (string reader in myReaders)
+                    {
+                        logAppend(reader);
+                    }
+                    if (myReaders.Count > 0)
+                    {
+                        logAppend(Resources.将自动选择首个设备 + myReaders.First());
+                    }
+                    else
+                    {
+                        logAppend(Resources.没有发现任何有效的NFC设备);
+                        logAppend(Resources.请检查接线是否正确_驱动是否正常安装_设备电源是否已经打开_);
+                    }
+                    ApplyDeviceList(myReaders);
                 }
+                // 设备列表定稿后再导一次（内部自带 --ui-info 判断，正常启动不会写文件）：
+                // 诊断文件里就能看到「无设备时串口被清空」的实际结果
+                DumpUiInfoIfRequested();
             }
             else
             {
@@ -303,23 +317,32 @@ namespace M1ToolPlus
 
         void list_dev(object sender, DoWorkEventArgs e)
         {
-            if (lprocess) { return; }
+            // 静默模式（热插拔重扫）不占用 lprocess / running：那两个标志同时也表示
+            // 「有业务任务在跑」，被抢占会让界面上的按钮整分钟不可用。
+            bool quiet = quietDeviceScan;
+            if (lprocess || (quiet && silentScanBusy)) { return; }
             ProcessStartInfo psi = new ProcessStartInfo("nfc-bin/nfc-scan-device.exe");
             psi.CreateNoWindow = true;
             psi.UseShellExecute = false;
             psi.RedirectStandardOutput = true;
             psi.RedirectStandardError = true;
-            lprocess = true;
+            if (quiet) { silentScanBusy = true; } else { lprocess = true; }
             BackgroundWorker b = (BackgroundWorker)sender;
             if (!ToolProcess.Start(psi, out process))
             {
-                lprocess = false;
-                running = false;
-                b.ReportProgress(100, Resources._运行出错);
-                logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
+                if (quiet) { silentScanBusy = false; } else { lprocess = false; running = false; }
+                if (!quiet)
+                {
+                    b.ReportProgress(100, Resources._运行出错);
+                    logAppend(string.Format(Resources.无法找到程序文件_操作终止, psi.FileName));
+                }
                 return;
             }
-            b.ReportProgress(0, Resources.开始执行检测设备); running = true;
+            if (!quiet)
+            {
+                b.ReportProgress(0, Resources.开始执行检测设备);
+                running = true;
+            }
             List<string> myReader = new List<string>();
             // 该处需在读取输出的同时收集设备名（Issue #26/#9），故传入行处理器而非直接输出到终端区。
             // libnfc 输出为 UTF-8；.NET 4.0 无 StandardOutputEncoding，默认按 ANSI 解码会中文乱码。
@@ -328,7 +351,10 @@ namespace M1ToolPlus
                 if (string.IsNullOrEmpty(line)) { return; }
                 // 回显到终端区（上游行为，ToolProcess 重构时被漏掉）：
                 // 不回显的话点「检测连接」后终端一片空白，无法判断卡在哪一步。
-                b.ReportProgress(0, line);
+                if (!quietDeviceScan)
+                {
+                    b.ReportProgress(0, line);
+                }
                 if (Properties.Settings.Default.NewScan)
                 {
                     //Issue #26/#9: 原仅匹配 pn532_uart, ACR122U(acr122_pcsc) 等设备永远无法进入设备列表,
@@ -348,17 +374,66 @@ namespace M1ToolPlus
             {
                 try { process.Kill(); } catch (Exception) { }
                 process.WaitForExit(3000);
-                lprocess = false;
-                running = false;
-                b.ReportProgress(100, Resources._程序已被强制停止);
+                if (quiet) { silentScanBusy = false; } else { lprocess = false; running = false; }
+                if (!quiet) { b.ReportProgress(100, Resources._程序已被强制停止); }
                 b.ReportProgress(103, myReader);
                 return;
             }
             process.WaitForExit();
-            lprocess = false;
-            running = false;
+            if (quiet) { silentScanBusy = false; } else { lprocess = false; running = false; }
             b.ReportProgress(103, myReader);
             b.ReportProgress(100, Resources._运行完毕);
+        }
+
+        /// <summary>
+        /// 把扫描到的设备列表同步到「指定设备」下拉框与状态栏串口（list_dev 的 103 回调走到这里）。
+        ///
+        /// - 有设备：沿用原有「自动选择首个」的行为并写回 libnfc.conf；若用户此前手动选了
+        ///   别的设备且它仍在列表里，就保留他的选择，不被自动扫描顶掉；
+        /// - 没设备：状态栏只留「设备串口：」四个字，具体串口置空 —— 原先这里什么都不做，
+        ///   拔掉读卡器后底部会一直挂着上一次的 COM 口，看着像设备还连着。
+        /// </summary>
+        private void ApplyDeviceList(List<string> readers)
+        {
+            try
+            {
+                if (readers == null) { readers = new List<string>(); }
+                if (readers.Count == 0)
+                {
+                    // 只保留常显的前缀，不追加任何串口文本
+                    curDevice.Text = DeviceStatus.Format(null);
+                    FillDeviceCombo(new string[] { Resources.未检测到设备 });
+                    return;
+                }
+
+                // 当前选中的设备若还在列表里就继续保留，否则回落到首个
+                string prev = SetDeviceCombo.SelectedItem as string;
+                int idx = readers.IndexOf(prev);
+                string chosen = (idx >= 0) ? readers[idx] : readers[0];
+
+                FillDeviceCombo(readers.ToArray());
+                if (idx > 0)
+                {
+                    SetDeviceCombo.SelectedIndexChanged -= SetDeviceCombo_SelectedIndexChanged;
+                    SetDeviceCombo.SelectedIndex = idx;
+                    SetDeviceCombo.SelectedIndexChanged += SetDeviceCombo_SelectedIndexChanged;
+                }
+                writeConfig(chosen);
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 重建「指定设备」下拉框。占位项（未检测到设备）不会写进 libnfc.conf，
+        /// 由 SetDeviceCombo_SelectedIndexChanged 判断。
+        /// </summary>
+        private void FillDeviceCombo(string[] items)
+        {
+            SetDeviceCombo.SelectedIndexChanged -= SetDeviceCombo_SelectedIndexChanged;
+            SetDeviceCombo.Items.Clear();
+            SetDeviceCombo.Items.AddRange(items);
+            if (SetDeviceCombo.Items.Count > 0) { SetDeviceCombo.SelectedIndex = 0; }
+            SetDeviceCombo.SelectedIndexChanged += SetDeviceCombo_SelectedIndexChanged;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -454,9 +529,138 @@ namespace M1ToolPlus
             {
                 if (Properties.Settings.Default.DefIsAdv) { SelectTab(1); }
                 ApplyInitialTab();
+                StartSilentUpdateCheck();
                 DumpUiInfoIfRequested();
             }
             catch (Exception) { }
+        }
+
+        // ---------- 启动时静默检查更新 ----------
+
+        private ReleaseInfo pendingUpdate;   // 非空 = 远端有比本地更新的版本
+
+        /// <summary>
+        /// 启动后静默查一次最新 Release：只取元数据（tag / 资源名 / 摘要），
+        /// **不下载、不弹窗、不打扰**；网络不通或接口报错一律静默返回。
+        /// 有更新时把状态栏「检查更新」换成「有新版本 vX.Y.Z」并染成强调色，
+        /// 用户点它才走 FormUpdate 的完整流程（下载 + 重启更新）。
+        /// 可用 Settings.CheckUpdateOnStartup = false 关闭（用户目录 user.config）。
+        /// </summary>
+        private void StartSilentUpdateCheck()
+        {
+            try
+            {
+                if (!Properties.Settings.Default.CheckUpdateOnStartup) { return; }
+                BackgroundWorker bgw = new BackgroundWorker();
+                bgw.DoWork += delegate(object s, DoWorkEventArgs e)
+                {
+                    string err;
+                    e.Result = GitHubUpdate.FetchLatest(out err);
+                };
+                bgw.RunWorkerCompleted += delegate(object s, RunWorkerCompletedEventArgs e)
+                {
+                    try
+                    {
+                        if (IsDisposed || Disposing || e.Error != null) { return; }
+                        ReleaseInfo rel = e.Result as ReleaseInfo;
+                        if (rel == null || rel.Remote == null) { return; }
+                        Version lv = Assembly.GetExecutingAssembly().GetName().Version;
+                        if (rel.Remote <= lv) { return; }
+                        pendingUpdate = rel;
+                        UiTheme.StatusUpdateBadge = true;
+                        UiTheme.StatusUpdateText = string.Format(Resources.有新版本, rel.Tag);
+                        ApplyUpdateHint();
+                        // 再导一次：让诊断文件里有「提示文案生效后」的实际布局
+                        DumpUiInfoIfRequested();
+                    }
+                    catch (Exception) { }
+                };
+                bgw.RunWorkerAsync();
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// 把「有新版本」提示写到状态栏右侧那一项（套主题后也要能重新生效）。
+        /// 若当前没有待更新版本，则还原成默认的「检查更新」文案与颜色。
+        /// </summary>
+        private void ApplyUpdateHint()
+        {
+            try
+            {
+                if (pendingUpdate == null)
+                {
+                    UiTheme.StatusUpdateBadge = false;
+                    toolStripCheckUpdate.ForeColor = UiTheme.IsDark ? UiTheme.DTextDim : UiTheme.LTextDim;
+                }
+                else
+                {
+                    Version lv = Assembly.GetExecutingAssembly().GetName().Version;
+                    toolStripCheckUpdate.Text = string.Format(Resources.有新版本, pendingUpdate.Tag);
+                    toolStripCheckUpdate.ToolTipText =
+                        string.Format(Resources.有新版本提示, pendingUpdate.Tag, "v" + lv.ToString(3));
+                    toolStripCheckUpdate.ForeColor = UiTheme.Accent;
+                }
+                UiTheme.LayoutStatusBar(statusStrip1);
+            }
+            catch (Exception) { }
+        }
+
+        // ---------- 设备热插拔 ----------
+
+        private const int WM_DEVICECHANGE = 0x0219;
+        private const int DBT_DEVICEARRIVAL = 0x8000;
+        private const int DBT_DEVICEREMOVECOMPLETE = 0x8004;
+        private const int DBT_DEVNODES_CHANGED = 0x0007;
+
+        private bool deviceScanPending;  // 收到插拔消息，等空闲再扫
+        private bool quietDeviceScan;    // 本次扫描是静默的（不回显日志）
+        private bool silentScanBusy;     // 静默扫描进行中（避免连开子进程）
+
+        /// <summary>
+        /// 监听 USB 插拔：读卡器一拔，状态栏的串口必须跟着清空，
+        /// 否则底部会一直挂着上一次的 COM 口，看着像设备还连着。
+        /// 这里只置标记，真正扫描交给 timer1，避免插拔瞬间连开多个子进程。
+        /// </summary>
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+            try
+            {
+                if (m.Msg != WM_DEVICECHANGE) { return; }
+                int wparam = m.WParam.ToInt32();
+                if (wparam == DBT_DEVICEARRIVAL ||
+                    wparam == DBT_DEVICEREMOVECOMPLETE ||
+                    wparam == DBT_DEVNODES_CHANGED)
+                {
+                    // 插拔消息会连着来好几条，这里只置标记；真正的扫描交给 timer1，
+                    // 攒够一轮再扫，避免刚插上就连开好几个 nfc-scan-device 子进程。
+                    deviceScanPending = true;
+                }
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>静默重扫设备列表（热插拔用），见 ApplyDeviceList。</summary>
+        private void RefreshDeviceList()
+        {
+            try
+            {
+                if (running || lprocess || silentScanBusy)
+                {
+                    // 业务任务与 list_dev 共用 process 字段，忙时挂起到下一轮 tick
+                    deviceScanPending = true;
+                    return;
+                }
+                BackgroundWorker bgw = new BackgroundWorker();
+                bgw.WorkerReportsProgress = true;
+                bgw.DoWork += new DoWorkEventHandler(list_dev);
+                bgw.ProgressChanged += new ProgressChangedEventHandler(default_rpt);
+                bgw.RunWorkerCompleted += delegate { quietDeviceScan = false; };
+                quietDeviceScan = true;
+                bgw.RunWorkerAsync();
+            }
+            catch (Exception) { quietDeviceScan = false; }
         }
 
         /// <summary>
@@ -1605,6 +1809,13 @@ namespace M1ToolPlus
                 }
             }
             else { statusLabel.Text = Resources.空闲; }
+
+            // 热插拔的重扫请求：等当前任务跑完再执行（list_dev 与业务任务共用 process 字段）
+            if (deviceScanPending && !running && !lprocess)
+            {
+                deviceScanPending = false;
+                RefreshDeviceList();
+            }
         }
 
         private void buttonCheckEncrypt_Click(object sender, EventArgs e)

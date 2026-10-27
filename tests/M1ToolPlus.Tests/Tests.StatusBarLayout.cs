@@ -22,6 +22,24 @@ namespace M1ToolPlus.Tests
             add("StatusBar: 两端自然宽度、中间项按数量 Spring", SpringOnlyMiddleItems);
             add("StatusBar: 中间项隐藏后重新分配，不残留 Spring", ReassignWhenMiddleHidden);
             add("StatusBar: 只有两项时两端都不 Spring", TwoItemsOnly);
+            add("DeviceStatus: 无设备时只留「设备串口：」", DeviceStatusNoDevice);
+            add("DeviceStatus: 有设备时前缀常显 + 串口", DeviceStatusWithDevice);
+        }
+
+        /// <summary>设备没接 / 已拔出：前缀常显，串口部分为空。</summary>
+        private static void DeviceStatusNoDevice()
+        {
+            TestAssert.Equal(Properties.Resources.设备串口, DeviceStatus.Format(null), "null 连接串");
+            TestAssert.Equal(Properties.Resources.设备串口, DeviceStatus.Format(""), "空连接串");
+        }
+
+        /// <summary>有设备：前缀照旧显示，后面跟 COM 口（去掉驱动前缀与波特率）。</summary>
+        private static void DeviceStatusWithDevice()
+        {
+            TestAssert.Equal(Properties.Resources.设备串口 + "COM6",
+                DeviceStatus.Format("pn532_uart:COM6:115200"), "COM6");
+            TestAssert.Equal(Properties.Resources.设备串口 + "COM12",
+                DeviceStatus.Format("pn532_uart:COM12:115200"), "COM12（两位以上）");
         }
 
         /// <summary>造一个宽度与真实窗口一致（787）的状态栏，按 Items 顺序添加若干个标签。</summary>

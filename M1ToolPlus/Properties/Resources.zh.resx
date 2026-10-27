@@ -651,4 +651,10 @@
   <data name="未检测到设备" xml:space="preserve">
     <value>（未检测到设备）</value>
   </data>
+  <data name="有新版本" xml:space="preserve">
+    <value>有新版本 {0}</value>
+  </data>
+  <data name="有新版本提示" xml:space="preserve">
+    <value>发现新版本 {0}（当前 {1}），点击打开更新窗口</value>
+  </data>
 </root>

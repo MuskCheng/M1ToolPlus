@@ -228,5 +228,22 @@ namespace M1ToolPlus.Properties {
                 this["UpgradeRequired"] = value;
             }
         }
+
+        /// <summary>
+        /// 出厂默认 true：启动后在后台静默查询一次最新 Release，有新版本就把状态栏
+        /// 「检查更新」换成提示文案。只取元数据、不下载、不弹窗，失败静默。
+        /// 想彻底断网运行可把它置 false（用户目录的 user.config）。
+        /// </summary>
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool CheckUpdateOnStartup {
+            get {
+                return ((bool)(this["CheckUpdateOnStartup"]));
+            }
+            set {
+                this["CheckUpdateOnStartup"] = value;
+            }
+        }
     }
 }

@@ -109,35 +109,36 @@
     <Compile Include="TerminalView.cs" />
     <Compile Include="CardToolFlow.cs" />
     <Compile Include="UiTheme.cs" />
-<Compile Include="UiTheme.Round.cs" />
+    <Compile Include="UiTheme.Round.cs" />
+    <Compile Include="DeviceStatus.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
-    </EmbeddedResource>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form1.zh.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormDiff.resx">
       <DependentUpon>FormDiff.cs</DependentUpon>
-    </EmbeddedResource>
+    </EmbeddedResource>
     <EmbeddedResource Include="FormDiff.zh.resx">
       <DependentUpon>FormDiff.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormHardNes.resx">
       <DependentUpon>FormHardNes.cs</DependentUpon>
-    </EmbeddedResource>
+    </EmbeddedResource>
     <EmbeddedResource Include="FormHardNes.zh.resx">
       <DependentUpon>FormHardNes.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormHTool.resx">
       <DependentUpon>FormHTool.cs</DependentUpon>
-    </EmbeddedResource>
+    </EmbeddedResource>
     <EmbeddedResource Include="FormHTool.zh.resx">
       <DependentUpon>FormHTool.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormMFF08.resx">
       <DependentUpon>FormMFF08.cs</DependentUpon>
-    </EmbeddedResource>
+    </EmbeddedResource>
     <EmbeddedResource Include="FormMFF08.zh.resx">
       <DependentUpon>FormMFF08.cs</DependentUpon>
     </EmbeddedResource>
@@ -150,7 +151,7 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
-    </Compile>
+    </Compile>
     <EmbeddedResource Include="Properties\Resources.zh.resx">
       <DependentUpon>Resources.resx</DependentUpon>
     </EmbeddedResource>
