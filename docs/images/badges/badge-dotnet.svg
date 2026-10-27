@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="66" height="20" role="img" aria-label=".NET: 4.0">
+  <title>.NET: 4.0</title>
+  <rect width="66" height="20" fill="#555"/>
+  <rect x="36" width="30" height="20" fill="#512bd4"/>
+  <g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif" font-size="11" fill="#fff" text-anchor="middle">
+    <text x="18" y="14">.NET</text>
+    <text x="51" y="14">4.0</text>
+  </g>
+</svg>

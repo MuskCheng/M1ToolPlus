@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="118" height="28" role="img" aria-label="下载最新版本">
+  <title>下载最新版本</title>
+  <rect width="118" height="28" rx="4" fill="#2ea44f"/>
+  <path d="M0 4a4 4 0 0 1 4-4h26v28H4a4 4 0 0 1-4-4z" fill="#22863a"/>
+  <g fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15 7v8"/><path d="M11.6 11.8 15 15.2l3.4-3.4"/><path d="M9 19.5h12"/>
+  </g>
+  <text x="74" y="19" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif" font-size="12" font-weight="600" fill="#fff" text-anchor="middle">下载最新版本</text>
+</svg>

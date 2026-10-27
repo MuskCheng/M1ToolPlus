@@ -162,7 +162,8 @@ CUID 卡不能像 UID 卡那样用后门随便写，必须用**卡内已有的�
 3. Windows 设置 → 个性化 → 颜色 → 「选择默认应用模式」
 
 若手动选了浅色却被环境变量强制成深色，先检查是否设置了 `M1TOOL_THEME`。
-用户配置在 `%LOCALAPPDATA%\XciCode\M1ToolPlus.exe_Url_*\1.7.0.0\user.config`。
+用户配置在 `%LOCALAPPDATA%\XciCode\M1ToolPlus.exe_Url_*\<版本号>\user.config`
+（如 `1.8.1.0`；版本升级后由 `Settings.Upgrade()` 自动迁移）。
 
 ### 窗口固定大小，不支持用户拖动缩放
 

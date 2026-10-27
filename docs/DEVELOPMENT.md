@@ -18,13 +18,13 @@
 
 ### al.exe 问题（重要）
 
-原工程依赖 Windows SDK 的 `al.exe` 生成中/俄文卫星程序集（`ru\`、`zh\` 目录）。
+原工程依赖 Windows SDK 的 `al.exe` 生成中/俄文卫星程序集（`ru\`、`zh\` 目录；v1.9.0 起只剩 `zh\`）。
 未安装 Windows SDK 时 MSBuild 报 `MSB3086`。`build.ps1` 的处理：
 
 1. 自动搜索 `al.exe`；找到 -> 走标准 MSBuild 全量构建
 2. 找不到 -> 仍执行 `/t:Build`（主 exe 会成功产出，仅卫星步骤失败），然后用
-   `csc` 手工把 `obj\...\*.ru.resources` / `*.zh.resources` 编译成
-   `ru\M1ToolPlus.ru.dll` / `zh\M1ToolPlus.zh.dll`（嵌入 AssemblyCulture）
+   `csc` 手工把 `obj\...\*.zh.resources` 编译成
+   `zh\M1ToolPlus.resources.dll`（嵌入 AssemblyCulture）
 
 > 注意：不要用 `/t:CoreCompile` 单独编译，它会跳过引用解析，报一堆
 > CS0518/CS0246（System.Object 未定义）——必须 `/t:Build`。
@@ -94,15 +94,17 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
 ### 本地化
 
 - 中性资源 = 简体中文（`Form1.resx` 界面文本即中文）
-- 卫星：`Form1.zh.resx`（中文覆盖）、`Form1.ru.resx`（俄语）、`*.en.resx`（英语，
-  2026 新增，文案移植自 xavave/MifareOneTool-English fork，生成脚本 `scripts/gen-en-resx.ps1`）
-- 运行时在 `Form1()` 构造里按 `Settings.Language` 设置 `CurrentUICulture`
+- 卫星：只剩 `Form1.zh.resx`（中文覆盖）。**v1.9.0 起移除英文/俄文**：
+  `*.en.resx` / `*.ru.resx` 已删除（原英语文案移植自 xavave/MifareOneTool-English fork），
+  `build.ps1` 的 csc 卫星步骤也只生成 `zh`，CI 只校验 `zh\M1ToolPlus.resources.dll`
+- 运行时在 `Form1()` 构造里固定 `CurrentUICulture = zh-CN`（`Form1.UiCulture`），
+  不再读 `Settings.Language`——系统区域是英文/俄文时也一律显示中文，不会落到无资源可用的回退态
 - 文案全部经 `Properties\Resources` 强类型访问（`Resources.xxx`）
-- 语言切换（`ComboBox1_SelectedIndexChanged`）按**下拉索引**映射文化
-  （0=zh-cn 1=ru-RU 2=en-US），不比对各语言文案，新增语言只需：
-  ① 生成对应 `.xx.resx` 并注册进 csproj ② combo 加一项 ③ switch 加一个分支
-- **下拉项文案固定用各语言本名**（`简体中文` / `Русский` / `English`），硬编码在
-  `Form1.Designer.cs`，**不要**放进 resx 本地化——否则会随界面语言翻译，外文用户认不出
+- 设置页「语言和地区」分组与语言下拉框已随多语言一起移除（`comboBox1` /
+  `ApplyLanguageSelection` / `ComboBox1_SelectedIndexChanged` 均不存在了）。
+  若将来要恢复多语言：重新加入 `.xx.resx` 并注册进 csproj → `build.ps1` 的
+  `foreach ($cult in @("zh"))` 加回语言代号 → 恢复下拉框与按索引切文化的逻辑
+- 废弃：`SelectLanguage.cs`（MultiLang 模板自带的语言选择窗体，从未被引用）已删除
 
 ### 设置项（Properties.Settings）
 
