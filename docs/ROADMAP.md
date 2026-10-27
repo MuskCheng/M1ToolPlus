@@ -1230,3 +1230,26 @@ set M1TOOL_WINSIZE=675x675 && M1ToolPlus.exe
 
 `fetch-deps.ps1` 依赖上游 `xcicode/MifareOneTool` 的 v1.7.0 Release 存续；
 后续应把 `M1T-Release.zip` 作为长期资产挂到自家 Release，并让拉取顺序改为自家优先。
+
+### 5. 首次草稿试跑暴露的两个坑（已修）
+
+第一次用 `workflow_dispatch` + draft 跑，`Checkout` 步骤直接失败（`git-upload-pack` exit 1，
+重试 4 次）。根因是两个叠加问题：
+
+1. **checkout 指向了还不存在的 tag**。原写法 `ref: inputs.tag`，而手动触发恰恰常用于
+   「tag 尚未创建、先验收一次」的场景，git 去 fetch `refs/tags/v1.8.1` 必然失败。
+   现在改为 checkout 触发 ref，再由独立步骤探测远端是否已有该 tag：有则 `--detach` 切过去，
+   没有就在当前 ref 上构建，由发布步骤用 `gh release create --target <sha>` 顺手把 tag 建出来。
+   `--target` 必须显式给 commit，否则 tag 会落在「默认分支当前头」，与本次构建的提交可能不是同一个。
+
+2. **`$ErrorActionPreference` 的默认值会把预期内的失败变成步骤失败**。Actions 给 powershell
+   步骤预设 `EAP=stop`，而 PowerShell 5.1 下原生命令（git / gh）写 stderr 会被包成
+   `NativeCommandError` 并直接终止脚本——`2>$null` 也拦不住（本地实测确认）。于是
+   「探测 tag 不存在」「`gh release view` 查不到 Release」这两种正常分支都会红。
+   凡是要读原生命令退出码做分支的步骤，脚本内一律先 `$ErrorActionPreference = "Continue"`，
+   再用显式 `throw` 表达真失败，末尾 `$global:LASTEXITCODE = 0` 避免 wrapper 的
+   `exit $LASTEXITCODE` 把探测失败当步骤失败。
+
+验证方式：把 yml 里每个 `run` 抽成独立 .ps1，用 `Parser::ParseFile` 做语法检查；
+再在本地临时克隆里用「模拟 Actions wrapper」（前置 `EAP=stop`、后置 `exit $LASTEXITCODE`）
+分别跑 tag 存在 / 不存在两种场景，以及版本对齐校验的正反用例。
