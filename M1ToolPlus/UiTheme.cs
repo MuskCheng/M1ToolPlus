@@ -361,17 +361,13 @@ namespace M1ToolPlus
         }
 
         /// <summary>
-        /// 锁定窗口的两个「可调整」样式位：
+        /// 抹掉窗口的 WS_THICKFRAME（可缩放边框）：去掉它右下角不再出现 resize grip，
+        /// 鼠标贴边也不会变成缩放箭头。FixedSingle 本来就没有这个样式位，这里防样式残留。
         ///
-        /// - WS_THICKFRAME：去掉可缩放边框，窗口右下角不再出现 resize grip，
-        ///   鼠标贴边也不会变成缩放箭头（FixedSingle 本来就没有，这里防样式残留）；
-        /// - WS_MAXIMIZEBOX：确保系统层面也不认「最大化」（WinForms 的
-        ///   <c>MaximizeBox = false</c> 已负责，这里再兜一层，防止外部代码把它打开）。
-        ///
-        /// 注意：Windows 11 的标题栏**始终画三颗按钮**，对不可最大化的窗口只画一颗
-        /// 灰色的禁用方框——实测把 WS_MAXIMIZEBOX 摘掉、甚至从设计器关掉 MaximizeBox，
-        /// 那颗灰按钮依然在（它本来就点不动）。想让标题栏只剩「最小化 + 关闭」，
-        /// 只能自绘标题栏（FormBorderStyle.None），代价远大于收益，故不处理。
+        /// 最大化按钮**不动**：实测窗口样式里 WS_MAXIMIZEBOX 从来就是 0，标题栏那颗方框
+        /// 是 Windows 11 给「有标题栏但不可最大化」的窗口统一画的禁用占位按钮（关闭是亮的、
+        /// 方框是灰的），摘样式位也去不掉。用户确认保留现状，这里只清缩放边框，
+        /// 不动 WS_MAXIMIZEBOX / WS_MINIMIZEBOX。
         ///
         /// 改完样式必须 SetWindowPos(SWP_FRAMECHANGED) 让系统重画非客户区。
         /// </summary>
@@ -382,9 +378,8 @@ namespace M1ToolPlus
             {
                 const int GWL_STYLE = -16;
                 const int WS_THICKFRAME = 0x00040000;
-                const int WS_MAXIMIZEBOX = 0x00010000;
                 int style = GetWindowLong(form.Handle, GWL_STYLE);
-                int wanted = style & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX;
+                int wanted = style & ~WS_THICKFRAME;
                 if (wanted == style) { return; }
 
                 SetWindowLong(form.Handle, GWL_STYLE, wanted);
@@ -1711,6 +1706,63 @@ namespace M1ToolPlus
                 }
             }
             StyleToolStripImages(ss);
+            LayoutStatusBar(ss);
+        }
+
+        /// <summary>
+        /// 状态栏自适应排布：最左一项贴左、最右一项贴右，都是自然宽度，
+        /// 中间的项按**可见数量**均分剩下的宽度。
+        ///
+        /// 为什么必须这么做：StatusStrip 默认的 HorizontalStackWithOverflow 布局一旦算不下，
+        /// 不会报错、也不会换行，而是把放不下的项塞进右端一个几乎看不见的溢出菜单（▾）——
+        /// 「检查更新」就是这样「消失」的（接上读卡器后「设备串口」变长，把它顶了出去）。
+        ///
+        /// 换成 Table 布局 + 中间项 Spring 后：
+        /// - 两端保持 AutoSize 的自然宽度，永不参与分配，宽度再紧张也丢不了；
+        /// - 中间项各占一份剩余空间（项数变化、文本变长都自动重算），
+        ///   不再依赖手工调 Margin —— 之前为了塞下四项把左右边距从 50 压到 20，仍然会溢出；
+        /// - 所有项 Overflow = Never，右端不会再冒出那个溢出箭头。
+        /// </summary>
+        internal static void LayoutStatusBar(StatusStrip ss)
+        {
+            if (ss == null) { return; }
+            try
+            {
+                // Spring 只在 Table 布局下生效，这一行是整套自适应的前提。
+                ss.LayoutStyle = ToolStripLayoutStyle.Table;
+
+                // 先复位**所有**项（含当前隐藏的）：隐藏项若残留 Spring，等它重新可见时
+                // 就会带着旧属性插进布局。这里只看 Visible，不看 Available —— 窗口句柄还没
+                // 创建时 Available 恒为 false，会把整条状态栏当成「没有项」而直接跳过。
+                var visible = new System.Collections.Generic.List<ToolStripItem>();
+                foreach (ToolStripItem item in ss.Items)
+                {
+                    if (item == null) { continue; }
+                    item.Overflow = ToolStripItemOverflow.Never;
+                    item.Margin = new Padding(0, 0, 0, 0);
+                    ToolStripStatusLabel label = item as ToolStripStatusLabel;
+                    if (label != null)
+                    {
+                        label.Spring = false;
+                        label.AutoSize = true;
+                        label.TextAlign = ContentAlignment.MiddleLeft;
+                    }
+                    if (item.Visible) { visible.Add(item); }
+                }
+                if (visible.Count == 0) { return; }
+
+                // 两端留一点呼吸位（外侧还有 StatusStrip 自己的 Padding 8px）。
+                visible[0].Margin = new Padding(0, 0, 12, 0);
+                if (visible.Count > 1) { visible[visible.Count - 1].Margin = new Padding(12, 0, 0, 0); }
+
+                // 中间项（不含两端）各分一份剩余宽度。
+                for (int i = 1; i < visible.Count - 1; i++)
+                {
+                    ToolStripStatusLabel label = visible[i] as ToolStripStatusLabel;
+                    if (label != null) { label.Spring = true; }
+                }
+            }
+            catch (Exception) { }
         }
 
         /// <summary>

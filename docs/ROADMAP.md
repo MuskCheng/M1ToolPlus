@@ -1321,5 +1321,59 @@ tag `v1.8.1` 落在 `2a0040f`；v1.8.0 的标题一并统一为 `v1.8.0`。
 再想让它彻底消失只能自绘标题栏（`FormBorderStyle.None` + 自己处理拖动/双击/阴影/贴边），
 代价远大于收益，暂不处理。
 
-顺手把 `WS_THICKFRAME` / `WS_MAXIMIZEBOX` 的清理收进 `UiTheme.StripCaptionButtons()`，
-并在 `HandleCreated` 时重放一次（句柄重建后样式会复位），防止将来有人把 MaximizeBox 打开。
+顺手把 `WS_THICKFRAME` 的清理收进 `UiTheme.StripCaptionButtons()`，并在 `HandleCreated`
+时重放一次（句柄重建后样式会复位）。`WS_MAXIMIZEBOX` 不动——用户确认保留现状（那颗灰按钮
+去不掉，也没必要为它自绘标题栏）。
+
+## 二十六、状态栏改成自适应排布（2026-10-27，v1.8.2）
+
+第二十五节只是把边距从 50 压到 20、给「检查更新」加了 `Overflow = Never`，
+本质仍是**手工凑宽度**：只要中间再多一项、或某种 DPI 下字宽变大，一样会溢出。
+用户要求改成真正的自适应：「四个标签按数量分配，保证最左和最右不丢，中间自适应，
+最大化按钮保持不动」。
+
+### 1. 换掉布局引擎：HorizontalStackWithOverflow → Table
+
+`StatusStrip` 默认的 `HorizontalStackWithOverflow` 是「算不下就塞进溢出菜单」，
+这正是按钮消失的机制。`ToolStripStatusLabel.Spring` 只在 **Table** 布局下生效，
+所以先把 `LayoutStyle` 定为 `Table`（设计器与 `UiTheme.LayoutStatusBar` 同时写死，
+避免两边打架）。
+
+### 2. 分配规则：两端自然宽度，中间均分
+
+```text
+[最左]  固定 AutoSize        ← 永不参与分配，宽度再紧也丢不了
+[中间1] Spring               ← 各分一份剩余宽度
+[中间2] Spring                 项数变化（隐藏/新增）自动重算
+[中间N] Spring
+[最右]  固定 AutoSize + Right ← 永不参与分配
+```
+
+同时所有项 `Overflow = Never`（含被隐藏的项，避免它重新可见时带着旧属性插进布局）。
+`TextAlign` 统一 `MiddleLeft`：带图标的项图标与文字是**分开定位**的，两者都居中会重叠。
+
+### 3. 实测（781 宽客户区，`--ui-info` 导出的真实 Bounds）
+
+| 项 | x | 宽 | 右缘 |
+|---|---|---|---|
+| 空闲 | 8 | 53 | 61 |
+| 运行时间:0秒 | 73 | 203 | 276 |
+| 本地版本 1.8.1.0 | 276 | 203 | 479 |
+| 设备串口（空） | 479 | 203 | 682 |
+| 检查更新 | 694 | 77 | 771 |
+
+两端各留 12px Margin + StatusStrip 自身 8px Padding，中间三项严格等宽 203。
+接上读卡器后「设备串口: COM6」约 105px，远小于 203，不会再顶掉任何项。
+
+### 4. 诊断与测试
+
+- `--ui-info` 增出 `StatusBarLayout` 与每项 `x / w / right / auto / spring / overflow`，
+  以后排查「某项不见了」直接看这一组数，不必截图；
+- 新增 4 个单测（`Tests.StatusBarLayout.cs`）：Table 布局 + 全项 Never、两端不 Spring、
+  中间按数量 Spring、中间项隐藏后重新分配、仅两项时不 Spring。**23/23 通过**。
+
+### 5. 最大化按钮
+
+按用户要求**保持不动**：`StripCaptionButtons()` 现在只清 `WS_THICKFRAME`（缩放边框），
+不再动 `WS_MAXIMIZEBOX`。那颗灰方框是 Windows 11 画的占位按钮，去不掉也不影响使用。
+
