@@ -1440,3 +1440,79 @@ tag `v1.8.1` 落在 `2a0040f`；v1.8.0 的标题一并统一为 `v1.8.0`。
 
 `Tests.StatusBarLayout.cs` 补了 2 个用例（`DeviceStatus.Format` 的空值/有值分支），
 本地与 CI 共 **25/25 通过**。
+
+## 二十八、拔出读卡器后串口不清空：扫描卡在失效串口上（2026-10-27）
+
+用户反馈：拔掉读卡器等十几秒，底部仍是「设备串口：COM6」，没有变回只有前缀；
+同时终端出现两行 `error libnfc.driver.pn532_uart Invalid serial port: COM6`。
+
+### 1. 先定位到底是哪一步没走完
+
+加了三处临时探针（WndProc / timer1 / ApplyDeviceList）写 `%TEMP%\m1t-probe.log`，
+复现出完整链路：
+
+```text
+15:59:57.370  wndproc w=7 -> pending=true
+15:59:57.448  tick: pending -> refresh
+15:59:57.450  refresh -> run scan
+（之后 32 秒内再无任何日志，ApplyDeviceList 从未被回调）
+```
+
+消息收到了、扫描也起来了，但 **103 回调迟迟不来**，所以状态栏自然不更新。
+日志还暴露了第二个问题：扫描期间出现几十次 `tick: pending -> refresh`。
+
+### 2. 三个根因
+
+**a) 静默扫描没删 `libnfc.conf`**
+
+「检测设备」按钮会先 `File.Delete("libnfc.conf")`（`NewScan` 开着时），
+但热插拔重扫走的是 `RefreshDeviceList()`，**没删**。于是 `nfc-scan-device`
+启动后先照旧配置去打开那个已经消失的 COM6 —— 既打印那两行 `Invalid serial port`
+（探测一次、初始化一次），又可能长时间阻塞（Issue #39 记录过 Win10 上超 100s，
+我们的超时是 60s）。实测本机完整扫描要 **38 秒**，用户等十几秒当然看不到变化。
+
+**b) 显示更新完全依赖完整扫描**
+
+即使扫描正常，也要等它跑完（十几到几十秒）才轮到 `ApplyDeviceList`。
+拔出是「已经发生」的确定事件，不该用这么慢的路径来反映。
+
+**c) timer1 在扫描期间反复重入（会无限扫）**
+
+```csharp
+if (deviceScanPending && !running && !lprocess)   // 少了 !silentScanBusy
+{
+    deviceScanPending = false;
+    RefreshDeviceList();   // 里面发现 busy 又把 pending 置回 true
+}
+```
+
+扫描一次要几十秒，期间每 100ms 一轮 tick 都调一次 `RefreshDeviceList`，
+它 busy 时又把 `pending` 置回来 —— 扫描一结束就被自己重新拉起，永远停不下来。
+
+### 3. 三处改动
+
+1. **毫秒级即时判断**：`WndProc` 收到插拔消息后直接读 `SerialPort.GetPortNames()`
+   （`DeviceStatus.PortStillPresent`），确认记录的串口已不在系统里就立刻把
+   `curDevice` 清成只有前缀 —— 实测 **2~3 毫秒**完成，不用等扫描。
+   非串口设备（`acr122_pcsc` / `openpcsc`）取不到端口名，一律交给完整扫描，避免误清。
+2. **静默扫描前删 conf**：与「检测设备」按钮行为对齐，不再拿失效串口去试探，
+   那两行 `Invalid serial port` 随之消失。
+3. **修掉重入**：timer1 的判断加上 `!silentScanBusy`；再引入 `deviceEventSeq` /
+   `deviceScanSeq` 两个序号 —— 扫描完成时只有「期间没来新事件」才清 `pending`，
+   否则保留并再扫一轮，既不死循环也不丢事件。
+
+### 4. 实测
+
+```text
+16:05:43.015  wndproc w=7 -> pending=true
+16:05:43.018  wndproc: port gone -> curDevice now = '设备串口：'   ← 3ms，已清空
+16:05:43.086  refresh -> run scan                                  ← 后台扫描
+（探针日志全程只有 3 行，重入消失）
+```
+
+单测补了 `DeviceStatus.ExtractPort`（连接串解析）与 `PortStillPresent`
+（非串口设备不误判、不存在的口返回 false）两组用例，本地 27/27 通过。
+
+> 测试环境注意：本机 `COM6` 是主板真实串口（`HKLM\HARDWARE\DEVICEMAP\SERIALCOMM`
+> 里 `\Device\Serial2 = COM6`），伪造 conf 必须用不存在的口（如 COM99）才能验证
+> 「确认消失 → 清空」分支；用 COM6 会让判断认为设备还在，测不出效果。
