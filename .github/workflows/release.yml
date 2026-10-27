@@ -45,7 +45,7 @@ jobs:
       # checkout would fail fetching a non-existent ref. Check out the trigger ref,
       # then switch to the tag only if it is actually present on the remote.
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -201,7 +201,15 @@ jobs:
             } else {
               $releaseArgs += '--generate-notes'
             }
-            if ('${{ inputs.draft }}' -eq 'true') { $releaseArgs += '--draft' }
+            if ('${{ inputs.draft }}' -eq 'true') {
+              # A draft is never the "Latest" release, so leave the badge alone here.
+              $releaseArgs += '--draft'
+            } else {
+              # Pin the Latest badge instead of relying on created_at ordering: GitHub
+              # resolves "Latest" by release creation time, which for a release that
+              # started life as a draft is the draft's timestamp, not the publish time.
+              $releaseArgs += '--latest'
+            }
             Write-Host "gh $($releaseArgs -join ' ')"
             & gh @releaseArgs
             if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
