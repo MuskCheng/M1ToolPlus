@@ -1730,5 +1730,23 @@ namespace M1ToolPlus.Properties {
                 return ResourceManager.GetString("浅色", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   状态栏「检查更新」在有新版本时的提示文案，{0} = 远端 tag（如 v1.8.2）。
+        /// </summary>
+        public static string 有新版本 {
+            get {
+                return ResourceManager.GetString("有新版本", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   有新版本时的悬浮提示，{0} = 远端 tag，{1} = 本地版本。
+        /// </summary>
+        public static string 有新版本提示 {
+            get {
+                return ResourceManager.GetString("有新版本提示", resourceCulture);
+            }
+        }
     }
 }

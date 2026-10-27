@@ -75,6 +75,22 @@ namespace M1ToolPlus
         internal static bool IsDark { get { return _dark; } }
 
         /// <summary>
+        /// 当前强调色（系统强调色优先，取不到时回落 DefaultAccent）。
+        /// 状态栏的「有新版本」提示用它染色，让提示从一堆灰色文字里跳出来。
+        /// </summary>
+        internal static Color Accent { get { return _accent; } }
+
+        /// <summary>
+        /// 有新版本时由主窗体置 true：状态栏最右侧那一项（「检查更新」→「有新版本」）
+        /// 染成强调色。放在这里而不是 Form1，是为了主题刷新（UiTheme.Refresh）
+        /// 重新套样式之后提示色还能回来。
+        /// </summary>
+        internal static bool StatusUpdateBadge;
+
+        /// <summary>配套文案（如「有新版本 v1.8.2」），为空则沿用控件原文案。</summary>
+        internal static string StatusUpdateText;
+
+        /// <summary>
         /// 界面字号（**像素**）。等价于 96 DPI 下的 9pt 微软雅黑（em 12px、行高 16px）。
         /// 原作 8.25pt 在屏幕上偏小、久看吃力，提到这个尺寸。
         /// 不再往大调：按钮列宽是 84~97px 的固定值（绝对定位布局的既成事实），
@@ -1706,6 +1722,16 @@ namespace M1ToolPlus
                 }
             }
             StyleToolStripImages(ss);
+            // 有新版本提示：给最右那一项上强调色（放在这里，主题刷新后依然生效）
+            if (StatusUpdateBadge && ss.Items.Count > 0)
+            {
+                ToolStripItem last = ss.Items[ss.Items.Count - 1];
+                if (last.Alignment == ToolStripItemAlignment.Right)
+                {
+                    if (!string.IsNullOrEmpty(StatusUpdateText)) { last.Text = StatusUpdateText; }
+                    last.ForeColor = _accent;
+                }
+            }
             LayoutStatusBar(ss);
         }
 

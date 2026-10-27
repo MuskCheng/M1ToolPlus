@@ -1377,3 +1377,66 @@ tag `v1.8.1` 落在 `2a0040f`；v1.8.0 的标题一并统一为 `v1.8.0`。
 按用户要求**保持不动**：`StripCaptionButtons()` 现在只清 `WS_THICKFRAME`（缩放边框），
 不再动 `WS_MAXIMIZEBOX`。那颗灰方框是 Windows 11 画的占位按钮，去不掉也不影响使用。
 
+
+## 二十七、启动静默检查更新 + 设备串口实时跟随插拔（2026-10-27，v1.8.2）
+
+### 1. 启动静默检查更新
+
+需求：打开软件后在后台自己查一次有没有新版本，有就把状态栏「检查更新」四个字换成提示，
+点了才走完整的更新流程。
+
+实现在 `Form1.StartSilentUpdateCheck()`（`Shown` 之后触发）：
+
+- `BackgroundWorker` 里只调 `GitHubUpdate.FetchLatest(out err)`，**只取元数据**，
+  不下载、不弹窗、不改窗口标题；
+- 拿到结果后比较 `rel.Remote`（tag 解析出的 Version）与本地 `AssemblyVersion`，
+  **严格大于**才提示（相等或更小说明已是最新，什么都不做）；
+- 有更新 → 文案换成 `有新版本 v1.8.2`，并用强调色染色，悬浮提示写明远端/本地版本；
+- 网络不通、接口报错、tag 格式异常一律静默吞掉 —— 静默检查绝不能打扰用户。
+
+提示色需要能扛住主题切换：套主题时 `StyleStatusStrip` 会把所有项刷成主题文字色，
+所以染色状态存在 `UiTheme.StatusUpdateBadge / StatusUpdateText` 里，
+由 `StyleStatusStrip` 在刷完色之后重新贴回去。
+
+开关：`Properties.Settings.CheckUpdateOnStartup`（**默认 true**）。
+想彻底断网运行，改用户目录下 `user.config` 里这一项为 False 即可。
+
+### 2. 设备拔出后串口实时清空
+
+原来 `list_dev` 扫到 0 个设备时只在终端打两行字，**没有动状态栏**，
+于是 `curDevice` 一直挂着上一次的 COM 口（拔掉读卡器、点「检测连接」也清不掉）。
+
+两处改动：
+
+- 抽出 `ApplyDeviceList(readers)`：有设备就写回 `libnfc.conf` 并更新下拉框
+  （用户之前手动选的设备若还在列表里就保留，不被自动扫描顶掉）；
+  **0 个设备则把状态栏串口部分清空**；
+- 新增 `DeviceStatus.Format(connstring)`：统一「前缀常显 + 串口按实况」，
+  前缀「设备串口：」四个字永远在，只有后面的串口会变（有就显示，没有就空）。
+
+实时检测靠 `WndProc` 监听 `WM_DEVICECHANGE`
+（`DBT_DEVNODES_CHANGED` / `DBT_DEVICEARRIVAL` / `DBT_DEVICEREMOVECOMPLETE`）：
+只置 `deviceScanPending` 标记，由 `timer1_Tick` 在**当前没有任务在跑**时才真正重扫
+（`running` / `lprocess` / `silentScanBusy` 任一为真就推迟）。
+静默重扫不回显终端、不改标题不写日志，用户无感。
+
+> 注意：`list_dev` 与业务任务共用 `process` 字段，所以静默扫描**不能**占用
+> `lprocess` / `running`（否则扫一次要十几秒，期间所有按钮都是禁用态）。
+> 静默扫描改用独立的 `silentScanBusy` 做互斥。
+
+### 3. 实测（广播一条假的 USB 变更消息）
+
+```text
+15:33:48.150  devicechange w=7 (DBT_DEVNODES_CHANGED)  running=False  lprocess=False
+15:33:48.164  scan start
+15:34:01.274  apply readers=0
+```
+
+扫描约 13 秒完成，0 个设备 → 状态栏 `curDevice` 由空变成 **`设备串口：`**
+（前缀在、串口为空），符合「四个字常显、串口按实况」的要求。
+远端 latest = v1.8.1 与本地 1.8.1.0 相同，文案保持「检查更新」不变。
+
+### 4. 测试
+
+`Tests.StatusBarLayout.cs` 补了 2 个用例（`DeviceStatus.Format` 的空值/有值分支），
+本地与 CI 共 **25/25 通过**。
