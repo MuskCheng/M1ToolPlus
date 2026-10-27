@@ -1324,26 +1324,26 @@
             // 
             this.statusLabel.Image = global::M1ToolPlus.Properties.Resources.round_sync_black_18pt_1x;
             resources.ApplyResources(this.statusLabel, "statusLabel");
-            this.statusLabel.Margin = new System.Windows.Forms.Padding(0, 0, 50, 0);
+            this.statusLabel.Margin = new System.Windows.Forms.Padding(0, 0, 20, 0);
             this.statusLabel.Name = "statusLabel";
             // 
             // runTimeLabel
             // 
             this.runTimeLabel.Image = global::M1ToolPlus.Properties.Resources.round_timer_black_18pt_1x;
             resources.ApplyResources(this.runTimeLabel, "runTimeLabel");
-            this.runTimeLabel.Margin = new System.Windows.Forms.Padding(50, 0, 50, 0);
+            this.runTimeLabel.Margin = new System.Windows.Forms.Padding(20, 0, 20, 0);
             this.runTimeLabel.Name = "runTimeLabel";
             // 
             // localVersionLabel
             // 
             this.localVersionLabel.Image = global::M1ToolPlus.Properties.Resources.outline_info_black_18pt_1x;
             resources.ApplyResources(this.localVersionLabel, "localVersionLabel");
-            this.localVersionLabel.Margin = new System.Windows.Forms.Padding(50, 0, 50, 0);
+            this.localVersionLabel.Margin = new System.Windows.Forms.Padding(20, 0, 20, 0);
             this.localVersionLabel.Name = "localVersionLabel";
             // 
             // curDevice
             // 
-            this.curDevice.Margin = new System.Windows.Forms.Padding(50, 0, 50, 0);
+            this.curDevice.Margin = new System.Windows.Forms.Padding(20, 0, 20, 0);
             this.curDevice.Name = "curDevice";
             resources.ApplyResources(this.curDevice, "curDevice");
             // 
@@ -1354,8 +1354,11 @@
             // 不设 ForeColor：由 UiTheme.StyleStatusStrip 统一成底部栏文字色，
             // 否则这里写死 SystemColors.ControlText，深色主题下是黑字，与其它项不一致。
             resources.ApplyResources(this.toolStripCheckUpdate, "toolStripCheckUpdate");
-            this.toolStripCheckUpdate.Margin = new System.Windows.Forms.Padding(0, 0, 10, 0);
+            this.toolStripCheckUpdate.Margin = new System.Windows.Forms.Padding(0, 0, 6, 0);
             this.toolStripCheckUpdate.Name = "toolStripCheckUpdate";
+            // 宽度不够时 ToolStrip 会把放不下的项塞进溢出菜单（右端一个很小的 ▾），
+            // 这一项永远不能进溢出：设备串口文字变长（COM10 以上）就可能把状态栏挤爆。
+            this.toolStripCheckUpdate.Overflow = System.Windows.Forms.ToolStripItemOverflow.Never;
             this.toolStripCheckUpdate.ButtonClick += new System.EventHandler(this.toolStripCheckUpdate_ButtonClick);
             // 
             // timer1
