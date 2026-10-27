@@ -1574,3 +1574,31 @@ FlowLayoutPanel flowLayoutPanel1 rel={X=403,Y=5,Width=37,Height=282}
   Label      label8      rel={X=0,Y=116,Width=37,Height=88}   ← 四字竖排，14px 粗体
 Label label7 (请放原卡) Width=69 Height=46  font=Microsoft YaHei UI 8.4pt h=18  ← 14px
 ```
+
+## 三十、v1.8.2 发布（2026-10-27）
+
+承接第二十六~二十九节的四项改动一起发版：状态栏自适应、启动静默检查更新 + 串口实时跟随、
+拔出即时清空、复制卡页提示改版。业务逻辑与 v1.8.1 一致。
+
+### 发版操作（本机流程，可照抄）
+
+1. `M1ToolPlus\Properties\AssemblyInfo.cs`：`AssemblyVersion` / `AssemblyFileVersion` → `1.8.2.0`
+   （**注意第 34 行有注释模板**，grep 必须锚定 `^\[assembly:/s*AssemblyVersion`）
+2. 同步文档里的版本字面量：README 徽章 `docs/images/badges/badge-release.svg`、`README.md` 的
+   `alt=` 与截图署名、`docs/USERGUIDE.md` 的适用版本
+3. 手写 `docs/release-notes/v1.8.2.md`（流水线优先用它做 Release 说明，没有才回退自动生成）
+4. `.\scripts\build.ps1 -Test` → 27/27 通过，exe 717.5 KB / v1.8.2.0
+5. 合回 dev（`git merge --no-ff`）→ `git push origin dev` → `git tag v1.8.2 && git push origin v1.8.2`
+6. 推 tag 即自动触发 `release.yml`（`on.push.tags: v*`），默认 **非草稿**，跑完直接置为 Latest
+
+### 结果
+
+- Release <https://github.com/MuskCheng/M1ToolPlus/releases/tag/v1.8.2>，标题 `v1.8.2`，已是 Latest
+- 资产：`M1ToolPlus-v1.8.2.zip` + `SHA256SUMS.txt`
+  （zip sha256 `8aae2781a7f19b1e10f11360299446b3925a19196f78db64eb689df618105070`）
+- 流水线 2m25s 全绿：版本对齐 → 还原 nfc-bin → 构建/单测/打包 → 产物在位校验 → 发布
+
+### 一个细节
+
+`gh` 在本仓库默认解析到 **upstream（xcicode/MifareOneTool）**，查流水线/Release 必须显式
+`-R MuskCheng/M1ToolPlus`，否则报 404。
