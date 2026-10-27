@@ -179,14 +179,28 @@ jobs:
           $ErrorActionPreference = "Continue"
           $tag     = $env:RELEASE_TAG
           $assets  = @($env:RELEASE_ZIP, $env:RELEASE_SUM)
+          # Hand-written notes win over GitHub's auto summary: --generate-notes only
+          # emits a compare link here because this repo merges without PRs.
+          $notes = Join-Path $env:GITHUB_WORKSPACE "docs\release-notes\$tag.md"
+          $hasNotes = Test-Path $notes
           $null = gh release view $tag 2>$null
           $exists = ($LASTEXITCODE -eq 0)
           if ($exists) {
             Write-Host "release $tag already exists - re-uploading assets"
+            if ($hasNotes) {
+              gh release edit $tag --notes-file $notes
+              if ($LASTEXITCODE -ne 0) { throw "gh release edit failed" }
+            }
             gh release upload $tag $assets --clobber
             if ($LASTEXITCODE -ne 0) { throw "gh release upload failed" }
           } else {
-            $releaseArgs = @('release', 'create', $tag) + $assets + @('--title', $tag, '--generate-notes', '--target', $env:RELEASE_SHA)
+            $releaseArgs = @('release', 'create', $tag) + $assets + @('--title', $tag, '--target', $env:RELEASE_SHA)
+            if ($hasNotes) {
+              Write-Host "using notes file: $notes"
+              $releaseArgs += @('--notes-file', $notes)
+            } else {
+              $releaseArgs += '--generate-notes'
+            }
             if ('${{ inputs.draft }}' -eq 'true') { $releaseArgs += '--draft' }
             Write-Host "gh $($releaseArgs -join ' ')"
             & gh @releaseArgs
