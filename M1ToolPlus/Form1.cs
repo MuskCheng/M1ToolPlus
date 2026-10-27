@@ -502,6 +502,22 @@ namespace M1ToolPlus
                 sb.AppendLine("TerminalFontFamily=" + richTextBox1.Font.FontFamily.Name);
                 sb.AppendLine("TerminalFontPx=" + richTextBox1.Font.SizeInPoints.ToString("0.##") + "pt h=" + richTextBox1.Font.Height);
                 sb.AppendLine("TerminalZoom=" + richTextBox1.ZoomFactor.ToString("0.##"));
+                // 状态栏自适应诊断：LayoutStyle 必须是 Table（Spring 才生效），
+                // 两端 AutoSize + spring=False（宽度永不参与分配），中间 spring=True 各分一份。
+                // 右端项 x+w 超过 statusStrip1.Width 就说明又被挤出去了。
+                sb.AppendLine("StatusBarLayout=" + statusStrip1.LayoutStyle + " width=" + statusStrip1.Width
+                    + " padding=" + statusStrip1.Padding);
+                foreach (ToolStripItem it in statusStrip1.Items)
+                {
+                    ToolStripStatusLabel lbl = it as ToolStripStatusLabel;
+                    sb.AppendLine("  status:" + it.Name
+                        + " x=" + it.Bounds.X + " w=" + it.Bounds.Width + " right=" + (it.Bounds.X + it.Bounds.Width)
+                        + " auto=" + it.AutoSize
+                        + " spring=" + (lbl != null ? lbl.Spring.ToString() : "-")
+                        + " overflow=" + it.Overflow
+                        + " visible=" + it.Visible
+                        + " text=\"" + it.Text + "\"");
+                }
                 string[] names = new string[] { "tabControl1", "richTextBox1", "statusStrip1", "groupBox1", "buttonScanCard" };
                 foreach (string n in names)
                 {

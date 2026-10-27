@@ -20,6 +20,7 @@ namespace M1ToolPlus.Tests
             TestsS50.Run(add);
             TestsGitHubUpdate.Run(add);
             TestsCardToolFlow.Run(add);
+            TestsStatusBarLayout.Run(add);
 
             int failed = 0;
             Console.WriteLine("M1ToolPlus 单元测试：{0} 个用例", cases.Count);
