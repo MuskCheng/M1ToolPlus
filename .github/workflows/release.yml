@@ -1,0 +1,161 @@
+# release.yml - Tag 触发的自动发版流水线
+#
+# 用法（正常发版）：
+#   1. 改 M1ToolPlus\Properties\AssemblyInfo.cs 的 AssemblyVersion -> 1.8.2.0
+#   2. git commit && git push origin dev
+#   3. git tag v1.8.2 && git push origin v1.8.2   <- 推送后本流水线自动跑
+#
+# 与 build.yml（CI）相比，多了三道护栏：
+#   1) 还原二进制依赖：nfc-bin/ 被 .gitignore 排除，不在版本库里。runner checkout 之后
+#      必须跑 fetch-deps.ps1 才能拿到 libnfc / mfoc 等工具，否则会打出一个「能安装、
+#      能启动、但读不了卡」的残包——build.ps1 对此只 Write-Warning，不会让 CI 变红。
+#   2) 版本号对齐：tag 名必须与 AssemblyInfo.cs 的 AssemblyVersion 前三位一致，
+#      防止「tag 是 v1.8.1、而 exe 里还是 1.8.0」这种错配再次发生。
+#   3) 产物在位校验：exe / Newtonsoft.Json.dll / app.config / zh 卫星 / nfc-bin 工具逐个确认。
+#
+# 注意：内联 PowerShell 注释一律用 ASCII。windows-latest 上的 Windows PowerShell 5.1
+#       解析 UTF-8 中文注释时偶发吞行（已在 ROADMAP 记录过这个坑）。
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build, e.g. v1.8.1'
+        required: true
+      draft:
+        description: 'Publish as draft (review before publishing)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & publish
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Install .NET 4.0 reference assemblies
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $dir = Join-Path $env:RUNNER_TEMP "net40ref"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $zip = Join-Path $dir "net40.zip"
+          $ver = "1.0.3"
+          Invoke-WebRequest "https://www.nuget.org/api/v2/package/Microsoft.NETFramework.ReferenceAssemblies.net40/$ver" `
+            -OutFile $zip -UseBasicParsing
+          Expand-Archive $zip (Join-Path $dir "pkg") -Force
+          $targets = Join-Path $dir "pkg\build\Microsoft.NETFramework.ReferenceAssemblies.net40.targets"
+          if (-not (Test-Path $targets)) { throw "unexpected package layout: $targets" }
+          "M1TP_MSBUILD_PROPS=CustomAfterMicrosoftCommonTargets=$targets" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "targets = $targets"
+
+      - name: Resolve tag
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') { $tag = '${{ inputs.tag }}' } else { $tag = $env:GITHUB_REF_NAME }
+          if ($tag -notmatch '^v\d+\.\d+\.\d+$') { throw "unsupported tag format: $tag (expected v1.8.1)" }
+          "RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "release tag = $tag"
+
+      - name: Check version matches tag
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $info = Get-Content M1ToolPlus\Properties\AssemblyInfo.cs -Raw
+          # Must anchor to line start: the file ships a commented-out template
+          # `// [assembly: AssemblyVersion("1.0.*")]` right above the real one,
+          # and a naive match would read that placeholder instead.
+          $m = [regex]::Match($info, '(?m)^\[assembly:\s*AssemblyVersion\("([^"]+)"\)')
+          if (-not $m.Success) { throw "AssemblyVersion not found in AssemblyInfo.cs" }
+          $full = $m.Groups[1].Value
+          $ver   = ($full -split '\.')[0..2] -join '.'
+          $want  = $env:RELEASE_TAG.TrimStart('v')
+          if ($ver -ne $want) { throw "version mismatch: tag=$want but AssemblyVersion=$full" }
+          Write-Host "version OK: $full"
+
+      - name: Restore runtime dependencies
+        shell: powershell
+        run: .\scripts\fetch-deps.ps1
+
+      - name: Build, test and pack
+        shell: powershell
+        run: .\scripts\build.ps1 -Test -Pack
+
+      - name: Verify package contents
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = "M1ToolPlus\bin\Release"
+          $required = @(
+            "M1ToolPlus.exe",
+            "Newtonsoft.Json.dll",
+            "M1ToolPlus.exe.config",
+            "zh\M1ToolPlus.resources.dll"
+          )
+          foreach ($f in $required) {
+            if (-not (Test-Path (Join-Path $out $f))) { throw "missing output: $f" }
+          }
+          # Same health list as fetch-deps.ps1, but fatal here: missing tools must
+          # never reach users as a silently broken package.
+          $tools = @(
+            "nfc-list.exe", "nfc-scan-device.exe", "nfc-mfclassic.exe", "nfc-mfsetuid.exe",
+            "mfoc.exe", "mfcuk.exe", "libnfc.dll", "libnfc_hardnested.exe", "mfdetect.exe"
+          )
+          foreach ($t in $tools) {
+            if (-not (Test-Path (Join-Path $out "nfc-bin\$t"))) { throw "missing nfc-bin tool: $t" }
+          }
+          Write-Host "package contents verified ($($tools.Count) tools present)"
+
+      - name: Rename artifacts and write checksum
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = $env:RELEASE_TAG
+          $src = Get-ChildItem "artifacts\M1ToolPlus-*.zip" | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+          if (-not $src) { throw "no zip produced by build.ps1 -Pack" }
+          $dist = Join-Path "artifacts" "dist"
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          $zip = Join-Path $dist "M1ToolPlus-$tag.zip"
+          Copy-Item $src.FullName $zip -Force
+          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
+          $sum  = Join-Path $dist "SHA256SUMS.txt"
+          "$hash  $(Split-Path $zip -Leaf)" | Out-File -FilePath $sum -Encoding ascii
+          Write-Host "asset = $zip"
+          Get-Content $sum
+          "RELEASE_ZIP=$zip"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "RELEASE_SUM=$sum"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Publish release
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag     = $env:RELEASE_TAG
+          $assets  = @($env:RELEASE_ZIP, $env:RELEASE_SUM)
+          $null = gh release view $tag 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "release $tag already exists - re-uploading assets"
+            gh release upload $tag $assets --clobber
+            if ($LASTEXITCODE -ne 0) { throw "gh release upload failed" }
+          } else {
+            $releaseArgs = @('release', 'create', $tag) + $assets + @('--title', $tag, '--generate-notes')
+            if ('${{ inputs.draft }}' -eq 'true') { $releaseArgs += '--draft' }
+            Write-Host "gh $($releaseArgs -join ' ')"
+            & gh @releaseArgs
+            if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
+          }
+          Write-Host "published $tag"

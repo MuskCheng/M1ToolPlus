@@ -139,6 +139,33 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
    本环境无硬件，需协作者配合
 4. 推送后 GitHub Actions `CI / Build & verify` 必须为绿
 
+## 发版（Release 流水线）
+
+发版靠 **tag 触发**：`.github/workflows/release.yml`，推送 tag 后自动构建、校验并把产物挂到 Release。
+
+**标准流程**
+
+1. 改 `M1ToolPlus\Properties\AssemblyInfo.cs` 的 `AssemblyVersion` / `AssemblyFileVersion` → 三位版本号（如 `1.8.2.0`）；
+2. 同步更新 `docs/images/badges/badge-release.svg` 里的静态版本号与 README 中出现的版本字样；
+3. 本地确认：`.\scripts\build.ps1 -Test`（19/19 绿）；
+4. 提交并推到 `dev`；
+5. `git tag v1.8.2 && git push origin v1.8.2` —— 之后 Actions 自动跑完剩下的。
+
+**流水线与 CI 的四个不同点**（也就是三道护栏）
+
+| 步骤 | 为什么必须有 |
+|---|---|
+| `.\scripts\fetch-deps.ps1` | `nfc-bin/` 被 `.gitignore` 排除，**不在版本库里**。runner checkout 后拿不到 libnfc / mfoc 等工具；而 `build.ps1` 发现缺依赖时只 `Write-Warning`，不加这一步会静默产出一个「能启动但读不了卡」的残包 |
+| tag 与版本号对齐校验 | 防止再次出现「Release 是 v1.8.0、exe 里已是 1.8.1.0」。不匹配直接失败，不发版 |
+| 产物在位校验 | `M1ToolPlus.exe` / `Newtonsoft.Json.dll` / `app.config` / `zh` 卫星 / 9 个 nfc-bin 工具逐个确认，缺失即失败 |
+| 重命名为稳定名 + SHA256 | `-Pack` 本地输出带时间戳，Release 附件统一为 `M1ToolPlus-v1.8.2.zip` + `SHA256SUMS.txt` |
+
+> ⚠️ 版本校验的正则必须锚定行首：`AssemblyInfo.cs` 第 34 行有一行被注释的模板
+> `// [assembly: AssemblyVersion("1.0.*")]`，不加 `^\[assembly:` 约束会读到它。
+
+**发草稿 / 试跑**：Actions 页 → Release → Run workflow，填 tag 名并勾选 draft，
+产物齐全、确认能读卡后再 Publish。首次上线建议走这条路。
+
 ## 已知问题 / 技术债
 
 - `Form1.cs` 巨石类承担全部业务逻辑，UI 与逻辑强耦合，是重构第一优先级
@@ -149,3 +176,7 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
   `.github/workflows/build.yml`（net40 引用程序集注入 + 产物校验 + 跑单测）与
   `tests\M1ToolPlus.Tests`
 - 官方 Release 包不含卫星程序集（历史问题），我们 build.ps1 已解决
+- **自动发版依赖上游可下载**：`fetch-deps.ps1` 从 `xcicode/MifareOneTool` 的 `v1.7.0` Release
+  取 `M1T-Release.zip`（内部的 nfc-bin，约 6.6 MB 展开后），上游包一旦下架，Release 流水线会红。
+  稳妥做法是把这份原始包作为**长期资产挂到我们自己的 Release**，并让 `fetch-deps.ps1`
+  优先拉自家资产、上游作为兜底（待办）
