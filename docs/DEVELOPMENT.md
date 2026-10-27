@@ -147,9 +147,18 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
 
 1. 改 `M1ToolPlus\Properties\AssemblyInfo.cs` 的 `AssemblyVersion` / `AssemblyFileVersion` → 三位版本号（如 `1.8.2.0`）；
 2. 同步更新 `docs/images/badges/badge-release.svg` 里的静态版本号与 README 中出现的版本字样；
-3. 本地确认：`.\scripts\build.ps1 -Test`（19/19 绿）；
-4. 提交并推到 `dev`；
-5. `git tag v1.8.2 && git push origin v1.8.2` —— 之后 Actions 自动跑完剩下的。
+3. 写 `docs/release-notes/v1.8.2.md`（面向使用者的更新说明，见下）；
+4. 本地确认：`.\scripts\build.ps1 -Test`（19/19 绿）；
+5. 提交并推到 `dev`；
+6. `git tag v1.8.2 && git push origin v1.8.2` —— 之后 Actions 自动跑完剩下的。
+
+**发版说明用文件，不用自动摘要**
+
+本仓库走「合并分支」而不是 PR，`--generate-notes` 只会产出一行 compare 链接。
+发布步骤因此优先找 `docs/release-notes/<tag>.md`：有就 `--notes-file`，没有才回退自动摘要；
+Release 已存在（重跑）时用 `gh release edit --notes-file` 覆盖正文。
+文件内容面向使用者（界面变化 / 精简 / 文档 / 校验方式 / 依赖 / 已知限制），
+技术细节与踩坑留在 ROADMAP。
 
 **流水线与 CI 的四个不同点**（也就是三道护栏）
 
@@ -159,6 +168,7 @@ GitHubUpdate.cs     GitHub Releases 检查更新（读 app.config 的 GitHubR �
 | tag 与版本号对齐校验 | 防止再次出现「Release 是 v1.8.0、exe 里已是 1.8.1.0」。不匹配直接失败，不发版 |
 | 产物在位校验 | `M1ToolPlus.exe` / `Newtonsoft.Json.dll` / `app.config` / `zh` 卫星 / 9 个 nfc-bin 工具逐个确认，缺失即失败 |
 | 重命名为稳定名 + SHA256 | `-Pack` 本地输出带时间戳，Release 附件统一为 `M1ToolPlus-v1.8.2.zip` + `SHA256SUMS.txt` |
+| 发版说明手写优先 | `docs/release-notes/<tag>.md` 存在时用 `--notes-file`，否则 `--generate-notes`（本仓库合并分支不走 PR，自动摘要只有一行 compare 链接） |
 
 > ⚠️ 版本校验的正则必须锚定行首：`AssemblyInfo.cs` 第 34 行有一行被注释的模板
 > `// [assembly: AssemblyVersion("1.0.*")]`，不加 `^\[assembly:` 约束会读到它。
