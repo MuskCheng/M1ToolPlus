@@ -8,6 +8,10 @@
 #
 # 卫星程序集（zh）依赖 al.exe（Windows SDK）：镜像上有则走标准构建，没有则
 # build.ps1 自动回退到 csc 手工生成——两条路径产物一致，CI 结束后统一校验。
+#
+# 注意：内联 PowerShell 里的字符串/注释一律用 ASCII。GitHub 把 run 块落成无 BOM 的
+#       UTF-8 临时 .ps1，Windows PowerShell 5.1 按 ANSI 读取，中文会变成乱码并被当成
+#       语法错误（2026-10-27 就因一句中文 throw 把 CI 判红过）。YAML 注释不受影响。
 
 name: CI
 
@@ -35,8 +39,8 @@ jobs:
             -OutFile $zip -UseBasicParsing
           Expand-Archive $zip (Join-Path $dir "pkg") -Force
           $targets = Join-Path $dir "pkg\build\Microsoft.NETFramework.ReferenceAssemblies.net40.targets"
-          if (-not (Test-Path $targets)) { throw "包结构异常，未找到 targets: $targets" }
-          # 注入给 build.ps1 的所有 MSBuild 调用（路径无空格，可直接作为单个 /p: 参数）
+          if (-not (Test-Path $targets)) { throw "unexpected package layout, missing targets: $targets" }
+          # Pass the targets file to every MSBuild call inside build.ps1 (no spaces in path, so one /p: works)
           "M1TP_MSBUILD_PROPS=CustomAfterMicrosoftCommonTargets=$targets" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host "targets = $targets"
 
@@ -50,14 +54,14 @@ jobs:
           $ErrorActionPreference = "Stop"
           $out = "M1ToolPlus\bin\Release"
           $exe = Join-Path $out "M1ToolPlus.exe"
-          if (-not (Test-Path $exe)) { throw "未产出 M1ToolPlus.exe" }
-          if (-not (Test-Path (Join-Path $out "Newtonsoft.Json.dll"))) { throw "未产出 Newtonsoft.Json.dll" }
-          if (-not (Test-Path (Join-Path $out "M1ToolPlus.exe.config"))) { throw "未产出 M1ToolPlus.exe.config" }
+          if (-not (Test-Path $exe)) { throw "M1ToolPlus.exe was not produced" }
+          if (-not (Test-Path (Join-Path $out "Newtonsoft.Json.dll"))) { throw "Newtonsoft.Json.dll was not produced" }
+          if (-not (Test-Path (Join-Path $out "M1ToolPlus.exe.config"))) { throw "M1ToolPlus.exe.config was not produced" }
           foreach ($c in @("zh")) {
             $sat = Join-Path $out "$c\M1ToolPlus.resources.dll"
-            if (-not (Test-Path $sat)) { throw "缺少卫星程序集: $sat" }
+            if (-not (Test-Path $sat)) { throw "missing satellite assembly: $sat" }
           }
-          Write-Host ("校验通过: {0} ({1:N0} bytes)" -f (Split-Path $exe -Leaf), (Get-Item $exe).Length)
+          Write-Host ("verify ok: {0} ({1:N0} bytes)" -f (Split-Path $exe -Leaf), (Get-Item $exe).Length)
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
