@@ -145,6 +145,7 @@ namespace M1ToolPlus
             cfg += "device.connstring = \"" + devstr + "\"";
             File.WriteAllText("libnfc.conf", cfg);
             curDevice.Text = DeviceStatus.Format(devstr);
+            currentDeviceConnstring = devstr;
         }
 
         void default_rpt(object sender, ProgressChangedEventArgs e)
@@ -403,6 +404,7 @@ namespace M1ToolPlus
                     // 只保留常显的前缀，不追加任何串口文本
                     curDevice.Text = DeviceStatus.Format(null);
                     FillDeviceCombo(new string[] { Resources.未检测到设备 });
+                    currentDeviceConnstring = null;
                     return;
                 }
 
@@ -477,6 +479,7 @@ namespace M1ToolPlus
                         SetDeviceCombo.SelectedIndex = SetDeviceCombo.Items.Count - 1;
                         SetDeviceCombo.SelectedIndexChanged += SetDeviceCombo_SelectedIndexChanged;
                         curDevice.Text = Resources.设备串口 + lastDev.Replace("pn532_uart:", "").Replace(":115200", "");
+                        currentDeviceConnstring = lastDev;
                         logAppend(Resources.已恢复上次使用的设备 + lastDev);
                     }
                 }
@@ -503,6 +506,8 @@ namespace M1ToolPlus
                         if (line.StartsWith("device.connstring = \"pn532_uart:"))
                         {
                             curDevice.Text = Resources.设备串口 + line.Replace("device.connstring = \"pn532_uart:", "").Replace(":115200\"", "");
+                            Match cm = Regex.Match(line, "\"([^\"]+)\"");
+                            if (cm.Success) { currentDeviceConnstring = cm.Groups[1].Value; }
                         }
                     }
                 }
@@ -616,6 +621,9 @@ namespace M1ToolPlus
         private bool deviceScanPending;  // 收到插拔消息，等空闲再扫
         private bool quietDeviceScan;    // 本次扫描是静默的（不回显日志）
         private bool silentScanBusy;     // 静默扫描进行中（避免连开子进程）
+        private string currentDeviceConnstring;  // 当前记录的连接串，用于即时判断串口是否还在
+        private int deviceEventSeq;              // 收到的插拔事件累计序号
+        private int deviceScanSeq;               // 最近一次扫描启动时看到的事件序号
 
         /// <summary>
         /// 监听 USB 插拔：读卡器一拔，状态栏的串口必须跟着清空，
@@ -636,6 +644,17 @@ namespace M1ToolPlus
                     // 插拔消息会连着来好几条，这里只置标记；真正的扫描交给 timer1，
                     // 攒够一轮再扫，避免刚插上就连开好几个 nfc-scan-device 子进程。
                     deviceScanPending = true;
+                    deviceEventSeq++;
+
+                    // 拔出是「已经发生」的确定事件，不该等几十秒的完整扫描才反映出来。
+                    // 这里直接读系统串口列表（毫秒级）：确认记的那个口已经不在系统里，
+                    // 就立刻把底部的串口清掉，只留常显前缀。
+                    if (!string.IsNullOrEmpty(currentDeviceConnstring) &&
+                        !DeviceStatus.PortStillPresent(currentDeviceConnstring))
+                    {
+                        curDevice.Text = DeviceStatus.Format(null);
+                        currentDeviceConnstring = null;
+                    }
                 }
             }
             catch (Exception) { }
@@ -652,12 +671,24 @@ namespace M1ToolPlus
                     deviceScanPending = true;
                     return;
                 }
+                // 与「检测设备」按钮保持一致：扫描前先丢掉旧的 libnfc.conf。
+                // 不删的话 libnfc 会先照着旧连接串去开那个已经消失的串口，
+                // 一边打印 Invalid serial port，一边可能阻塞几十秒才返回。
+                try { if (File.Exists("libnfc.conf")) { File.Delete("libnfc.conf"); } }
+                catch (Exception) { }
+
                 BackgroundWorker bgw = new BackgroundWorker();
                 bgw.WorkerReportsProgress = true;
                 bgw.DoWork += new DoWorkEventHandler(list_dev);
                 bgw.ProgressChanged += new ProgressChangedEventHandler(default_rpt);
-                bgw.RunWorkerCompleted += delegate { quietDeviceScan = false; };
+                bgw.RunWorkerCompleted += delegate
+                {
+                    quietDeviceScan = false;
+                    // 扫描期间没来新事件就收工，否则再扫一轮把最新状态补上
+                    if (deviceEventSeq == deviceScanSeq) { deviceScanPending = false; }
+                };
                 quietDeviceScan = true;
+                deviceScanSeq = deviceEventSeq;
                 bgw.RunWorkerAsync();
             }
             catch (Exception) { quietDeviceScan = false; }
@@ -1811,7 +1842,10 @@ namespace M1ToolPlus
             else { statusLabel.Text = Resources.空闲; }
 
             // 热插拔的重扫请求：等当前任务跑完再执行（list_dev 与业务任务共用 process 字段）
-            if (deviceScanPending && !running && !lprocess)
+            // silentScanBusy 必须一起判：扫描要跑几十秒，少了这一位会让每一轮
+            // tick 都再调一次 RefreshDeviceList，而它 busy 时又把 pending 置回来，
+            // 等于扫描一结束就被自己重新拉起，无限转。
+            if (deviceScanPending && !running && !lprocess && !silentScanBusy)
             {
                 deviceScanPending = false;
                 RefreshDeviceList();

@@ -24,6 +24,35 @@ namespace M1ToolPlus.Tests
             add("StatusBar: 只有两项时两端都不 Spring", TwoItemsOnly);
             add("DeviceStatus: 无设备时只留「设备串口：」", DeviceStatusNoDevice);
             add("DeviceStatus: 有设备时前缀常显 + 串口", DeviceStatusWithDevice);
+            add("DeviceStatus: 从连接串解析串口名", DeviceStatusExtractPort);
+            add("DeviceStatus: 非串口设备不做存在性判断", DeviceStatusNonSerialAlwaysPresent);
+        }
+
+        /// <summary>
+        /// 拔出判断依赖从连接串里取出串口名：libnfc 的连接串形如
+        /// pn532_uart:COM6:115200，要拿到 COM6 才能和系统串口列表比对。
+        /// </summary>
+        private static void DeviceStatusExtractPort()
+        {
+            TestAssert.Equal("COM6", DeviceStatus.ExtractPort("pn532_uart:COM6:115200"), "COM6");
+            TestAssert.Equal("COM12", DeviceStatus.ExtractPort("pn532_uart:COM12:115200"), "COM12（两位）");
+            TestAssert.Equal("COM6", DeviceStatus.ExtractPort("PN532_UART:com6:115200"), "统一大写、忽略大小写");
+            TestAssert.Equal(null, DeviceStatus.ExtractPort("acr122_pcsc:ACR122U"), "PCSC 设备没有串口名");
+            TestAssert.Equal(null, DeviceStatus.ExtractPort(null), "null");
+            TestAssert.Equal(null, DeviceStatus.ExtractPort(""), "空串");
+        }
+
+        /// <summary>
+        /// 非串口设备（acr122_pcsc / openpcsc 等）无法用 SerialPort 枚举判断，
+        /// 必须一律返回 true，交给完整扫描处理 —— 否则拔出时会误清空。
+        /// </summary>
+        private static void DeviceStatusNonSerialAlwaysPresent()
+        {
+            TestAssert.True(DeviceStatus.PortStillPresent("acr122_pcsc:ACR122U"), "PCSC 设备不做串口判断");
+            TestAssert.True(DeviceStatus.PortStillPresent(null), "空连接串视为「还在」，由扫描决定");
+            // 一个几乎不可能存在的串口号，用来验证「查得到 vs 查不到」的分支
+            TestAssert.False(DeviceStatus.PortStillPresent("pn532_uart:COM250:115200"),
+                "COM250 不应存在于本机（若真存在请改测试用例）");
         }
 
         /// <summary>设备没接 / 已拔出：前缀常显，串口部分为空。</summary>
