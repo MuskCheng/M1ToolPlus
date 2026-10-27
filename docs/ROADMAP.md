@@ -1253,3 +1253,32 @@ set M1TOOL_WINSIZE=675x675 && M1ToolPlus.exe
 验证方式：把 yml 里每个 `run` 抽成独立 .ps1，用 `Parser::ParseFile` 做语法检查；
 再在本地临时克隆里用「模拟 Actions wrapper」（前置 `EAP=stop`、后置 `exit $LASTEXITCODE`）
 分别跑 tag 存在 / 不存在两种场景，以及版本对齐校验的正反用例。
+
+## 二十四、首次自动发版跑通 + 发版说明手写化（2026-10-27，v1.8.1）
+
+修完「checkout 指向不存在的 tag」与「EAP=stop」两处后重跑，流水线一次通过：
+`Verify package contents → Rename artifacts and write checksum → Publish release` 全绿，
+产出 **Draft Release v1.8.1**（target `2a0040f`，附件 `M1ToolPlus-v1.8.1.zip` 2.87 MB +
+`SHA256SUMS.txt`）。
+
+### 1. 产物复核（本地下载附件后解包）
+
+- `M1ToolPlus.exe` 的 `FileVersion` / `ProductVersion` 均为 `1.8.1.0`；
+- `nfc-bin\` 内 libnfc / mfoc / mfcuk / mftool 等工具与 `data\` 子目录齐全；
+- `zh\M1ToolPlus.resources.dll`、`Newtonsoft.Json.dll`、`M1ToolPlus.exe.config` 在位；
+- 附件的 SHA256 与 `SHA256SUMS.txt` 一致（`ca465104…e975`）；
+- 草稿阶段远端**没有** tag——这是 `gh release create --draft` 的正常行为，
+  tag 在点 Publish 时才按 `--target` 指向的提交建出来。
+
+### 2. 发版说明不再依赖 `--generate-notes`
+
+首次草稿的正文只有一行 `Full Changelog: compare/v1.8.0...v1.8.1`。原因是本仓库合并
+分支而不走 PR，GitHub 的自动摘要既列不出 PR 也没有 commit 列表，等于空。
+
+改为「手写优先」：发布步骤先找 `docs/release-notes/<tag>.md`，存在就用 `--notes-file`，
+不存在才回退 `--generate-notes`；Release 已存在（重跑场景）时用 `gh release edit --notes-file`
+覆盖正文。`docs/release-notes/v1.8.1.md` 补齐了界面 / 精简 / 文档 / 校验 / 依赖 / 已知限制六段，
+并已回写到已建的草稿上。
+
+约定：以后每次发版同步提交一份 `docs/release-notes/<tag>.md`，内容面向使用者，
+提交历史与技术细节留在 ROADMAP 与 DEVELOPMENT 里。
